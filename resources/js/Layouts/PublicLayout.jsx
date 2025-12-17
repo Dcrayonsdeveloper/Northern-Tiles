@@ -1,35 +1,101 @@
 import StorefrontHeader from '@/Components/Storefront/StorefrontHeader';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Footer } from '@/Components/Footer';
+import { Head, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
 
-function FooterLink({ item }) {
-    const href = item?.url ?? '#';
-    const target = item?.target ?? '_self';
+function TrackingScripts({ tracking }) {
+    const gtmId = tracking?.gtm_id;
+    const ga4Id = tracking?.ga4_id;
+    const metaPixelId = tracking?.meta_pixel_id;
 
-    const isExternal = typeof href === 'string' && (href.startsWith('http://') || href.startsWith('https://'));
-    const useAnchor = isExternal || target === '_blank';
+    useEffect(() => {
+        // Google Tag Manager
+        if (gtmId && !window.gtmLoaded) {
+            window.gtmLoaded = true;
+            window.dataLayer = window.dataLayer || [];
 
-    if (useAnchor) {
-        return (
-            <a
-                href={href}
-                target={target}
-                rel={target === '_blank' ? 'noreferrer noopener' : undefined}
-                className="text-sm text-gray-600 hover:text-gray-900"
-            >
-                {item?.label}
-            </a>
-        );
-    }
+            const script = document.createElement('script');
+            script.innerHTML = `
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','${gtmId}');
+            `;
+            document.head.appendChild(script);
+        }
+
+        // Google Analytics 4 (only if GTM not present)
+        if (ga4Id && !gtmId && !window.ga4Loaded) {
+            window.ga4Loaded = true;
+
+            const gtagScript = document.createElement('script');
+            gtagScript.async = true;
+            gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${ga4Id}`;
+            document.head.appendChild(gtagScript);
+
+            const inlineScript = document.createElement('script');
+            inlineScript.innerHTML = `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${ga4Id}');
+            `;
+            document.head.appendChild(inlineScript);
+        }
+
+        // Meta Pixel
+        if (metaPixelId && !window.metaPixelLoaded) {
+            window.metaPixelLoaded = true;
+
+            const fbScript = document.createElement('script');
+            fbScript.innerHTML = `
+                !function(f,b,e,v,n,t,s)
+                {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+                n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+                if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+                n.queue=[];t=b.createElement(e);t.async=!0;
+                t.src=v;s=b.getElementsByTagName(e)[0];
+                s.parentNode.insertBefore(t,s)}(window, document,'script',
+                'https://connect.facebook.net/en_US/fbevents.js');
+                fbq('init', '${metaPixelId}');
+                fbq('track', 'PageView');
+            `;
+            document.head.appendChild(fbScript);
+        }
+    }, [gtmId, ga4Id, metaPixelId]);
+
+    return null;
+}
+
+function JsonLdScript({ data }) {
+    if (!data) return null;
 
     return (
-        <Link href={href} className="text-sm text-gray-600 hover:text-gray-900">
-            {item?.label}
-        </Link>
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+        />
+    );
+}
+
+function GtmNoscript({ gtmId }) {
+    if (!gtmId) return null;
+
+    return (
+        <noscript>
+            <iframe
+                src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+                height="0"
+                width="0"
+                style={{ display: 'none', visibility: 'hidden' }}
+            />
+        </noscript>
     );
 }
 
 export default function PublicLayout({ children }) {
-    const { auth, cart, flash, ui, site, menus } = usePage().props;
+    const { auth, cart, flash, ui, site, menus, tracking, organizationJsonLd } = usePage().props;
     const user = auth?.user;
 
     const cartCount = cart?.count ?? 0;
@@ -42,12 +108,12 @@ export default function PublicLayout({ children }) {
     const ogImageUrl = site?.og_image_url ?? null;
     const twitterSite = site?.twitter_site ?? '';
     const twitterCreator = site?.twitter_creator ?? '';
-
-    const footerItems = menus?.footer ?? [];
+    const faviconUrl = site?.favicon_url ?? null;
 
     return (
         <div className="min-h-screen bg-gray-50 text-gray-900">
             <Head>
+                {faviconUrl ? <link rel="icon" href={faviconUrl} type="image/x-icon" /> : null}
                 {siteDescription ? <meta name="description" content={siteDescription} /> : null}
                 {siteTitle ? <meta property="og:site_name" content={siteTitle} /> : null}
                 {siteTitle ? <meta property="og:title" content={siteTitle} /> : null}
@@ -62,6 +128,11 @@ export default function PublicLayout({ children }) {
                 {siteDescription ? <meta name="twitter:description" content={siteDescription} /> : null}
                 {ogImageUrl ? <meta name="twitter:image" content={ogImageUrl} /> : null}
             </Head>
+
+            <JsonLdScript data={organizationJsonLd} />
+            <TrackingScripts tracking={tracking} />
+
+            <GtmNoscript gtmId={tracking?.gtm_id} />
 
             <StorefrontHeader user={user} cartCount={cartCount} topBar={topBar} menus={menus} />
 
@@ -84,21 +155,7 @@ export default function PublicLayout({ children }) {
                 {children}
             </main>
 
-            <footer className="border-t bg-white">
-                <div className="w-full px-4 py-8 sm:px-6 lg:px-8">
-                    {footerItems.length ? (
-                        <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2">
-                            {footerItems.map((item, idx) => (
-                                <FooterLink key={(item?.label ?? 'item') + idx} item={item} />
-                            ))}
-                        </div>
-                    ) : null}
-
-                    <div className="text-sm text-gray-500">
-                        © {new Date().getFullYear()} Jikra. All rights reserved.
-                    </div>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 }

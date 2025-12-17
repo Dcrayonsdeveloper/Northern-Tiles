@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Storefront;
 
+use App\Domain\Settings\Services\SiteConfigService;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Inertia\Inertia;
@@ -9,7 +10,7 @@ use Inertia\Response;
 
 class HomeController extends Controller
 {
-    public function __invoke(): Response
+    public function __invoke(SiteConfigService $siteConfig): Response
     {
         $featuredProducts = Product::query()
             ->where('is_active', true)
@@ -27,6 +28,7 @@ class HomeController extends Controller
 
         return Inertia::render('Storefront/Home', [
             'featuredProducts' => $featuredProducts,
+            'heroSlides' => $siteConfig->getHomeHeroSlides(),
         ]);
     }
 }

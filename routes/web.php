@@ -54,8 +54,10 @@ Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
 });
 
-// CMS Pages
-Route::get('/page/{slug}', [PublicPageController::class, 'show'])->name('page.show');
+// CMS Pages - supports hierarchical slugs like /page/about/team
+Route::get('/page/{slug}', [PublicPageController::class, 'show'])
+    ->where('slug', '[a-zA-Z0-9-_/]+')
+    ->name('page.show');
 
 // SEO Routes
 Route::get('/sitemap.xml', function (SeoService $seoService) {

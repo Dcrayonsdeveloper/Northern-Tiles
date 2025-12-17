@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "Bash(php artisan db:seed:*)",
+      "Bash(php artisan:*)",
+      "Bash(php artisan view:clear:*)"
     ]
   }
 }

@@ -124,6 +124,17 @@ function IconBook(props) {
     );
 }
 
+function IconMenu(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+            <path
+                d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z"
+                fill="currentColor"
+            />
+        </svg>
+    );
+}
+
 function SidebarLink({ href, active, icon, collapsed, label, children }) {
     return (
         <Link
@@ -248,6 +259,13 @@ export default function DashboardLayout({ title, children }) {
                     icon: <IconUsers className="h-5 w-5" />,
                 },
                 {
+                    key: 'menus',
+                    label: 'Menus',
+                    href: route('admin.menus.index'),
+                    active: route().current('admin.menus.*'),
+                    icon: <IconMenu className="h-5 w-5" />,
+                },
+                {
                     key: 'dictionary',
                     label: 'Dictionary',
                     href: route('admin.dictionary.index'),
@@ -356,7 +374,7 @@ export default function DashboardLayout({ title, children }) {
                                             />
                                         </svg>
                                     ) : (
-                                        <span>Menu</span>
+                                        ""
                                     )}
                                 </h2>
 

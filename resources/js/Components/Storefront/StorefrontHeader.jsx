@@ -3,58 +3,35 @@ import { Link } from '@inertiajs/react';
 import { useState } from 'react';
 
 import { CartIcon, MenuIcon, SearchIcon, UserIcon } from './Icons';
+import MegaMenu from './MegaMenu';
 import MobileMenu from './MobileMenu';
 import TopBar from './TopBar';
-
-function NavItem({ item, className }) {
-    const href = item?.href ?? '#';
-    const target = item?.target ?? '_self';
-
-    const isExternal = typeof href === 'string' && (href.startsWith('http://') || href.startsWith('https://'));
-    const useAnchor = isExternal || target === '_blank';
-
-    if (useAnchor) {
-        return (
-            <a
-                href={href}
-                target={target}
-                rel={target === '_blank' ? 'noreferrer noopener' : undefined}
-                className={className}
-            >
-                {item?.label}
-            </a>
-        );
-    }
-
-    return (
-        <Link href={href} className={className}>
-            {item?.label}
-        </Link>
-    );
-}
 
 export default function StorefrontHeader({ user, cartCount = 0, topBar, menus }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const topMenuItems = menus?.header_top ?? [];
 
+    // Default nav items (fallback when no menu is configured)
     const defaultNavItems = [
-        { label: 'Home', href: route('home'), target: '_self' },
-        { label: 'New Arrivals', href: route('shop.index', { category: 'new-arrivals' }), target: '_self' },
-        { label: 'Best Sellers', href: route('shop.index', { category: 'best-sellers' }), target: '_self' },
-        { label: 'Kitchen Accessories', href: route('shop.index', { category: 'kitchen-accessories' }), target: '_self' },
-        { label: 'Mobile Accessories', href: route('shop.index', { category: 'mobile-accessories' }), target: '_self' },
-        { label: 'Corporate Gifting', href: route('shop.index', { category: 'corporate-gifting' }), target: '_self' },
-        { label: 'Contact', href: route('pages.contact'), target: '_self' },
+        { label: 'Home', url: route('home'), target: '_self' },
+        { label: 'New Arrivals', url: route('shop.index', { category: 'new-arrivals' }), target: '_self' },
+        { label: 'Best Sellers', url: route('shop.index', { category: 'best-sellers' }), target: '_self' },
+        { label: 'Kitchen Accessories', url: route('shop.index', { category: 'kitchen-accessories' }), target: '_self' },
+        { label: 'Mobile Accessories', url: route('shop.index', { category: 'mobile-accessories' }), target: '_self' },
+        { label: 'Corporate Gifting', url: route('shop.index', { category: 'corporate-gifting' }), target: '_self' },
+        { label: 'Contact', url: route('pages.contact'), target: '_self' },
     ];
 
-    const navItems = (menus?.header_main ?? []).length
-        ? (menus.header_main ?? []).map((i) => ({
-              label: i.label,
-              href: i.url,
-              target: i.target ?? '_self',
-          }))
+    // Use full menu data for MegaMenu (includes children, is_mega, images, etc.)
+    const navItems = (menus?.header_main ?? []).length > 0
+        ? menus.header_main
         : defaultNavItems;
+
+    // Mobile menu items (use dedicated mobile menu or fallback to header)
+    const mobileItems = (menus?.mobile ?? []).length > 0
+        ? menus.mobile
+        : navItems;
 
     return (
         <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
@@ -66,16 +43,12 @@ export default function StorefrontHeader({ user, cartCount = 0, topBar, menus })
                     <span className="sr-only">Jikra</span>
                 </Link>
 
+                {/* Desktop Mega Menu */}
+                <div className="hidden flex-1 justify-center md:flex">
+                    <MegaMenu items={navItems} />
+                </div>
+
                 <div className="ml-auto flex items-center gap-4">
-                    <nav className="hidden items-center gap-6 text-sm md:flex">
-                        {navItems.map((item) => (
-                            <NavItem
-                                key={item.label}
-                                item={item}
-                                className="text-sm font-medium text-gray-700 hover:text-gray-900"
-                            />
-                        ))}
-                    </nav>
 
                     <Link
                         href={route('shop.index')}
@@ -141,7 +114,7 @@ export default function StorefrontHeader({ user, cartCount = 0, topBar, menus })
             <MobileMenu
                 open={mobileMenuOpen}
                 onClose={() => setMobileMenuOpen(false)}
-                navItems={navItems}
+                navItems={mobileItems}
                 user={user}
             />
         </header>

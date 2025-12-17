@@ -3,8 +3,11 @@
 namespace App\Http\Middleware;
 
 use App\Domain\Dictionary\Services\DictionaryService;
+use App\Domain\Menu\Services\MenuService;
+use App\Domain\Settings\Models\Setting;
+use App\Domain\Settings\Services\FooterConfigService;
 use App\Domain\Settings\Services\SettingService;
-use App\Models\Setting;
+use App\Domain\Settings\Services\SiteConfigService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -43,17 +46,12 @@ class HandleInertiaRequests extends Middleware
             'ui' => [
                 'topBar' => Setting::getValue('ui.topBar', config('ui.topBar')),
             ],
-            'site' => fn () => [
-                'title' => app(SettingService::class)->getText('site.title', config('app.name')),
-                'description' => app(SettingService::class)->getText('site.description', ''),
-                'og_image_url' => app(SettingService::class)->getFileUrl('site.og_image'),
-                'twitter_site' => app(SettingService::class)->getText('twitter.site', ''),
-                'twitter_creator' => app(SettingService::class)->getText('twitter.creator', ''),
-            ],
+            'site' => fn () => app(SiteConfigService::class)->getSiteData(),
             'menus' => fn () => [
                 'header_top' => app(SettingService::class)->menuItems('menu.header_top', []),
-                'header_main' => app(SettingService::class)->menuItems('menu.header_main', []),
-                'footer' => app(SettingService::class)->menuItems('menu.footer', []),
+                'header_main' => app(MenuService::class)->getTree('header'),
+                'footer' => app(MenuService::class)->getTree('footer'),
+                'mobile' => app(MenuService::class)->getTree('mobile'),
             ],
             'auth' => [
                 'user' => $request->user(),
@@ -65,6 +63,10 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'footerConfig' => fn () => app(FooterConfigService::class)->getConfig(),
+            'tracking' => fn () => app(SiteConfigService::class)->getTrackingData(),
+            'organizationJsonLd' => fn () => app(SiteConfigService::class)->getOrganizationJsonLd(),
+            'socialLinks' => fn () => app(SiteConfigService::class)->getSocialLinks(),
         ];
     }
 }

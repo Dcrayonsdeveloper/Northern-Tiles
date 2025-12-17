@@ -13,6 +13,7 @@ use Database\Seeders\DashboardSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\CMSSeeder;
+use Database\Seeders\SectionRegistrySeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -33,6 +34,7 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             MenuSeeder::class,
             CMSSeeder::class,
+            SectionRegistrySeeder::class,
             StorefrontSeeder::class,
             DashboardSeeder::class,
         ]);

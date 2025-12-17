@@ -21,12 +21,24 @@ class MenuItem extends Model
         'css_class',
         'sort_order',
         'is_active',
+        'is_mega',
+        'mega_columns',
+        'image_url',
+        'image_alt',
+        'video_url',
+        'badge_text',
+        'badge_color',
+        'description',
+        'featured_content',
     ];
 
     protected $casts = [
         'route_params' => 'array',
         'is_active' => 'boolean',
+        'is_mega' => 'boolean',
         'sort_order' => 'integer',
+        'mega_columns' => 'integer',
+        'featured_content' => 'array',
     ];
 
     protected static function booted(): void

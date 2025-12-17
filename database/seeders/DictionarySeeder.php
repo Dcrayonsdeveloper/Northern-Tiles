@@ -56,6 +56,34 @@ class DictionarySeeder extends Seeder
             ['locale' => 'en', 'dkey' => 'dash.seller.low_stock', 'value_text' => 'Low Stock Alerts', 'group' => 'dashboard'],
 
             ['locale' => 'en', 'dkey' => 'dash.common.announcements', 'value_text' => 'Announcements', 'group' => 'dashboard'],
+
+            // Footer
+            ['locale' => 'en', 'dkey' => 'footer.tagline', 'value_text' => 'Your trusted shopping destination', 'group' => 'footer'],
+            ['locale' => 'en', 'dkey' => 'footer.shop.title', 'value_text' => 'Shop', 'group' => 'footer'],
+            ['locale' => 'en', 'dkey' => 'footer.company.title', 'value_text' => 'Company', 'group' => 'footer'],
+            ['locale' => 'en', 'dkey' => 'footer.help.title', 'value_text' => 'Help & Support', 'group' => 'footer'],
+            ['locale' => 'en', 'dkey' => 'footer.policies.title', 'value_text' => 'Policies', 'group' => 'footer'],
+            ['locale' => 'en', 'dkey' => 'footer.copyright', 'value_text' => 'All rights reserved.', 'group' => 'footer'],
+
+            // Company Info
+            ['locale' => 'en', 'dkey' => 'company.address', 'value_text' => '123 Business Street, City, Country', 'group' => 'company'],
+
+            // Home Hero Slides
+            ['locale' => 'en', 'dkey' => 'home.hero.slide1.h1', 'value_text' => 'Discover Premium Quality Products', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide1.p', 'value_text' => 'Explore our curated collection of high-quality products designed to enhance your lifestyle. Free shipping on orders over $50.', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide1.cta_primary', 'value_text' => 'Shop Now', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide1.cta_secondary', 'value_text' => 'Learn More', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide1.image_alt', 'value_text' => 'Premium products collection', 'group' => 'home'],
+
+            ['locale' => 'en', 'dkey' => 'home.hero.slide2.h1', 'value_text' => 'New Arrivals Just Landed', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide2.p', 'value_text' => 'Be the first to discover our latest additions. Fresh styles, innovative designs, and trending products updated weekly.', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide2.cta_primary', 'value_text' => 'Explore New Arrivals', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide2.image_alt', 'value_text' => 'New arrivals collection', 'group' => 'home'],
+
+            ['locale' => 'en', 'dkey' => 'home.hero.slide3.h1', 'value_text' => 'Best Sellers of the Season', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide3.p', 'value_text' => 'Join thousands of satisfied customers. Our most popular products chosen by people who know quality when they see it.', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide3.cta_primary', 'value_text' => 'View Best Sellers', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide3.image_alt', 'value_text' => 'Best sellers collection', 'group' => 'home'],
         ];
 
         foreach ($items as $item) {

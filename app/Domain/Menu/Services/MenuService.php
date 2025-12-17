@@ -45,6 +45,16 @@ class MenuService
                     'target' => $item->target,
                     'icon' => $item->icon,
                     'css_class' => $item->css_class,
+                    // Mega menu fields
+                    'is_mega' => $item->is_mega,
+                    'mega_columns' => $item->mega_columns,
+                    'image_url' => $item->image_url,
+                    'image_alt' => $item->image_alt,
+                    'video_url' => $item->video_url,
+                    'badge_text' => $item->badge_text,
+                    'badge_color' => $item->badge_color,
+                    'description' => $item->description,
+                    'featured_content' => $item->featured_content,
                     'children' => $this->buildTree($items, $item->id),
                 ];
                 $branch[] = $node;

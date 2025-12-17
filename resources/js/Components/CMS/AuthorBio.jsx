@@ -27,7 +27,7 @@ export default function AuthorBio({ author, variant = 'default', showSocial = tr
                 )}
                 <div>
                     <Link
-                        href={route('author.show', author.slug)}
+                        href={route('blog.author', author.slug)}
                         className="text-sm font-semibold text-gray-900 hover:text-brand"
                     >
                         {author.name}
@@ -60,7 +60,7 @@ export default function AuthorBio({ author, variant = 'default', showSocial = tr
 
                 {/* Name & Title */}
                 <Link
-                    href={route('author.show', author.slug)}
+                    href={route('blog.author', author.slug)}
                     className="mt-4 block text-lg font-semibold text-gray-900 hover:text-brand"
                 >
                     {author.name}
@@ -121,7 +121,7 @@ export default function AuthorBio({ author, variant = 'default', showSocial = tr
                 <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                         <Link
-                            href={route('author.show', author.slug)}
+                            href={route('blog.author', author.slug)}
                             className="text-lg font-semibold text-gray-900 hover:text-brand"
                         >
                             {author.name}

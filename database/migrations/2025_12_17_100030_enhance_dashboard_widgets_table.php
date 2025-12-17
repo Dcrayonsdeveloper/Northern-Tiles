@@ -9,11 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('dashboard_widgets', function (Blueprint $table) {
-            if (!Schema::hasColumn('dashboard_widgets', 'widget_key')) {
-                $table->string('widget_key', 100)->unique()->nullable()->after('id');
-            }
             if (!Schema::hasColumn('dashboard_widgets', 'config_json')) {
-                $table->json('config_json')->nullable()->after('description');
+                $table->json('config_json')->nullable()->after('description_key');
             }
             if (!Schema::hasColumn('dashboard_widgets', 'default_size')) {
                 $table->string('default_size', 20)->default('medium')->after('config_json');
@@ -30,7 +27,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('dashboard_widgets', function (Blueprint $table) {
-            $columns = ['widget_key', 'config_json', 'default_size', 'min_role', 'component_name'];
+            $columns = ['config_json', 'default_size', 'min_role', 'component_name'];
             foreach ($columns as $col) {
                 if (Schema::hasColumn('dashboard_widgets', $col)) {
                     $table->dropColumn($col);

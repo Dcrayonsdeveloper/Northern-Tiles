@@ -143,4 +143,99 @@ class MenuController extends Controller
 
         return back()->with('success', 'Menu items reordered successfully');
     }
+
+    /**
+     * Sync all menu items (handles create, update, delete in one call)
+     */
+    public function syncItems(Request $request, Menu $menu)
+    {
+        $validated = $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'nullable',
+            'items.*.title' => 'required|string|max:191',
+            'items.*.url' => 'nullable|string|max:500',
+            'items.*.target' => 'nullable|string|max:20',
+            'items.*.icon' => 'nullable|string|max:100',
+            'items.*.css_class' => 'nullable|string|max:100',
+            // Mega menu fields
+            'items.*.is_mega' => 'nullable|boolean',
+            'items.*.mega_columns' => 'nullable|integer|min:1|max:5',
+            'items.*.image_url' => 'nullable|string|max:500',
+            'items.*.image_alt' => 'nullable|string|max:191',
+            'items.*.video_url' => 'nullable|string|max:500',
+            'items.*.badge_text' => 'nullable|string|max:50',
+            'items.*.badge_color' => 'nullable|string|max:20',
+            'items.*.description' => 'nullable|string|max:500',
+            'items.*.featured_content' => 'nullable|array',
+            'items.*.children' => 'nullable|array',
+        ]);
+
+        $this->syncItemsRecursive($menu, $validated['items'], null);
+
+        // Delete items not in the sync
+        $keepIds = $this->collectItemIds($validated['items']);
+        $menu->items()->whereNotIn('id', $keepIds)->delete();
+
+        $this->menuService->flushCache($menu->location);
+
+        return back()->with('success', 'Menu items synced successfully');
+    }
+
+    protected function syncItemsRecursive(Menu $menu, array $items, ?int $parentId, int &$sortOrder = 0): void
+    {
+        foreach ($items as $itemData) {
+            $isNew = !isset($itemData['id']) || str_starts_with((string) $itemData['id'], 'new-');
+
+            $data = [
+                'menu_id' => $menu->id,
+                'parent_id' => $parentId,
+                'label' => $itemData['title'],
+                'url' => $itemData['url'] ?? null,
+                'target' => $itemData['target'] ?? '_self',
+                'icon' => $itemData['icon'] ?? null,
+                'css_class' => $itemData['css_class'] ?? null,
+                'sort_order' => $sortOrder++,
+                'is_active' => true,
+                // Mega menu fields
+                'is_mega' => $itemData['is_mega'] ?? false,
+                'mega_columns' => $itemData['mega_columns'] ?? 4,
+                'image_url' => $itemData['image_url'] ?? null,
+                'image_alt' => $itemData['image_alt'] ?? null,
+                'video_url' => $itemData['video_url'] ?? null,
+                'badge_text' => $itemData['badge_text'] ?? null,
+                'badge_color' => $itemData['badge_color'] ?? null,
+                'description' => $itemData['description'] ?? null,
+                'featured_content' => $itemData['featured_content'] ?? null,
+            ];
+
+            if ($isNew) {
+                $item = $menu->items()->create($data);
+            } else {
+                $item = $menu->items()->find($itemData['id']);
+                if ($item) {
+                    $item->update($data);
+                } else {
+                    $item = $menu->items()->create($data);
+                }
+            }
+
+            if (!empty($itemData['children'])) {
+                $this->syncItemsRecursive($menu, $itemData['children'], $item->id, $sortOrder);
+            }
+        }
+    }
+
+    protected function collectItemIds(array $items): array
+    {
+        $ids = [];
+        foreach ($items as $item) {
+            if (isset($item['id']) && !str_starts_with((string) $item['id'], 'new-')) {
+                $ids[] = $item['id'];
+            }
+            if (!empty($item['children'])) {
+                $ids = array_merge($ids, $this->collectItemIds($item['children']));
+            }
+        }
+        return $ids;
+    }
 }

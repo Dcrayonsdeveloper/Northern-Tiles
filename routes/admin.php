@@ -34,6 +34,7 @@ Route::resource('roles', RoleController::class)->except(['show']);
 // Menus
 Route::resource('menus', MenuController::class)->except(['show']);
 Route::post('menus/{menu}/items', [MenuController::class, 'storeItem'])->name('menus.items.store');
+Route::post('menus/{menu}/items/sync', [MenuController::class, 'syncItems'])->name('menus.items.sync');
 Route::put('menus/{menu}/items/{item}', [MenuController::class, 'updateItem'])->name('menus.items.update');
 Route::delete('menus/{menu}/items/{item}', [MenuController::class, 'destroyItem'])->name('menus.items.destroy');
 Route::post('menus/{menu}/reorder', [MenuController::class, 'reorderItems'])->name('menus.reorder');
@@ -45,6 +46,11 @@ Route::resource('authors', AuthorController::class)->except(['show']);
 Route::resource('pages', PageController::class)->except(['show']);
 Route::post('pages/{page}/publish', [PageController::class, 'publish'])->name('pages.publish');
 Route::post('pages/{page}/unpublish', [PageController::class, 'unpublish'])->name('pages.unpublish');
+Route::post('pages/{page}/duplicate', [PageController::class, 'duplicate'])->name('pages.duplicate');
+Route::post('pages/{page}/archive', [PageController::class, 'archive'])->name('pages.archive');
+Route::post('pages/{page}/restore', [PageController::class, 'restore'])->name('pages.restore')->withTrashed();
+Route::delete('pages/{page}/force', [PageController::class, 'forceDelete'])->name('pages.forceDelete')->withTrashed();
+Route::get('pages/generate-slug', [PageController::class, 'generateSlug'])->name('pages.generateSlug');
 
 // CMS - Posts
 Route::resource('posts', PostController::class)->except(['show']);

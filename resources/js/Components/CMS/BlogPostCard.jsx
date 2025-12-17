@@ -62,7 +62,7 @@ export default function BlogPostCard({ post, variant = 'default' }) {
                         <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
                             {post.author && (
                                 <Link
-                                    href={route('author.show', post.author.slug)}
+                                    href={route('blog.author', post.author.slug)}
                                     className="flex items-center gap-2 hover:text-brand"
                                 >
                                     {post.author.avatar_url && (
@@ -180,7 +180,7 @@ export default function BlogPostCard({ post, variant = 'default' }) {
                     <div className="flex items-center gap-3">
                         {post.author && (
                             <Link
-                                href={route('author.show', post.author.slug)}
+                                href={route('blog.author', post.author.slug)}
                                 className="flex items-center gap-1.5 hover:text-brand"
                             >
                                 {post.author.avatar_url && (

@@ -12,14 +12,45 @@ use Illuminate\Support\Facades\Cache;
 
 class CMSService
 {
-    public function getPage(string $slug): ?Page
+    /**
+     * Get a page by slug or full_slug.
+     *
+     * @param string $slug The page slug or full path slug (e.g., "about" or "company/about/team")
+     * @param bool $preview If true, return drafts/scheduled pages as well
+     */
+    public function getPage(string $slug, bool $preview = false): ?Page
     {
-        return Cache::remember("page.{$slug}", 3600, function () use ($slug) {
-            return Page::with('author')
-                ->where('slug', $slug)
-                ->published()
-                ->first();
+        $cacheKey = $preview ? "page.preview.{$slug}" : "page.{$slug}";
+        $ttl = $preview ? 60 : 3600; // Shorter TTL for previews
+
+        return Cache::remember($cacheKey, $ttl, function () use ($slug, $preview) {
+            $query = Page::with([
+                'author',
+                'sections' => function ($q) {
+                    $q->where('is_active', true)->orderBy('sort');
+                },
+            ]);
+
+            // Try full_slug first, then regular slug
+            $query->where(function ($q) use ($slug) {
+                $q->where('full_slug', $slug)
+                    ->orWhere('slug', $slug);
+            });
+
+            if (!$preview) {
+                $query->published();
+            }
+
+            return $query->first();
         });
+    }
+
+    /**
+     * Get a page by full_slug for hierarchical pages.
+     */
+    public function getPageByFullSlug(string $fullSlug, bool $preview = false): ?Page
+    {
+        return $this->getPage($fullSlug, $preview);
     }
 
     public function getPost(string $slug): ?Post
@@ -166,9 +197,15 @@ class CMSService
         return $post;
     }
 
-    public function flushPageCache(string $slug): void
+    public function flushPageCache(string $slug, ?string $fullSlug = null): void
     {
         Cache::forget("page.{$slug}");
+        Cache::forget("page.preview.{$slug}");
+
+        if ($fullSlug && $fullSlug !== $slug) {
+            Cache::forget("page.{$fullSlug}");
+            Cache::forget("page.preview.{$fullSlug}");
+        }
     }
 
     public function flushPostCache(string $slug): void
