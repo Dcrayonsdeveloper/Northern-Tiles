@@ -1,4 +1,4 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, useForm } from '@inertiajs/react';
 
 export default function UiSettings({ topBar }) {
@@ -17,19 +17,17 @@ export default function UiSettings({ topBar }) {
     };
 
     return (
-        <AuthenticatedLayout
-            header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    UI Settings
-                </h2>
-            }
-        >
+        <DashboardLayout title="UI Settings">
             <Head title="UI Settings" />
 
-            <div className="py-12">
-                <div className="mx-auto max-w-3xl space-y-6 sm:px-6 lg:px-8">
-                    <div className="bg-white p-6 shadow sm:rounded-lg">
-                        <form onSubmit={submit} className="space-y-6">
+            <div className="mx-auto max-w-3xl">
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                    <div className="text-[15px] font-semibold">Top Bar</div>
+                    <div className="mt-1 text-slate-600">
+                        Control the announcement bar shown at the very top of the storefront.
+                    </div>
+
+                    <form onSubmit={submit} className="mt-4 space-y-5">
                             <div className="flex items-center gap-3">
                                 <input
                                     id="enabled"
@@ -38,91 +36,91 @@ export default function UiSettings({ topBar }) {
                                     onChange={(e) => setData('enabled', e.target.checked)}
                                     className="h-4 w-4 rounded border-gray-300"
                                 />
-                                <label htmlFor="enabled" className="text-sm font-medium text-gray-700">
+                                <label htmlFor="enabled" className="font-medium text-slate-700">
                                     Enable Top Bar
                                 </label>
                             </div>
                             {errors.enabled ? (
-                                <div className="text-sm text-red-600">{errors.enabled}</div>
+                                <div className="text-red-600">{errors.enabled}</div>
                             ) : null}
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">
+                                <label className="block font-medium text-slate-700">
                                     Message
                                 </label>
                                 <input
                                     type="text"
                                     value={data.message}
                                     onChange={(e) => setData('message', e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                    className="mt-1 block w-full rounded-md border-slate-200 bg-white px-3 py-2"
                                 />
                                 {errors.message ? (
-                                    <div className="mt-1 text-sm text-red-600">{errors.message}</div>
+                                    <div className="mt-1 text-red-600">{errors.message}</div>
                                 ) : null}
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">
+                                    <label className="block font-medium text-slate-700">
                                         Background Color
                                     </label>
                                     <input
                                         type="text"
                                         value={data.backgroundColor}
                                         onChange={(e) => setData('backgroundColor', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                        className="mt-1 block w-full rounded-md border-slate-200 bg-white px-3 py-2"
                                     />
                                     {errors.backgroundColor ? (
-                                        <div className="mt-1 text-sm text-red-600">
+                                        <div className="mt-1 text-red-600">
                                             {errors.backgroundColor}
                                         </div>
                                     ) : null}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">
+                                    <label className="block font-medium text-slate-700">
                                         Text Color
                                     </label>
                                     <input
                                         type="text"
                                         value={data.textColor}
                                         onChange={(e) => setData('textColor', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                        className="mt-1 block w-full rounded-md border-slate-200 bg-white px-3 py-2"
                                     />
                                     {errors.textColor ? (
-                                        <div className="mt-1 text-sm text-red-600">{errors.textColor}</div>
+                                        <div className="mt-1 text-red-600">{errors.textColor}</div>
                                     ) : null}
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">
+                                    <label className="block font-medium text-slate-700">
                                         Link Label (optional)
                                     </label>
                                     <input
                                         type="text"
                                         value={data.linkLabel}
                                         onChange={(e) => setData('linkLabel', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                        className="mt-1 block w-full rounded-md border-slate-200 bg-white px-3 py-2"
                                     />
                                     {errors.linkLabel ? (
-                                        <div className="mt-1 text-sm text-red-600">{errors.linkLabel}</div>
+                                        <div className="mt-1 text-red-600">{errors.linkLabel}</div>
                                     ) : null}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">
+                                    <label className="block font-medium text-slate-700">
                                         Link Route Name (optional)
                                     </label>
                                     <input
                                         type="text"
                                         value={data.linkRoute}
                                         onChange={(e) => setData('linkRoute', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                        className="mt-1 block w-full rounded-md border-slate-200 bg-white px-3 py-2"
                                     />
                                     {errors.linkRoute ? (
-                                        <div className="mt-1 text-sm text-red-600">{errors.linkRoute}</div>
+                                        <div className="mt-1 text-red-600">{errors.linkRoute}</div>
                                     ) : null}
-                                    <div className="mt-1 text-xs text-gray-500">
+                                    <div className="mt-1 text-[12px] text-slate-500">
                                         Example: pages.contact
                                     </div>
                                 </div>
@@ -132,15 +130,13 @@ export default function UiSettings({ topBar }) {
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white"
+                                    className="inline-flex items-center rounded-md bg-slate-900 px-4 py-2 text-[13px] font-semibold text-white"
                                 >
                                     Save
                                 </button>
                             </div>
-                        </form>
-                    </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </DashboardLayout>
     );
 }
