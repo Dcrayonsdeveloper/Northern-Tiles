@@ -10,18 +10,16 @@ use Database\Seeders\StorefrontSeeder;
 use Database\Seeders\DictionarySeeder;
 use Database\Seeders\SettingsSeeder;
 use Database\Seeders\DashboardSeeder;
+use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\MenuSeeder;
+use Database\Seeders\CMSSeeder;
 
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
         $admin = User::query()->firstOrNew(['email' => 'test@example.com']);
         $admin->name = 'Test User';
         $admin->password = Hash::make('password');
@@ -29,9 +27,14 @@ class DatabaseSeeder extends Seeder
         $admin->email_verified_at = now();
         $admin->save();
 
-        $this->call(DictionarySeeder::class);
-        $this->call(SettingsSeeder::class);
-        $this->call(StorefrontSeeder::class);
-        $this->call(DashboardSeeder::class);
+        $this->call([
+            RolesAndPermissionsSeeder::class,
+            DictionarySeeder::class,
+            SettingsSeeder::class,
+            MenuSeeder::class,
+            CMSSeeder::class,
+            StorefrontSeeder::class,
+            DashboardSeeder::class,
+        ]);
     }
 }

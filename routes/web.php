@@ -15,12 +15,16 @@ use App\Http\Controllers\Storefront\ContactController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\PageController;
 use App\Http\Controllers\Storefront\ShopController;
+use App\Http\Controllers\Public\BlogController;
+use App\Http\Controllers\Public\PageController as PublicPageController;
+use App\Http\Controllers\Public\ShopController as PublicShopController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\SellerMiddleware;
 use App\Domain\Dashboard\Http\Controllers\Admin\AdminDashboardController as WidgetAdminDashboardController;
 use App\Domain\Dashboard\Http\Controllers\Admin\DashboardLayoutController;
 use App\Domain\Dashboard\Http\Controllers\Seller\SellerDashboardController;
 use App\Domain\Dashboard\Http\Controllers\Seller\DashboardLayoutController as SellerDashboardLayoutController;
+use App\Domain\SEO\Services\SeoService;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -41,6 +45,28 @@ Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.s
 Route::get('/about', [PageController::class, 'about'])->name('pages.about');
 Route::get('/contact', [PageController::class, 'contact'])->name('pages.contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+// Blog Routes
+Route::prefix('blog')->name('blog.')->group(function () {
+    Route::get('/', [BlogController::class, 'index'])->name('index');
+    Route::get('/category/{slug}', [BlogController::class, 'category'])->name('category');
+    Route::get('/author/{slug}', [BlogController::class, 'author'])->name('author');
+    Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
+});
+
+// CMS Pages
+Route::get('/page/{slug}', [PublicPageController::class, 'show'])->name('page.show');
+
+// SEO Routes
+Route::get('/sitemap.xml', function (SeoService $seoService) {
+    return response($seoService->generateSitemap(), 200)
+        ->header('Content-Type', 'application/xml');
+})->name('sitemap');
+
+Route::get('/robots.txt', function (SeoService $seoService) {
+    return response($seoService->getRobotsTxt(), 200)
+        ->header('Content-Type', 'text/plain');
+})->name('robots');
 
 Route::get('/welcome', function () {
     return Inertia::render('Welcome', [

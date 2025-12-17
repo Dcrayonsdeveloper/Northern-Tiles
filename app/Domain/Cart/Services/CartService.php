@@ -1,0 +1,160 @@
+<?php
+
+namespace App\Domain\Cart\Services;
+
+use App\Domain\Cart\Models\Cart;
+use App\Domain\Cart\Models\CartItem;
+use App\Domain\Catalog\Models\ProductVariant;
+use App\Models\Product;
+
+class CartService
+{
+    public function getOrCreate(?int $userId, ?string $sessionId): Cart
+    {
+        return Cart::getOrCreate($userId, $sessionId);
+    }
+
+    public function getCart(?int $userId, ?string $sessionId): ?Cart
+    {
+        if ($userId) {
+            return Cart::where('user_id', $userId)->active()->first();
+        }
+
+        if ($sessionId) {
+            return Cart::where('session_id', $sessionId)
+                ->whereNull('user_id')
+                ->active()
+                ->first();
+        }
+
+        return null;
+    }
+
+    public function addItem(Cart $cart, int $productId, ?int $variantId, int $quantity = 1, array $options = []): CartItem
+    {
+        $product = Product::findOrFail($productId);
+        $variant = $variantId ? ProductVariant::findOrFail($variantId) : null;
+
+        $price = $variant ? $variant->price : $product->price;
+
+        $existingItem = $cart->items()
+            ->where('product_id', $productId)
+            ->where('variant_id', $variantId)
+            ->first();
+
+        if ($existingItem) {
+            $existingItem->incrementQuantity($quantity);
+            return $existingItem->fresh();
+        }
+
+        return $cart->items()->create([
+            'product_id' => $productId,
+            'variant_id' => $variantId,
+            'quantity' => $quantity,
+            'price' => $price,
+            'options_json' => $options ?: null,
+        ]);
+    }
+
+    public function updateItemQuantity(CartItem $item, int $quantity): bool
+    {
+        return $item->updateQuantity($quantity);
+    }
+
+    public function removeItem(CartItem $item): bool
+    {
+        return $item->delete();
+    }
+
+    public function clearCart(Cart $cart): void
+    {
+        $cart->clear();
+    }
+
+    public function getCount(?int $userId, ?string $sessionId): int
+    {
+        $cart = $this->getCart($userId, $sessionId);
+        return $cart ? $cart->getItemCount() : 0;
+    }
+
+    public function getSubtotal(Cart $cart): float
+    {
+        return $cart->getSubtotal();
+    }
+
+    public function syncPrices(Cart $cart): void
+    {
+        foreach ($cart->items as $item) {
+            $item->syncPrice();
+        }
+    }
+
+    public function mergeGuestCart(int $userId, string $sessionId): void
+    {
+        $guestCart = Cart::where('session_id', $sessionId)
+            ->whereNull('user_id')
+            ->active()
+            ->first();
+
+        if (!$guestCart) {
+            return;
+        }
+
+        $userCart = Cart::where('user_id', $userId)->active()->first();
+
+        if (!$userCart) {
+            $guestCart->update(['user_id' => $userId, 'session_id' => null]);
+            return;
+        }
+
+        foreach ($guestCart->items as $guestItem) {
+            $existingItem = $userCart->items()
+                ->where('product_id', $guestItem->product_id)
+                ->where('variant_id', $guestItem->variant_id)
+                ->first();
+
+            if ($existingItem) {
+                $existingItem->incrementQuantity($guestItem->quantity);
+            } else {
+                $userCart->items()->create([
+                    'product_id' => $guestItem->product_id,
+                    'variant_id' => $guestItem->variant_id,
+                    'quantity' => $guestItem->quantity,
+                    'price' => $guestItem->price,
+                    'options_json' => $guestItem->options_json,
+                ]);
+            }
+        }
+
+        $guestCart->delete();
+    }
+
+    public function validateCart(Cart $cart): array
+    {
+        $errors = [];
+
+        foreach ($cart->items as $item) {
+            if (!$item->product || !$item->product->is_active) {
+                $errors[] = "Product '{$item->product?->name}' is no longer available";
+                continue;
+            }
+
+            if ($item->variant) {
+                if (!$item->variant->is_active) {
+                    $errors[] = "Variant '{$item->variant->name}' is no longer available";
+                    continue;
+                }
+
+                if (!$item->variant->canPurchase($item->quantity)) {
+                    $errors[] = "Insufficient stock for '{$item->variant->name}'";
+                }
+            } else {
+                if ($item->product->inventory_policy === 'deny' && $item->product->inventory_quantity < $item->quantity) {
+                    $errors[] = "Insufficient stock for '{$item->product->name}'";
+                }
+            }
+        }
+
+        return $errors;
+    }
+}
