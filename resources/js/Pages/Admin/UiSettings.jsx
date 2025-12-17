@@ -1,0 +1,146 @@
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, useForm } from '@inertiajs/react';
+
+export default function UiSettings({ topBar }) {
+    const { data, setData, put, processing, errors } = useForm({
+        enabled: Boolean(topBar?.enabled ?? true),
+        backgroundColor: topBar?.backgroundColor ?? '#205258',
+        textColor: topBar?.textColor ?? '#ffffff',
+        message: topBar?.message ?? '',
+        linkLabel: topBar?.link?.label ?? '',
+        linkRoute: topBar?.link?.route ?? '',
+    });
+
+    const submit = (e) => {
+        e.preventDefault();
+        put(route('admin.settings.ui.update'));
+    };
+
+    return (
+        <AuthenticatedLayout
+            header={
+                <h2 className="text-xl font-semibold leading-tight text-gray-800">
+                    UI Settings
+                </h2>
+            }
+        >
+            <Head title="UI Settings" />
+
+            <div className="py-12">
+                <div className="mx-auto max-w-3xl space-y-6 sm:px-6 lg:px-8">
+                    <div className="bg-white p-6 shadow sm:rounded-lg">
+                        <form onSubmit={submit} className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <input
+                                    id="enabled"
+                                    type="checkbox"
+                                    checked={data.enabled}
+                                    onChange={(e) => setData('enabled', e.target.checked)}
+                                    className="h-4 w-4 rounded border-gray-300"
+                                />
+                                <label htmlFor="enabled" className="text-sm font-medium text-gray-700">
+                                    Enable Top Bar
+                                </label>
+                            </div>
+                            {errors.enabled ? (
+                                <div className="text-sm text-red-600">{errors.enabled}</div>
+                            ) : null}
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Message
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.message}
+                                    onChange={(e) => setData('message', e.target.value)}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                />
+                                {errors.message ? (
+                                    <div className="mt-1 text-sm text-red-600">{errors.message}</div>
+                                ) : null}
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Background Color
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.backgroundColor}
+                                        onChange={(e) => setData('backgroundColor', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                    />
+                                    {errors.backgroundColor ? (
+                                        <div className="mt-1 text-sm text-red-600">
+                                            {errors.backgroundColor}
+                                        </div>
+                                    ) : null}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Text Color
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.textColor}
+                                        onChange={(e) => setData('textColor', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                    />
+                                    {errors.textColor ? (
+                                        <div className="mt-1 text-sm text-red-600">{errors.textColor}</div>
+                                    ) : null}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Link Label (optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.linkLabel}
+                                        onChange={(e) => setData('linkLabel', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                    />
+                                    {errors.linkLabel ? (
+                                        <div className="mt-1 text-sm text-red-600">{errors.linkLabel}</div>
+                                    ) : null}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Link Route Name (optional)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={data.linkRoute}
+                                        onChange={(e) => setData('linkRoute', e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                    />
+                                    {errors.linkRoute ? (
+                                        <div className="mt-1 text-sm text-red-600">{errors.linkRoute}</div>
+                                    ) : null}
+                                    <div className="mt-1 text-xs text-gray-500">
+                                        Example: pages.contact
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white"
+                                >
+                                    Save
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </AuthenticatedLayout>
+    );
+}
