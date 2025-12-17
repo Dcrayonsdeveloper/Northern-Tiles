@@ -3,9 +3,11 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
+import { useD } from '@/Support/dictionary';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Register() {
+    const d = useD();
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         email: '',
@@ -23,11 +25,20 @@ export default function Register() {
 
     return (
         <GuestLayout>
-            <Head title="Register" />
+            <Head title={d('auth.sign_up.title')} />
+
+            <div className="mb-4">
+                <div className="text-[15px] font-semibold text-gray-900">
+                    {d('auth.sign_up.title')}
+                </div>
+                <div className="mt-1 text-[13px] text-gray-600">
+                    {d('auth.sign_up.subtitle')}
+                </div>
+            </div>
 
             <form onSubmit={submit}>
                 <div>
-                    <InputLabel htmlFor="name" value="Name" />
+                    <InputLabel htmlFor="name" value={d('auth.name.label')} />
 
                     <TextInput
                         id="name"
@@ -44,7 +55,7 @@ export default function Register() {
                 </div>
 
                 <div className="mt-4">
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="email" value={d('auth.email.label')} />
 
                     <TextInput
                         id="email"
@@ -61,7 +72,7 @@ export default function Register() {
                 </div>
 
                 <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                    <InputLabel htmlFor="password" value={d('auth.password.label')} />
 
                     <TextInput
                         id="password"
@@ -80,7 +91,7 @@ export default function Register() {
                 <div className="mt-4">
                     <InputLabel
                         htmlFor="password_confirmation"
-                        value="Confirm Password"
+                        value={d('auth.confirm_password.label')}
                     />
 
                     <TextInput
@@ -107,11 +118,11 @@ export default function Register() {
                         href={route('login')}
                         className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     >
-                        Already registered?
+                        {d('auth.already_registered')}
                     </Link>
 
                     <PrimaryButton className="ms-4" disabled={processing}>
-                        Register
+                        {d('auth.sign_up.link')}
                     </PrimaryButton>
                 </div>
             </form>

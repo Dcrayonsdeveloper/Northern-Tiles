@@ -7,7 +7,9 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Database\Seeders\StorefrontSeeder;
+use Database\Seeders\DictionarySeeder;
 use Database\Seeders\SettingsSeeder;
+use Database\Seeders\DashboardSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -27,7 +29,9 @@ class DatabaseSeeder extends Seeder
         $admin->email_verified_at = now();
         $admin->save();
 
+        $this->call(DictionarySeeder::class);
         $this->call(SettingsSeeder::class);
         $this->call(StorefrontSeeder::class);
+        $this->call(DashboardSeeder::class);
     }
 }

@@ -82,6 +82,11 @@ return [
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
+    'dictionary' => [
+        'default_locale' => env('DICTIONARY_DEFAULT_LOCALE', 'en'),
+        'fallback_locale' => env('DICTIONARY_FALLBACK_LOCALE', env('APP_FALLBACK_LOCALE', 'en')),
+    ],
+
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     /*

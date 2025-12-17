@@ -2,6 +2,33 @@ import { Link } from '@inertiajs/react';
 
 import { CloseIcon } from './Icons';
 
+function NavItem({ item, onClick }) {
+    const href = item?.href ?? '#';
+    const target = item?.target ?? '_self';
+
+    const isExternal = typeof href === 'string' && (href.startsWith('http://') || href.startsWith('https://'));
+    const useAnchor = isExternal || target === '_blank';
+
+    if (useAnchor) {
+        return (
+            <a
+                href={href}
+                target={target}
+                rel={target === '_blank' ? 'noreferrer noopener' : undefined}
+                onClick={onClick}
+            >
+                <span className="block border-t py-2">{item?.label}</span>
+            </a>
+        );
+    }
+
+    return (
+        <Link href={href} onClick={onClick}>
+            <span className="block border-t py-2">{item?.label}</span>
+        </Link>
+    );
+}
+
 export default function MobileMenu({ open, onClose, navItems, user }) {
     if (!open) {
         return null;
@@ -32,9 +59,7 @@ export default function MobileMenu({ open, onClose, navItems, user }) {
                 <nav className="overflow-y-auto px-4 pb-8 text-sm">
                     <div className="m-0 p-0">
                         {navItems.map((item) => (
-                            <Link key={item.label} href={item.href} onClick={onClose}>
-                                <span className="block border-t py-2">{item.label}</span>
-                            </Link>
+                            <NavItem key={item.label} item={item} onClick={onClose} />
                         ))}
 
                         {user ? (

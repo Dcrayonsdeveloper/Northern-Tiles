@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Dictionary\Services\DictionaryService;
+use App\Domain\Settings\Services\SettingService;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -34,8 +36,24 @@ class HandleInertiaRequests extends Middleware
 
         return [
             ...parent::share($request),
+            'dictionary' => fn () => [
+                'locale' => app()->getLocale(),
+                'items' => app(DictionaryService::class)->mergedLocale(app()->getLocale()),
+            ],
             'ui' => [
                 'topBar' => Setting::getValue('ui.topBar', config('ui.topBar')),
+            ],
+            'site' => fn () => [
+                'title' => app(SettingService::class)->getText('site.title', config('app.name')),
+                'description' => app(SettingService::class)->getText('site.description', ''),
+                'og_image_url' => app(SettingService::class)->getFileUrl('site.og_image'),
+                'twitter_site' => app(SettingService::class)->getText('twitter.site', ''),
+                'twitter_creator' => app(SettingService::class)->getText('twitter.creator', ''),
+            ],
+            'menus' => fn () => [
+                'header_top' => app(SettingService::class)->menuItems('menu.header_top', []),
+                'header_main' => app(SettingService::class)->menuItems('menu.header_main', []),
+                'footer' => app(SettingService::class)->menuItems('menu.footer', []),
             ],
             'auth' => [
                 'user' => $request->user(),

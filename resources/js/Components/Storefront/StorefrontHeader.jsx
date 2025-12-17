@@ -6,22 +6,59 @@ import { CartIcon, MenuIcon, SearchIcon, UserIcon } from './Icons';
 import MobileMenu from './MobileMenu';
 import TopBar from './TopBar';
 
-export default function StorefrontHeader({ user, cartCount = 0, topBar }) {
+function NavItem({ item, className }) {
+    const href = item?.href ?? '#';
+    const target = item?.target ?? '_self';
+
+    const isExternal = typeof href === 'string' && (href.startsWith('http://') || href.startsWith('https://'));
+    const useAnchor = isExternal || target === '_blank';
+
+    if (useAnchor) {
+        return (
+            <a
+                href={href}
+                target={target}
+                rel={target === '_blank' ? 'noreferrer noopener' : undefined}
+                className={className}
+            >
+                {item?.label}
+            </a>
+        );
+    }
+
+    return (
+        <Link href={href} className={className}>
+            {item?.label}
+        </Link>
+    );
+}
+
+export default function StorefrontHeader({ user, cartCount = 0, topBar, menus }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    const navItems = [
-        { label: 'Home', href: route('home') },
-        { label: 'New Arrivals', href: route('shop.index', { category: 'new-arrivals' }) },
-        { label: 'Best Sellers', href: route('shop.index', { category: 'best-sellers' }) },
-        { label: 'Kitchen Accessories', href: route('shop.index', { category: 'kitchen-accessories' }) },
-        { label: 'Mobile Accessories', href: route('shop.index', { category: 'mobile-accessories' }) },
-        { label: 'Corporate Gifting', href: route('shop.index', { category: 'corporate-gifting' }) },
-        { label: 'Contact', href: route('pages.contact') },
+    const topMenuItems = menus?.header_top ?? [];
+
+    const defaultNavItems = [
+        { label: 'Home', href: route('home'), target: '_self' },
+        { label: 'New Arrivals', href: route('shop.index', { category: 'new-arrivals' }), target: '_self' },
+        { label: 'Best Sellers', href: route('shop.index', { category: 'best-sellers' }), target: '_self' },
+        { label: 'Kitchen Accessories', href: route('shop.index', { category: 'kitchen-accessories' }), target: '_self' },
+        { label: 'Mobile Accessories', href: route('shop.index', { category: 'mobile-accessories' }), target: '_self' },
+        { label: 'Corporate Gifting', href: route('shop.index', { category: 'corporate-gifting' }), target: '_self' },
+        { label: 'Contact', href: route('pages.contact'), target: '_self' },
     ];
+
+    const navItems = (menus?.header_main ?? []).length
+        ? (menus.header_main ?? []).map((i) => ({
+              label: i.label,
+              href: i.url,
+              target: i.target ?? '_self',
+          }))
+        : defaultNavItems;
 
     return (
         <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
-            <TopBar topBar={topBar} />
+            <TopBar topBar={topBar} menuItems={topMenuItems} />
 
             <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
                 <Link href={route('home')} className="flex items-center">
@@ -32,13 +69,11 @@ export default function StorefrontHeader({ user, cartCount = 0, topBar }) {
                 <div className="ml-auto flex items-center gap-4">
                     <nav className="hidden items-center gap-6 text-sm md:flex">
                         {navItems.map((item) => (
-                            <Link
+                            <NavItem
                                 key={item.label}
-                                href={item.href}
+                                item={item}
                                 className="text-sm font-medium text-gray-700 hover:text-gray-900"
-                            >
-                                {item.label}
-                            </Link>
+                            />
                         ))}
                     </nav>
 

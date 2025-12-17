@@ -4,9 +4,11 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
+import { useD } from '@/Support/dictionary';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Login({ status, canResetPassword }) {
+    const d = useD();
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -23,7 +25,7 @@ export default function Login({ status, canResetPassword }) {
 
     return (
         <GuestLayout>
-            <Head title="Log in" />
+            <Head title={d('auth.sign_in.title')} />
 
             {status && (
                 <div className="mb-4 text-sm font-medium text-green-600">
@@ -31,9 +33,18 @@ export default function Login({ status, canResetPassword }) {
                 </div>
             )}
 
+            <div className="mb-4">
+                <div className="text-[15px] font-semibold text-gray-900">
+                    {d('auth.sign_in.title')}
+                </div>
+                <div className="mt-1 text-[13px] text-gray-600">
+                    {d('auth.sign_in.subtitle')}
+                </div>
+            </div>
+
             <form onSubmit={submit}>
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="email" value={d('auth.email.label')} />
 
                     <TextInput
                         id="email"
@@ -50,7 +61,7 @@ export default function Login({ status, canResetPassword }) {
                 </div>
 
                 <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                    <InputLabel htmlFor="password" value={d('auth.password.label')} />
 
                     <TextInput
                         id="password"
@@ -75,7 +86,7 @@ export default function Login({ status, canResetPassword }) {
                             }
                         />
                         <span className="ms-2 text-sm text-gray-600">
-                            Remember me
+                            {d('auth.remember_me')}
                         </span>
                     </label>
                 </div>
@@ -86,13 +97,23 @@ export default function Login({ status, canResetPassword }) {
                             href={route('password.request')}
                             className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                         >
-                            Forgot your password?
+                            {d('auth.forgot_password')}
                         </Link>
                     )}
 
                     <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
+                        {d('auth.sign_in.button')}
                     </PrimaryButton>
+                </div>
+
+                <div className="mt-4 text-[13px] text-gray-600">
+                    {d('auth.no_account')}{' '}
+                    <Link
+                        href={route('register')}
+                        className="font-semibold text-gray-900 underline hover:text-gray-700"
+                    >
+                        {d('auth.sign_up.link')}
+                    </Link>
                 </div>
             </form>
         </GuestLayout>
