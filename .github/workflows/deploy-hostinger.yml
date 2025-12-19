@@ -136,8 +136,16 @@ jobs:
           rm deploy.tar.gz
 
           echo "=== Setting permissions ==="
+          # Storage and cache directories
           chmod -R 755 storage bootstrap/cache
-          chmod -R 644 public/build/assets/* 2>/dev/null || true
+
+          # Public directory - set directories and files separately for proper permissions
+          find public -type d -exec chmod 755 {} \; 2>/dev/null || true
+          find public -type f -exec chmod 644 {} \; 2>/dev/null || true
+
+          # Ensure critical files are readable
+          chmod 644 public/index.php 2>/dev/null || true
+          chmod 644 public/.htaccess 2>/dev/null || true
 
           echo "=== Finding PHP path ==="
           PHP_BIN=$(which php8.2 2>/dev/null || which php 2>/dev/null || echo "php")
