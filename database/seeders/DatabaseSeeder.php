@@ -14,6 +14,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\MenuSeeder;
 use Database\Seeders\CMSSeeder;
 use Database\Seeders\SectionRegistrySeeder;
+use Database\Seeders\CouponSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -36,6 +37,7 @@ class DatabaseSeeder extends Seeder
             CMSSeeder::class,
             SectionRegistrySeeder::class,
             StorefrontSeeder::class,
+            CouponSeeder::class,
             DashboardSeeder::class,
         ]);
     }
