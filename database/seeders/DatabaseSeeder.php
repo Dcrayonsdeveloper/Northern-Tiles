@@ -22,12 +22,21 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        $admin = User::query()->firstOrNew(['email' => 'test@example.com']);
-        $admin->name = 'Test User';
+        // Create main admin user
+        $admin = User::query()->firstOrNew(['email' => 'rahul@dcrayons.app']);
+        $admin->name = 'Rahul Admin';
         $admin->password = Hash::make('password');
         $admin->is_admin = true;
         $admin->email_verified_at = now();
         $admin->save();
+
+        // Create test admin user (backup)
+        $testAdmin = User::query()->firstOrNew(['email' => 'test@example.com']);
+        $testAdmin->name = 'Test User';
+        $testAdmin->password = Hash::make('password');
+        $testAdmin->is_admin = true;
+        $testAdmin->email_verified_at = now();
+        $testAdmin->save();
 
         $this->call([
             RolesAndPermissionsSeeder::class,
