@@ -100,21 +100,29 @@ class ShopController extends Controller
             ->limit(8)
             ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description']);
 
-        // Get available active coupons to display
-        $availableCoupons = Coupon::query()
-            ->where('is_active', true)
-            ->where(function ($q) {
-                $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
-            })
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
-            })
-            ->where(function ($q) {
-                $q->whereNull('usage_limit')->orWhereColumn('times_used', '<', 'usage_limit');
-            })
-            ->orderByDesc('value')
-            ->limit(3)
-            ->get(['code', 'type', 'value', 'title', 'description', 'minimum_purchase', 'maximum_discount']);
+        // Get available active coupons to display (gracefully handle missing table)
+        $availableCoupons = collect();
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('coupons')) {
+                $availableCoupons = Coupon::query()
+                    ->where('is_active', true)
+                    ->where(function ($q) {
+                        $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+                    })
+                    ->where(function ($q) {
+                        $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                    })
+                    ->where(function ($q) {
+                        $q->whereNull('usage_limit')->orWhereColumn('times_used', '<', 'usage_limit');
+                    })
+                    ->orderByDesc('value')
+                    ->limit(3)
+                    ->get(['code', 'type', 'value', 'title', 'description', 'minimum_purchase', 'maximum_discount']);
+            }
+        } catch (\Exception $e) {
+            // Coupons table may not exist yet
+            $availableCoupons = collect();
+        }
 
         return Inertia::render('Storefront/Shop/Show', [
             'product' => $product,
