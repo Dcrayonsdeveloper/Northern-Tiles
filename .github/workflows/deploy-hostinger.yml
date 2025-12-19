@@ -180,6 +180,20 @@ jobs:
           echo "Using PHP: $PHP_BIN"
           $PHP_BIN -v
 
+          echo "=== Configuring SMTP in .env ==="
+          # Update mail settings if not already set
+          if grep -q "MAIL_MAILER=log" .env 2>/dev/null; then
+            sed -i 's/MAIL_MAILER=log/MAIL_MAILER=smtp/' .env
+          fi
+          # Add SMTP settings if not present
+          grep -q "MAIL_HOST=smtp.hostinger.com" .env || echo "MAIL_HOST=smtp.hostinger.com" >> .env
+          grep -q "MAIL_PORT=465" .env || echo "MAIL_PORT=465" >> .env
+          grep -q "MAIL_USERNAME=" .env || echo "MAIL_USERNAME=admin@jikra.dcrayons.app" >> .env
+          grep -q "MAIL_PASSWORD=" .env || echo "MAIL_PASSWORD=#defineRahul123.h" >> .env
+          grep -q "MAIL_ENCRYPTION=ssl" .env || echo "MAIL_ENCRYPTION=ssl" >> .env
+          grep -q "MAIL_FROM_ADDRESS=" .env || echo "MAIL_FROM_ADDRESS=admin@jikra.dcrayons.app" >> .env
+          grep -q "MAIL_FROM_NAME=" .env || echo 'MAIL_FROM_NAME="Jikra Store"' >> .env
+
           echo "=== Clearing caches ==="
           $PHP_BIN artisan cache:clear
           $PHP_BIN artisan config:clear

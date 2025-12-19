@@ -22,7 +22,18 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        // Create/update main admin user - always reset password
+        // Create/update main admin user
+        User::updateOrCreate(
+            ['email' => 'admin@jikra.dcrayons.app'],
+            [
+                'name' => 'Jikra Admin',
+                'password' => Hash::make('#defineRahul123.h'),
+                'is_admin' => true,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        // Create/update secondary admin user
         User::updateOrCreate(
             ['email' => 'rahul@dcrayons.app'],
             [
@@ -33,7 +44,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Create/update test admin user - always reset password
+        // Create/update test admin user
         User::updateOrCreate(
             ['email' => 'test@example.com'],
             [
