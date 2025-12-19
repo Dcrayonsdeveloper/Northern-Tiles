@@ -71,7 +71,8 @@ jobs:
       - name: Create deployment package
         run: |
           # Create deployment archive excluding dev files
-          tar -czf deploy.tar.gz \
+          # Use /tmp to avoid "file changed as we read it" error
+          tar -czf /tmp/deploy.tar.gz \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='node_modules' \
@@ -84,8 +85,8 @@ jobs:
             --exclude='storage/framework/views/*' \
             --exclude='*.md' \
             --exclude='phpunit.xml' \
-            --exclude='deploy.tar.gz' \
             .
+          mv /tmp/deploy.tar.gz deploy.tar.gz
 
       - name: Upload deployment artifact
         uses: actions/upload-artifact@v4
