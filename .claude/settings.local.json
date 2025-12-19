@@ -36,7 +36,8 @@
       "Bash(find:*)",
       "Bash(powershell:*)",
       "Bash(git add:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd product reviews, coupons, and enhance product details page\n\nFeatures added:\n- Product review system with auto-approval\n- Star ratings on product details and product cards\n- Coupon management system with validation\n- Display available coupons on product details page\n- Quantity stepper \\(+/-\\) buttons on product details and cart\n- Improved cart UX with API-based updates \\(no full page refresh\\)\n- Admin pages for managing coupons and reviews\n- Sidebar navigation for admin coupon and review management\n\nFrontend improvements:\n- Add to cart sidebar with real-time cart count\n- Product details page with enhanced layout\n- Available offers display with coupon details\n- Related products section\n- Review section with star ratings\n- Smooth quantity adjustments without page reload\n\nBackend improvements:\n- Review auto-approval logic\n- Coupon validation and filtering\n- Cart API endpoints for real-time operations\n- Collections and category management\n- Product variant support\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
