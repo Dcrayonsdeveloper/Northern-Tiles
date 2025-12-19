@@ -139,26 +139,25 @@ jobs:
           chmod -R 755 storage bootstrap/cache
           chmod -R 644 public/build/assets/* 2>/dev/null || true
 
+          echo "=== Finding PHP path ==="
+          PHP_BIN=$(which php8.2 2>/dev/null || which php 2>/dev/null || echo "php")
+          echo "Using PHP: $PHP_BIN"
+          $PHP_BIN -v
+
           echo "=== Clearing caches ==="
-          /usr/bin/php8.3 artisan cache:clear || php artisan cache:clear
-          /usr/bin/php8.3 artisan config:clear || php artisan config:clear
-          /usr/bin/php8.3 artisan view:clear || php artisan view:clear
-          /usr/bin/php8.3 artisan route:clear || php artisan route:clear
+          $PHP_BIN artisan cache:clear
+          $PHP_BIN artisan config:clear
+          $PHP_BIN artisan view:clear
+          $PHP_BIN artisan route:clear
+
+          echo "=== Running migrations ==="
+          $PHP_BIN artisan migrate --force
+
+          echo "=== Running seeders ==="
+          $PHP_BIN artisan db:seed --force
 
           echo "=== Deployment complete! ==="
           DEPLOY_SCRIPT
-
-      - name: Run migrations
-        run: |
-          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
-            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
-            "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && /usr/bin/php8.3 artisan migrate --force"
-
-      - name: Run seeders
-        run: |
-          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
-            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
-            "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && /usr/bin/php8.3 artisan db:seed --force"
 
       - name: Deployment summary
         run: |
