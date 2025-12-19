@@ -54,7 +54,7 @@ function DiscountCard({ product }) {
         >
             <div className="relative aspect-square overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
                 <img
-                    src={product.image_url || '/images/placeholder-product.svg'}
+                    src={product.image_url || '/public/images/placeholder-product.svg'}
                     alt={product.name}
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"

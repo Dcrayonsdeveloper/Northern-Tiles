@@ -41,7 +41,7 @@ export default function CartLineItem({
                 className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100"
             >
                 <img
-                    src={product.image_url || '/images/placeholder-product.svg'}
+                    src={product.image_url || '/public/images/placeholder-product.svg'}
                     alt={product.name}
                     className="h-full w-full object-cover"
                 />
