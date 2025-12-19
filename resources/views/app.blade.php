@@ -19,21 +19,7 @@
         <!-- Scripts -->
         @routes
         @viteReactRefresh
-        @php
-            // Override asset URLs for Hostinger environment where public_html is the root
-            ob_start();
-        @endphp
         @vite(['resources/js/app.jsx'])
-        @php
-            $html = ob_get_clean();
-            echo str_replace([
-                'href="/build/',
-                'src="/build/',
-            ], [
-                'href="/public/build/',
-                'src="/public/build/',
-            ], $html);
-        @endphp
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
