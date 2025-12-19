@@ -148,15 +148,13 @@ jobs:
           echo "=== Deployment complete! ==="
           DEPLOY_SCRIPT
 
-      - name: Run migrations (if requested)
-        if: github.event.inputs.run_migrations == 'true'
+      - name: Run migrations
         run: |
           ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
             "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && php artisan migrate --force"
 
-      - name: Run seeders (if requested)
-        if: github.event.inputs.run_seeders == 'true'
+      - name: Run seeders
         run: |
           ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
