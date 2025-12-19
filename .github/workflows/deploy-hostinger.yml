@@ -135,7 +135,14 @@ jobs:
           tar -xzf deploy.tar.gz
           rm deploy.tar.gz
 
-          echo "=== Setting permissions ==="
+          echo "=== Setting ownership and permissions ==="
+          # Get current user
+          CURRENT_USER=$(whoami)
+          echo "Setting ownership to: $CURRENT_USER"
+
+          # Set ownership for all files
+          chown -R $CURRENT_USER:$CURRENT_USER . 2>/dev/null || true
+
           # Storage and cache directories
           chmod -R 755 storage bootstrap/cache
 
@@ -143,9 +150,15 @@ jobs:
           find public -type d -exec chmod 755 {} \; 2>/dev/null || true
           find public -type f -exec chmod 644 {} \; 2>/dev/null || true
 
-          # Ensure critical files are readable
+          # Ensure critical files are readable and executable where needed
           chmod 644 public/index.php 2>/dev/null || true
           chmod 644 public/.htaccess 2>/dev/null || true
+          chmod 755 public 2>/dev/null || true
+
+          # Make sure images directory exists and is accessible
+          mkdir -p public/images 2>/dev/null || true
+          chmod -R 755 public/images 2>/dev/null || true
+          find public/images -type f -exec chmod 644 {} \; 2>/dev/null || true
 
           echo "=== Finding PHP path ==="
           PHP_BIN=$(which php8.2 2>/dev/null || which php 2>/dev/null || echo "php")
