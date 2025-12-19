@@ -1,0 +1,20 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect /build/* to /public/build/*
+    RewriteCond %{REQUEST_URI} ^/build/(.*)$
+    RewriteRule ^build/(.*)$ /public/build/$1 [L]
+
+    # Redirect /images/* to /public/images/*
+    RewriteCond %{REQUEST_URI} ^/images/(.*)$
+    RewriteRule ^images/(.*)$ /public/images/$1 [L]
+
+    # Redirect /favicon.* to /public/favicon.*
+    RewriteCond %{REQUEST_URI} ^/favicon\.(.*)$
+    RewriteRule ^favicon\.(.*)$ /public/favicon.$1 [L]
+
+    # Send all other requests to Laravel's public/index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ /public/index.php [L]
+</IfModule>

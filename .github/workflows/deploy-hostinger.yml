@@ -143,22 +143,37 @@ jobs:
           # Set ownership for all files
           chown -R $CURRENT_USER:$CURRENT_USER . 2>/dev/null || true
 
+          # Root .htaccess for asset redirects (critical for Hostinger)
+          chmod 644 .htaccess 2>/dev/null || true
+
           # Storage and cache directories
           chmod -R 755 storage bootstrap/cache
 
           # Public directory - set directories and files separately for proper permissions
+          chmod 755 public 2>/dev/null || true
           find public -type d -exec chmod 755 {} \; 2>/dev/null || true
           find public -type f -exec chmod 644 {} \; 2>/dev/null || true
 
-          # Ensure critical files are readable and executable where needed
+          # Ensure critical files are readable
           chmod 644 public/index.php 2>/dev/null || true
           chmod 644 public/.htaccess 2>/dev/null || true
-          chmod 755 public 2>/dev/null || true
 
-          # Make sure images directory exists and is accessible
+          # Build directory - ensure accessible
+          chmod 755 public/build 2>/dev/null || true
+          chmod 755 public/build/assets 2>/dev/null || true
+          find public/build -type d -exec chmod 755 {} \; 2>/dev/null || true
+          find public/build -type f -exec chmod 644 {} \; 2>/dev/null || true
+
+          # Images directory
           mkdir -p public/images 2>/dev/null || true
-          chmod -R 755 public/images 2>/dev/null || true
+          chmod 755 public/images 2>/dev/null || true
           find public/images -type f -exec chmod 644 {} \; 2>/dev/null || true
+
+          # Debug: List permissions
+          echo "=== Verifying permissions ==="
+          ls -la .htaccess 2>/dev/null || echo "No root .htaccess"
+          ls -la public/ | head -10
+          ls -la public/build/ 2>/dev/null | head -5 || echo "No build dir yet"
 
           echo "=== Finding PHP path ==="
           PHP_BIN=$(which php8.2 2>/dev/null || which php 2>/dev/null || echo "php")
