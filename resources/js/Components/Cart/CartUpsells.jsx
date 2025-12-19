@@ -13,9 +13,10 @@ function UpsellCard({ product, currency, onAdd }) {
         <div className="flex-shrink-0 w-32">
             <div className="relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-100">
                 <img
-                    src={product.image_url || '/public/images/placeholder-product.svg'}
+                    src={product.image_url || '/images/placeholder-product.svg'}
                     alt={product.name}
                     className="h-full w-full object-cover"
+                    onError={(e) => { e.target.src = '/images/placeholder-product.svg'; }}
                 />
                 {product.has_discount && product.discount_percent > 0 && (
                     <div className="absolute left-1 top-1 rounded bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">

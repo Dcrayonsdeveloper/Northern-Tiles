@@ -431,7 +431,7 @@ export default function Index({
                                                     <div key={item.id} className="flex gap-3">
                                                         <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border bg-gray-100">
                                                             <img
-                                                                src={item.image_url || '/public/images/placeholder-product.svg'}
+                                                                src={item.image_url || '/images/placeholder-product.svg'}
                                                                 alt={item.name}
                                                                 className="h-full w-full object-cover"
                                                             />

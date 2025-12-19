@@ -1,0 +1,171 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      run_migrations:
+        description: 'Run database migrations'
+        required: false
+        default: 'false'
+        type: boolean
+      run_seeders:
+        description: 'Run database seeders (WARNING: May reset data)'
+        required: false
+        default: 'false'
+        type: boolean
+
+env:
+  PHP_VERSION: '8.2'
+  NODE_VERSION: '20'
+
+jobs:
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, ctype, json, curl, openssl, pdo, pdo_mysql
+          coverage: none
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Copy Vite manifest
+        run: |
+          if [ -f "public/build/.vite/manifest.json" ]; then
+            cp public/build/.vite/manifest.json public/build/manifest.json
+          fi
+
+      - name: Create deployment package
+        run: |
+          # Create deployment archive excluding dev files
+          tar -czf deploy.tar.gz \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='tests' \
+            --exclude='.env' \
+            --exclude='.env.local' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/framework/cache/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            --exclude='*.md' \
+            --exclude='phpunit.xml' \
+            --exclude='deploy.tar.gz' \
+            .
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: deploy.tar.gz
+          retention-days: 1
+
+  deploy:
+    name: Deploy to Production
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Download deployment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.HOSTINGER_SSH_PORT }} ${{ secrets.HOSTINGER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Upload to server
+        run: |
+          scp -i ~/.ssh/deploy_key -P ${{ secrets.HOSTINGER_SSH_PORT }} \
+            deploy.tar.gz \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }}:${{ secrets.HOSTINGER_REMOTE_PATH }}/
+
+      - name: Deploy on server
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} << 'DEPLOY_SCRIPT'
+
+          cd ${{ secrets.HOSTINGER_REMOTE_PATH }}
+
+          echo "=== Extracting deployment package ==="
+          tar -xzf deploy.tar.gz
+          rm deploy.tar.gz
+
+          echo "=== Setting permissions ==="
+          chmod -R 755 storage bootstrap/cache
+          chmod -R 644 public/build/assets/* 2>/dev/null || true
+
+          echo "=== Clearing caches ==="
+          php artisan cache:clear
+          php artisan config:clear
+          php artisan view:clear
+          php artisan route:clear
+
+          echo "=== Deployment complete! ==="
+          DEPLOY_SCRIPT
+
+      - name: Run migrations (if requested)
+        if: github.event.inputs.run_migrations == 'true'
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && php artisan migrate --force"
+
+      - name: Run seeders (if requested)
+        if: github.event.inputs.run_seeders == 'true'
+        run: |
+          ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && php artisan db:seed --force"
+
+      - name: Cleanup SSH
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+
+      - name: Deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** Success" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL:** https://jikra.dcrayons.app" >> $GITHUB_STEP_SUMMARY
