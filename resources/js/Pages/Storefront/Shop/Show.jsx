@@ -80,8 +80,8 @@ function AvailableCoupons({ coupons = [] }) {
                                         ? 'Free shipping on your order'
                                         : `Save with code ${coupon.code}`
                                 )}
-                                {coupon.min_purchase_amount > 0 && (
-                                    <span className="text-green-600"> (Min. ₹{coupon.min_purchase_amount?.toLocaleString()})</span>
+                                {coupon.minimum_purchase > 0 && (
+                                    <span className="text-green-600"> (Min. ₹{coupon.minimum_purchase?.toLocaleString()})</span>
                                 )}
                             </p>
                         </div>

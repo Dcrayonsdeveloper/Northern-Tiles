@@ -107,14 +107,14 @@ class ShopController extends Controller
                 $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
             ->where(function ($q) {
-                $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+                $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
             })
             ->where(function ($q) {
                 $q->whereNull('usage_limit')->orWhereColumn('times_used', '<', 'usage_limit');
             })
             ->orderByDesc('value')
             ->limit(3)
-            ->get(['code', 'type', 'value', 'title', 'description', 'min_purchase_amount', 'gives_free_shipping']);
+            ->get(['code', 'type', 'value', 'title', 'description', 'minimum_purchase', 'maximum_discount']);
 
         return Inertia::render('Storefront/Shop/Show', [
             'product' => $product,
