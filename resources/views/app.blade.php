@@ -8,9 +8,9 @@
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Favicon -->
-        <link rel="icon" type="image/png" href="/favicon.png">
-        <link rel="icon" type="image/x-icon" href="/favicon.ico">
-        <link rel="apple-touch-icon" href="/favicon.png">
+        <link rel="icon" type="image/png" href="/public/favicon.png">
+        <link rel="icon" type="image/x-icon" href="/public/favicon.ico">
+        <link rel="apple-touch-icon" href="/public/favicon.png">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -19,7 +19,21 @@
         <!-- Scripts -->
         @routes
         @viteReactRefresh
+        @php
+            // Override asset URLs for Hostinger environment where public_html is the root
+            ob_start();
+        @endphp
         @vite(['resources/js/app.jsx'])
+        @php
+            $html = ob_get_clean();
+            echo str_replace([
+                'href="/build/',
+                'src="/build/',
+            ], [
+                'href="/public/build/',
+                'src="/public/build/',
+            ], $html);
+        @endphp
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
