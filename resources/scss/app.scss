@@ -119,9 +119,9 @@ input[type="checkbox"] {
             max-height: calc(100vh - 150px);
             overflow-y: auto;
 
-            // Inner container constraints
+            // Inner container constraints - uses container for consistency
             .mega-menu-inner {
-                @apply mx-auto max-w-6xl px-4 py-5;
+                @apply container mx-auto px-4 py-5 sm:px-6 lg:px-8;
             }
 
             // Columns grid - ensure proper wrapping and overflow
@@ -233,6 +233,10 @@ input[type="checkbox"] {
     .video-thumbnail {
         @apply relative aspect-video w-full overflow-hidden rounded-lg bg-gray-100;
 
+        &--compact {
+            @apply aspect-[16/9];
+        }
+
         &__image {
             @apply h-full w-full object-cover transition-transform duration-300;
         }
@@ -254,6 +258,90 @@ input[type="checkbox"] {
 
             svg {
                 @apply h-4 w-4 text-brand;
+            }
+
+            &--compact {
+                @apply h-7 w-7;
+
+                svg {
+                    @apply h-3 w-3;
+                }
+            }
+        }
+    }
+
+    // Compact featured card (horizontal layout)
+    .featured-card-compact {
+        @apply flex items-center gap-2 rounded-md p-1.5 -mx-1.5 transition-colors;
+        @apply hover:bg-gray-50;
+
+        &__image {
+            @apply h-10 w-10 shrink-0 overflow-hidden rounded bg-gray-100;
+
+            img {
+                @apply h-full w-full object-cover;
+            }
+        }
+
+        &__content {
+            @apply min-w-0 flex-1;
+        }
+
+        &__type {
+            @apply text-[9px] font-semibold uppercase tracking-wide text-brand;
+        }
+
+        &__title {
+            @apply truncate text-[11px] font-medium text-gray-900 transition-colors;
+        }
+
+        &:hover .featured-card-compact__title {
+            @apply text-brand;
+        }
+    }
+
+    // Small image card for grid
+    .small-image-card {
+        @apply relative block overflow-hidden rounded bg-gray-100;
+        aspect-ratio: 1;
+
+        &__image {
+            @apply h-full w-full;
+
+            img {
+                @apply h-full w-full object-cover transition-transform duration-300;
+            }
+        }
+
+        &:hover .small-image-card__image img {
+            transform: scale(1.05);
+        }
+
+        &__label {
+            @apply absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 pb-1.5 pt-4;
+            @apply text-[10px] font-medium text-white line-clamp-1;
+        }
+    }
+
+    // Compact mega menu featured sidebar
+    .mega-menu-featured--compact {
+        @apply w-44 space-y-2;
+
+        .mega-menu-featured__grid {
+            @apply grid grid-cols-2 gap-1.5;
+        }
+
+        .mega-menu-featured__slider {
+            @apply flex gap-1.5 overflow-x-auto pb-1;
+            scrollbar-width: none;
+
+            &::-webkit-scrollbar {
+                display: none;
+            }
+
+            > * {
+                @apply shrink-0;
+                width: calc(100% - 8px);
             }
         }
     }

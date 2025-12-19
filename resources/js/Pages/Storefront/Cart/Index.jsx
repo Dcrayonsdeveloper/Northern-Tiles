@@ -1,26 +1,92 @@
 import PublicLayout from '@/Layouts/PublicLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import Container from '@/Components/Container';
+import { Head, Link } from '@inertiajs/react';
+import { useState, useEffect, useCallback } from 'react';
 
-export default function Index({ items, subtotal }) {
-    const updateQty = (productSlug, quantity) => {
-        router.put(
-            route('cart.update', productSlug),
-            { quantity },
-            { preserveScroll: true },
-        );
+export default function Index({ items: initialItems, subtotal: initialSubtotal }) {
+    const [items, setItems] = useState(initialItems ?? []);
+    const [subtotal, setSubtotal] = useState(initialSubtotal ?? 0);
+    const [updating, setUpdating] = useState(null);
+
+    // Fetch fresh cart data
+    const fetchCart = useCallback(async () => {
+        try {
+            const response = await fetch('/api/cart', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setItems(data.items || []);
+                setSubtotal(data.totals?.subtotal || 0);
+            }
+        } catch (error) {
+            console.error('Failed to fetch cart:', error);
+        }
+    }, []);
+
+    // Update quantity via API
+    const updateQty = async (itemId, quantity) => {
+        if (quantity < 1 || quantity > 99) return;
+
+        setUpdating(itemId);
+        try {
+            const response = await fetch(`/api/cart/${itemId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ quantity }),
+            });
+
+            if (response.ok) {
+                await fetchCart();
+                window.dispatchEvent(new CustomEvent('cart-updated'));
+            }
+        } catch (error) {
+            console.error('Failed to update quantity:', error);
+        } finally {
+            setUpdating(null);
+        }
     };
 
-    const remove = (productSlug) => {
-        router.delete(route('cart.destroy', productSlug), {
-            preserveScroll: true,
-        });
+    // Remove item via API
+    const remove = async (itemId) => {
+        setUpdating(itemId);
+        try {
+            const response = await fetch(`/api/cart/${itemId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                },
+                credentials: 'same-origin',
+            });
+
+            if (response.ok) {
+                await fetchCart();
+                window.dispatchEvent(new CustomEvent('cart-updated'));
+            }
+        } catch (error) {
+            console.error('Failed to remove item:', error);
+        } finally {
+            setUpdating(null);
+        }
     };
 
     return (
         <PublicLayout>
             <Head title="Cart" />
-
-            <div className="flex items-end justify-between">
+            <Container>
+                <div className="flex items-end justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Cart</h1>
                     <p className="mt-1 text-sm text-gray-600">
@@ -35,7 +101,7 @@ export default function Index({ items, subtotal }) {
                 </Link>
             </div>
 
-            {(items ?? []).length === 0 ? (
+            {items.length === 0 ? (
                 <div className="mt-8 rounded-lg border bg-white p-8 text-center shadow-sm">
                     <div className="text-sm text-gray-700">
                         Your cart is empty.
@@ -52,16 +118,16 @@ export default function Index({ items, subtotal }) {
                     <div className="lg:col-span-2">
                         <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
                             <div className="divide-y">
-                                {(items ?? []).map((item) => (
+                                {items.map((item) => (
                                     <div
-                                        key={item.product.id}
-                                        className="flex items-center gap-4 p-4"
+                                        key={item.id}
+                                        className={`flex items-center gap-4 p-4 transition-opacity ${updating === item.id ? 'opacity-50 pointer-events-none' : ''}`}
                                     >
                                         <div className="h-16 w-20 overflow-hidden rounded bg-gray-100">
-                                            {item.product.image_url ? (
+                                            {item.product?.image_url ? (
                                                 <img
                                                     src={item.product.image_url}
-                                                    alt={item.product.name}
+                                                    alt={item.product?.name}
                                                     className="h-full w-full object-cover"
                                                 />
                                             ) : null}
@@ -71,42 +137,56 @@ export default function Index({ items, subtotal }) {
                                             <Link
                                                 href={route(
                                                     'products.show',
-                                                    item.product.slug,
+                                                    item.product?.slug,
                                                 )}
                                                 className="text-sm font-semibold text-gray-900 hover:underline"
                                             >
-                                                {item.product.name}
+                                                {item.product?.name}
                                             </Link>
                                             <div className="mt-1 text-sm text-gray-600">
-                                                ₹{item.product.price}
+                                                ₹{item.price?.toLocaleString()}
                                             </div>
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                max="99"
-                                                value={item.quantity}
-                                                onChange={(e) =>
-                                                    updateQty(
-                                                        item.product.slug,
-                                                        Number(e.target.value),
-                                                    )
-                                                }
-                                                className="w-20 rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                                            />
+                                            {/* Quantity stepper */}
+                                            <div className="flex items-center rounded-md border border-gray-200">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updateQty(item.id, item.quantity - 1)}
+                                                    disabled={updating === item.id || item.quantity <= 1}
+                                                    className="px-3 py-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                                                >
+                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                                    </svg>
+                                                </button>
+                                                <span className="min-w-[2.5rem] text-center text-sm font-medium">
+                                                    {item.quantity}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updateQty(item.id, item.quantity + 1)}
+                                                    disabled={updating === item.id || item.quantity >= 99}
+                                                    className="px-3 py-2 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                                                >
+                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                             <button
                                                 type="button"
-                                                onClick={() => remove(item.product.slug)}
-                                                className="rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                                                onClick={() => remove(item.id)}
+                                                disabled={updating === item.id}
+                                                className="rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                                             >
                                                 Remove
                                             </button>
                                         </div>
 
                                         <div className="w-24 text-right text-sm font-semibold text-gray-900">
-                                            ₹{item.line_total}
+                                            ₹{item.line_total?.toLocaleString()}
                                         </div>
                                     </div>
                                 ))}
@@ -121,19 +201,19 @@ export default function Index({ items, subtotal }) {
                         <div className="mt-4 flex items-center justify-between text-sm">
                             <span className="text-gray-600">Subtotal</span>
                             <span className="font-semibold text-gray-900">
-                                ₹{subtotal}
+                                ₹{subtotal?.toLocaleString()}
                             </span>
                         </div>
                         <div className="mt-2 flex items-center justify-between text-sm">
                             <span className="text-gray-600">Tax</span>
-                            <span className="font-semibold text-gray-900">₹0</span>
+                            <span className="font-semibold text-gray-900">Calculated at checkout</span>
                         </div>
                         <div className="mt-4 border-t pt-4 flex items-center justify-between">
                             <span className="text-sm font-semibold text-gray-900">
                                 Total
                             </span>
                             <span className="text-lg font-bold text-gray-900">
-                                ₹{subtotal}
+                                ₹{subtotal?.toLocaleString()}
                             </span>
                         </div>
                         <Link
@@ -145,6 +225,7 @@ export default function Index({ items, subtotal }) {
                     </div>
                 </div>
             )}
+            </Container>
         </PublicLayout>
     );
 }

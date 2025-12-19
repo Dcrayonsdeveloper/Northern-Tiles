@@ -1,0 +1,2006 @@
+{
+  "prompt_for_claude_opus": "Build a Laravel 12 (Inertia + React) catalog seeding workflow.\n1) Add an artisan command `catalog:reset-seed` that TRUNCATES catalog tables (products, variants, categories, tags, pivots, media, collections) and then seeds taxonomy + products from the `seed_data` below.\n2) Safety: command must refuse to run unless `--force` is passed AND env `CATALOG_RESET=YES`.\n3) Pricing rules: `price = source_price * 0.95` (5% lower than CSV). For Pack of 2 SKUs: `price = (source_price*2) * 0.95 * 0.85` (15% cheaper than buying two singles, after the 5% rule). `compare_at_price` should be the undiscounted total (single: source_price, pack2: source_price*2).\n4) Inventory rule: set `stock_qty = 100` for every variant.\n5) All products must be `active`.\n6) Categories + smart collections: create/seed as provided.\n7) Persist SEO fields (meta_title, meta_description, keywords, opportunity_score) per product.\n8) Keep SKUs as provided (sanitized) + add -P2 suffix for pack-of-2.\n9) Do NOT import channels/accounts; this is own website only.\n",
+  "pricing_rules": {
+    "single_price_multiplier": 0.95,
+    "pack2_total_multiplier": 0.8075,
+    "pack2_note": "pack2_price = (source_price*2) * 0.95 * 0.85"
+  },
+  "inventory_default_qty": 100,
+  "vendor_default": "Jikra India",
+  "taxonomy": {
+    "categories": [
+      {
+        "slug": "drinkware",
+        "name": "Drinkware",
+        "parent": null,
+        "auto_rules": null
+      },
+      {
+        "slug": "tumblers",
+        "name": "Tumblers",
+        "parent": "drinkware",
+        "auto_rules": {
+          "any": {
+            "product_type": [
+              "tumbler",
+              "drinking_cup"
+            ],
+            "title_contains": [
+              "tumbler"
+            ]
+          }
+        }
+      },
+      {
+        "slug": "coffee-mugs",
+        "name": "Coffee Mugs",
+        "parent": "drinkware",
+        "auto_rules": {
+          "any": {
+            "title_contains": [
+              "coffee mug",
+              "travel coffee mug",
+              "mug"
+            ]
+          }
+        }
+      },
+      {
+        "slug": "bottles",
+        "name": "Bottles",
+        "parent": "drinkware",
+        "auto_rules": {
+          "any": {
+            "title_contains": [
+              "water bottle",
+              "thermos",
+              "bottle"
+            ]
+          }
+        }
+      },
+      {
+        "slug": "kitchen-home",
+        "name": "Kitchen & Home",
+        "parent": null,
+        "auto_rules": null
+      },
+      {
+        "slug": "coffee-accessories",
+        "name": "Coffee Accessories",
+        "parent": "kitchen-home",
+        "auto_rules": {
+          "any": {
+            "title_contains": [
+              "frother",
+              "whisk"
+            ]
+          }
+        }
+      },
+      {
+        "slug": "lighters",
+        "name": "Lighters",
+        "parent": "kitchen-home",
+        "auto_rules": {
+          "any": {
+            "title_contains": [
+              "lighter",
+              "arc"
+            ]
+          }
+        }
+      },
+      {
+        "slug": "puja-essentials",
+        "name": "Puja Essentials",
+        "parent": "kitchen-home",
+        "auto_rules": {
+          "any": {
+            "title_contains": [
+              "diya",
+              "diyas",
+              "puja",
+              "pooja",
+              "lamp"
+            ]
+          }
+        }
+      },
+      {
+        "slug": "safety-utility",
+        "name": "Safety & Utility",
+        "parent": null,
+        "auto_rules": null
+      },
+      {
+        "slug": "anti-slip-tapes",
+        "name": "Anti-Slip Tapes",
+        "parent": "safety-utility",
+        "auto_rules": {
+          "any": {
+            "title_contains": [
+              "anti slip",
+              "non-slip",
+              "traction tape"
+            ]
+          }
+        }
+      },
+      {
+        "slug": "counters-tools",
+        "name": "Counters & Tools",
+        "parent": "safety-utility",
+        "auto_rules": {
+          "any": {
+            "title_contains": [
+              "tally",
+              "counter",
+              "clicker"
+            ]
+          }
+        }
+      }
+    ],
+    "collections": [
+      {
+        "slug": "new-arrivals",
+        "name": "New Arrivals",
+        "type": "smart",
+        "rules": {
+          "all": {
+            "published_within_days": 30
+          }
+        }
+      },
+      {
+        "slug": "discounts",
+        "name": "Discounts",
+        "type": "smart",
+        "rules": {
+          "all": {
+            "discount_pct_gte": 5
+          }
+        }
+      },
+      {
+        "slug": "bundle-deals",
+        "name": "Bundle Deals",
+        "type": "smart",
+        "rules": {
+          "any": {
+            "tag_in": [
+              "bundle-deal",
+              "pack-of-2"
+            ]
+          }
+        }
+      },
+      {
+        "slug": "drinkware",
+        "name": "Drinkware",
+        "type": "smart",
+        "rules": {
+          "any": {
+            "category_path_prefix": [
+              "Drinkware"
+            ]
+          }
+        }
+      }
+    ],
+    "tags": [
+      "380ml",
+      "5-digit",
+      "500ml",
+      "510ml",
+      "anti-slip",
+      "arc-lighter",
+      "bottle",
+      "brass",
+      "bundle-deal",
+      "candle",
+      "clicker",
+      "coffee",
+      "coffee-mug",
+      "counter",
+      "diwali",
+      "diya",
+      "dual-spring",
+      "eco-friendly",
+      "festival",
+      "finger-ring",
+      "flip-lid",
+      "frother",
+      "glow-in-dark",
+      "grip-tape",
+      "home-decor",
+      "hot-cold",
+      "indoor",
+      "insulated",
+      "japa",
+      "kitchen",
+      "large-capacity",
+      "leakproof",
+      "lotus",
+      "matte",
+      "milk-frother",
+      "non-slip",
+      "office",
+      "outdoor",
+      "pack-of-2",
+      "plasma-lighter",
+      "portable",
+      "puja",
+      "rechargeable",
+      "reusable",
+      "rope-handle",
+      "safety",
+      "sports",
+      "stainless-steel",
+      "stair-safety",
+      "straw",
+      "strong-adhesive",
+      "tally-counter",
+      "thermos",
+      "traditional",
+      "travel",
+      "tumbler",
+      "type-c",
+      "usb",
+      "vacuum-insulated",
+      "whisk",
+      "windproof"
+    ]
+  },
+  "products": [
+    {
+      "handle": "jikra-anti-slip-grip-tape-2-inch-x-5-meter-glow-in-dark",
+      "name": "JIKRA Anti-Slip Grip Tape 2 inch x 5 meter (Glow-in-Dark)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Safety & Utility",
+        "Anti-Slip Tapes"
+      ],
+      "tags": [
+        "anti-slip",
+        "non-slip",
+        "safety",
+        "grip-tape",
+        "stair-safety",
+        "glow-in-dark",
+        "indoor",
+        "outdoor",
+        "strong-adhesive"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "anti slip tape 5 meter | Jikra India",
+        "meta_description": "Improve grip on stairs, bathrooms, ramps, and slippery floors. Shop anti slip tape 5 meter with practical features like non slip grip tape, traction tape for.",
+        "primary_keyword": "anti slip tape 5 meter",
+        "secondary_keywords": [
+          "non slip grip tape",
+          "traction tape for stairs",
+          "glow in dark tape"
+        ],
+        "long_tail_keywords": [
+          "anti slip tape for bathroom floor",
+          "non slip tape for indoor outdoor stairs",
+          "strong adhesive grip tape 2 inch x 5 meter"
+        ],
+        "opportunity_score": 79,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Anti-Slip Grip Tape 2 inch x 5 meter (Glow-in-Dark) is built for real everyday use. If you are searching for anti slip tape 5 meter, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Improve grip on stairs, bathrooms, ramps, and slippery floors.",
+          "Strong-grip surface to reduce slips on common indoor/outdoor surfaces.",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Size: 2 inch x 5 meter",
+          "Use: indoor/outdoor grip surface"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "5MTRSAFETY-YELLOW-P1FBA",
+          "options": {
+            "Color": "Yellow"
+          },
+          "price": 664.05,
+          "compare_at_price": 699.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FNLR1FBS",
+            "source_price": 699.0
+          }
+        },
+        {
+          "sku": "GREETAPE-5MTR-P1",
+          "options": {
+            "Color": "Red"
+          },
+          "price": 759.05,
+          "compare_at_price": 799.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FNWDXD9L",
+            "source_price": 799.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-anti-slip-grip-tape-2-inch-x-5-meter-glow-in-dark-pack-of-2",
+      "name": "JIKRA Anti-Slip Grip Tape 2 inch x 5 meter (Glow-in-Dark) (Pack of 2)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Safety & Utility",
+        "Anti-Slip Tapes"
+      ],
+      "tags": [
+        "anti-slip",
+        "non-slip",
+        "safety",
+        "grip-tape",
+        "stair-safety",
+        "glow-in-dark",
+        "indoor",
+        "outdoor",
+        "strong-adhesive",
+        "pack-of-2",
+        "bundle-deal"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "anti slip tape 5 meter pack of 2 | Jikra India",
+        "meta_description": "Improve grip on stairs, bathrooms, ramps, and slippery floors. Shop anti slip tape 5 meter pack of 2 with practical features like non slip grip tape, traction.",
+        "primary_keyword": "anti slip tape 5 meter pack of 2",
+        "secondary_keywords": [
+          "non slip grip tape",
+          "traction tape for stairs",
+          "glow in dark tape"
+        ],
+        "long_tail_keywords": [
+          "anti slip tape for bathroom floor pack of 2",
+          "non slip tape for indoor outdoor stairs pack of 2",
+          "strong adhesive grip tape 2 inch x 5 meter pack of 2"
+        ],
+        "opportunity_score": 81,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Anti-Slip Grip Tape 2 inch x 5 meter (Glow-in-Dark) - Pack of 2 is built for real everyday use. If you are searching for anti slip tape 5 meter, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Improve grip on stairs, bathrooms, ramps, and slippery floors.",
+          "Strong-grip surface to reduce slips on common indoor/outdoor surfaces.",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Size: 2 inch x 5 meter",
+          "Use: indoor/outdoor grip surface",
+          "Pack: 2 units (bundle pricing)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "5MTRSAFETY-YELLOW-P1FBA-P2",
+          "options": {
+            "Color": "Yellow"
+          },
+          "price": 1128.89,
+          "compare_at_price": 1398.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FNLR1FBS",
+            "source_price": 699.0
+          }
+        },
+        {
+          "sku": "GREETAPE-5MTR-P1-P2",
+          "options": {
+            "Color": "Red"
+          },
+          "price": 1290.39,
+          "compare_at_price": 1598.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FNWDXD9L",
+            "source_price": 799.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-brass-lotus-diya-set-for-puja-set-of-2",
+      "name": "JIKRA Brass Lotus Diya Set for Puja (Set of 2)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Kitchen & Home",
+        "Puja Essentials"
+      ],
+      "tags": [
+        "puja",
+        "brass",
+        "diya",
+        "lotus",
+        "festival",
+        "diwali",
+        "home-decor",
+        "traditional"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "brass diya set | Jikra India",
+        "meta_description": "Traditional brass diyas for daily puja and festive decor. Shop brass diya set with practical features like lotus diya for puja, brass oil lamp for home. Quality.",
+        "primary_keyword": "brass diya set",
+        "secondary_keywords": [
+          "lotus diya for puja",
+          "brass oil lamp for home",
+          "pooja diya set"
+        ],
+        "long_tail_keywords": [
+          "brass lotus diya set for diwali puja",
+          "traditional brass diya for mandir at home",
+          "brass diya set for gifting"
+        ],
+        "opportunity_score": 80,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Brass Lotus Diya Set for Puja (Set of 2) is built for real everyday use. If you are searching for brass diya set, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Traditional brass diyas for daily puja and festive decor.",
+          "Classic brass finish for puja and festive decor.",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Material: brass",
+          "Set: 2 diyas (base pack)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "DIYARED-P2",
+          "options": {
+            "Finish": "Brass"
+          },
+          "price": 379.05,
+          "compare_at_price": 399.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FNJVRJYL",
+            "source_price": 399.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-brass-lotus-diya-set-for-puja-set-of-2-pack-of-2",
+      "name": "JIKRA Brass Lotus Diya Set for Puja (Set of 2) (Pack of 2)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Kitchen & Home",
+        "Puja Essentials"
+      ],
+      "tags": [
+        "puja",
+        "brass",
+        "diya",
+        "lotus",
+        "festival",
+        "diwali",
+        "home-decor",
+        "traditional",
+        "pack-of-2",
+        "bundle-deal"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "brass diya set pack of 2 | Jikra India",
+        "meta_description": "Traditional brass diyas for daily puja and festive decor. Shop brass diya set pack of 2 with practical features like lotus diya for puja, brass oil lamp for.",
+        "primary_keyword": "brass diya set pack of 2",
+        "secondary_keywords": [
+          "lotus diya for puja",
+          "brass oil lamp for home",
+          "pooja diya set"
+        ],
+        "long_tail_keywords": [
+          "brass lotus diya set for diwali puja pack of 2",
+          "traditional brass diya for mandir at home pack of 2",
+          "brass diya set for gifting pack of 2"
+        ],
+        "opportunity_score": 82,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Brass Lotus Diya Set for Puja (Set of 2) - Pack of 2 is built for real everyday use. If you are searching for brass diya set, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Traditional brass diyas for daily puja and festive decor.",
+          "Classic brass finish for puja and festive decor.",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Material: brass",
+          "Set: 2 diyas (base pack)",
+          "Pack: 2 units (bundle pricing)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "DIYARED-P2-P2",
+          "options": {
+            "Finish": "Brass"
+          },
+          "price": 644.39,
+          "compare_at_price": 798.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FNJVRJYL",
+            "source_price": 399.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-rechargeable-electric-plasma-lighter-type-c-windproof",
+      "name": "JIKRA Rechargeable Electric Plasma Lighter (Type-C, Windproof)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Kitchen & Home",
+        "Lighters"
+      ],
+      "tags": [
+        "rechargeable",
+        "type-c",
+        "windproof",
+        "arc-lighter",
+        "plasma-lighter",
+        "kitchen",
+        "puja",
+        "candle"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "electric plasma lighter rechargeable | Jikra India",
+        "meta_description": "Safe, flameless ignition for stove, candles, and puja. Shop electric plasma lighter rechargeable with practical features like type c arc lighter, windproof.",
+        "primary_keyword": "electric plasma lighter rechargeable",
+        "secondary_keywords": [
+          "type c arc lighter",
+          "windproof lighter for stove",
+          "flexible neck lighter"
+        ],
+        "long_tail_keywords": [
+          "rechargeable plasma lighter for gas stove and candles",
+          "windproof arc lighter for puja diya lighting",
+          "usb type c electric lighter with flexible neck"
+        ],
+        "opportunity_score": 80,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Rechargeable Electric Plasma Lighter (Type-C, Windproof) is built for real everyday use. If you are searching for electric plasma lighter rechargeable, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Safe, flameless ignition for stove, candles, and puja.",
+          "Rechargeable, flameless ignition for cleaner lighting.",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Charging: Type-C",
+          "Use: stove, candles, puja"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "BBQ-LIGHTER-BLU1",
+          "options": {
+            "Color": "Black"
+          },
+          "price": 664.05,
+          "compare_at_price": 699.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FN5KP65G",
+            "source_price": 699.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-rechargeable-electric-plasma-lighter-type-c-windproof-pack-of-2",
+      "name": "JIKRA Rechargeable Electric Plasma Lighter (Type-C, Windproof) (Pack of 2)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Kitchen & Home",
+        "Lighters"
+      ],
+      "tags": [
+        "rechargeable",
+        "type-c",
+        "windproof",
+        "arc-lighter",
+        "plasma-lighter",
+        "kitchen",
+        "puja",
+        "candle",
+        "pack-of-2",
+        "bundle-deal"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "electric plasma lighter rechargeable pack of 2 | Jikra India",
+        "meta_description": "Safe, flameless ignition for stove, candles, and puja. Shop electric plasma lighter rechargeable pack of 2 with practical features like type c arc lighter,.",
+        "primary_keyword": "electric plasma lighter rechargeable pack of 2",
+        "secondary_keywords": [
+          "type c arc lighter",
+          "windproof lighter for stove",
+          "flexible neck lighter"
+        ],
+        "long_tail_keywords": [
+          "rechargeable plasma lighter for gas stove and candles pack of 2",
+          "windproof arc lighter for puja diya lighting pack of 2",
+          "usb type c electric lighter with flexible neck pack of 2"
+        ],
+        "opportunity_score": 82,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Rechargeable Electric Plasma Lighter (Type-C, Windproof) - Pack of 2 is built for real everyday use. If you are searching for electric plasma lighter rechargeable, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Safe, flameless ignition for stove, candles, and puja.",
+          "Rechargeable, flameless ignition for cleaner lighting.",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Charging: Type-C",
+          "Use: stove, candles, puja",
+          "Pack: 2 units (bundle pricing)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "BBQ-LIGHTER-BLU1-P2",
+          "options": {
+            "Color": "Black"
+          },
+          "price": 1128.89,
+          "compare_at_price": 1398.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FN5KP65G",
+            "source_price": 699.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "theshift-insulated-stainless-steel-tumbler-1200ml-lid-straw",
+      "name": "THESHIFT Insulated Stainless Steel Tumbler 1200ml (Lid + Straw)",
+      "vendor": "Jikra India",
+      "brand": "THESHIFT",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Drinkware",
+        "Tumblers"
+      ],
+      "tags": [
+        "insulated",
+        "tumbler",
+        "stainless-steel",
+        "vacuum-insulated",
+        "straw",
+        "travel",
+        "hot-cold",
+        "reusable",
+        "large-capacity"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "insulated tumbler 1200ml | Jikra India",
+        "meta_description": "Carry water, iced coffee, or tea and keep it hot/cold for longer. Shop insulated tumbler 1200ml with practical features like stainless steel tumbler with straw,.",
+        "primary_keyword": "insulated tumbler 1200ml",
+        "secondary_keywords": [
+          "stainless steel tumbler with straw",
+          "vacuum insulated travel tumbler",
+          "large capacity tumbler"
+        ],
+        "long_tail_keywords": [
+          "1200ml insulated tumbler with lid and straw for travel",
+          "large stainless steel tumbler for hot and cold drinks",
+          "vacuum sealed tumbler for office and car"
+        ],
+        "opportunity_score": 82,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "THESHIFT Insulated Stainless Steel Tumbler 1200ml (Lid + Straw) is built for real everyday use. If you are searching for insulated tumbler 1200ml, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Carry water, iced coffee, or tea and keep it hot/cold for longer.",
+          "Vacuum-insulated style build to help keep drinks hot or cold longer (actual performance varies by use).",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Capacity: 1200 ml",
+          "Includes: lid + straw"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "INS-TMB-01FBA",
+          "options": {
+            "Color": "Stainless"
+          },
+          "price": 854.05,
+          "compare_at_price": 899.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FGXXJDKQ",
+            "source_price": 899.0
+          }
+        },
+        {
+          "sku": "2W-3I9L-ZW10",
+          "options": {
+            "Color": "Stainless"
+          },
+          "price": 664.05,
+          "compare_at_price": 699.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FM32B7H7",
+            "source_price": 699.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "theshift-insulated-stainless-steel-tumbler-1200ml-lid-straw-pack-of-2",
+      "name": "THESHIFT Insulated Stainless Steel Tumbler 1200ml (Lid + Straw) (Pack of 2)",
+      "vendor": "Jikra India",
+      "brand": "THESHIFT",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Drinkware",
+        "Tumblers"
+      ],
+      "tags": [
+        "insulated",
+        "tumbler",
+        "stainless-steel",
+        "vacuum-insulated",
+        "straw",
+        "travel",
+        "hot-cold",
+        "reusable",
+        "large-capacity",
+        "pack-of-2",
+        "bundle-deal"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "insulated tumbler 1200ml pack of 2 | Jikra India",
+        "meta_description": "Carry water, iced coffee, or tea and keep it hot/cold for longer. Shop insulated tumbler 1200ml pack of 2 with practical features like stainless steel tumbler.",
+        "primary_keyword": "insulated tumbler 1200ml pack of 2",
+        "secondary_keywords": [
+          "stainless steel tumbler with straw",
+          "vacuum insulated travel tumbler",
+          "large capacity tumbler"
+        ],
+        "long_tail_keywords": [
+          "1200ml insulated tumbler with lid and straw for travel pack of 2",
+          "large stainless steel tumbler for hot and cold drinks pack of 2",
+          "vacuum sealed tumbler for office and car pack of 2"
+        ],
+        "opportunity_score": 84,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "THESHIFT Insulated Stainless Steel Tumbler 1200ml (Lid + Straw) - Pack of 2 is built for real everyday use. If you are searching for insulated tumbler 1200ml, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Carry water, iced coffee, or tea and keep it hot/cold for longer.",
+          "Vacuum-insulated style build to help keep drinks hot or cold longer (actual performance varies by use).",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Capacity: 1200 ml",
+          "Includes: lid + straw",
+          "Pack: 2 units (bundle pricing)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "INS-TMB-01FBA-P2",
+          "options": {
+            "Color": "Stainless"
+          },
+          "price": 1451.89,
+          "compare_at_price": 1798.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FGXXJDKQ",
+            "source_price": 899.0
+          }
+        },
+        {
+          "sku": "2W-3I9L-ZW10-P2",
+          "options": {
+            "Color": "Stainless"
+          },
+          "price": 1128.89,
+          "compare_at_price": 1398.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FM32B7H7",
+            "source_price": 699.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "theshift-matte-stainless-steel-water-bottle-500ml-vacuum-insulated",
+      "name": "THESHIFT Matte Stainless Steel Water Bottle 500ml (Vacuum Insulated)",
+      "vendor": "Jikra India",
+      "brand": "THESHIFT",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Drinkware",
+        "Bottles"
+      ],
+      "tags": [
+        "bottle",
+        "stainless-steel",
+        "vacuum-insulated",
+        "leakproof",
+        "matte",
+        "500ml",
+        "travel",
+        "eco-friendly"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "stainless steel water bottle 500ml | Jikra India",
+        "meta_description": "Everyday bottle for office, gym, and travel with hot/cold insulation. Shop stainless steel water bottle 500ml with practical features like vacuum insulated.",
+        "primary_keyword": "stainless steel water bottle 500ml",
+        "secondary_keywords": [
+          "vacuum insulated bottle",
+          "leakproof water bottle",
+          "hot cold bottle 500ml"
+        ],
+        "long_tail_keywords": [
+          "500ml matte finish stainless steel bottle for office and gym",
+          "vacuum insulated leakproof bottle for hot and cold water",
+          "durable eco friendly water bottle 500ml"
+        ],
+        "opportunity_score": 82,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "THESHIFT Matte Stainless Steel Water Bottle 500ml (Vacuum Insulated) is built for real everyday use. If you are searching for stainless steel water bottle 500ml, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Everyday bottle for office, gym, and travel with hot/cold insulation.",
+          "Vacuum-insulated style build to help keep drinks hot or cold longer (actual performance varies by use).",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Capacity: 500 ml"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "MATBTLBLACK",
+          "options": {
+            "Color": "Black"
+          },
+          "price": 569.05,
+          "compare_at_price": 599.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FK431HP2",
+            "source_price": 599.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "theshift-matte-stainless-steel-water-bottle-500ml-vacuum-insulated-pack-of-2",
+      "name": "THESHIFT Matte Stainless Steel Water Bottle 500ml (Vacuum Insulated) (Pack of 2)",
+      "vendor": "Jikra India",
+      "brand": "THESHIFT",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Drinkware",
+        "Bottles"
+      ],
+      "tags": [
+        "bottle",
+        "stainless-steel",
+        "vacuum-insulated",
+        "leakproof",
+        "matte",
+        "500ml",
+        "travel",
+        "eco-friendly",
+        "pack-of-2",
+        "bundle-deal"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "stainless steel water bottle 500ml pack of 2 | Jikra India",
+        "meta_description": "Everyday bottle for office, gym, and travel with hot/cold insulation. Shop stainless steel water bottle 500ml pack of 2 with practical features like vacuum.",
+        "primary_keyword": "stainless steel water bottle 500ml pack of 2",
+        "secondary_keywords": [
+          "vacuum insulated bottle",
+          "leakproof water bottle",
+          "hot cold bottle 500ml"
+        ],
+        "long_tail_keywords": [
+          "500ml matte finish stainless steel bottle for office and gym pack of 2",
+          "vacuum insulated leakproof bottle for hot and cold water pack of 2",
+          "durable eco friendly water bottle 500ml pack of 2"
+        ],
+        "opportunity_score": 84,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "THESHIFT Matte Stainless Steel Water Bottle 500ml (Vacuum Insulated) - Pack of 2 is built for real everyday use. If you are searching for stainless steel water bottle 500ml, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Everyday bottle for office, gym, and travel with hot/cold insulation.",
+          "Vacuum-insulated style build to help keep drinks hot or cold longer (actual performance varies by use).",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Capacity: 500 ml",
+          "Pack: 2 units (bundle pricing)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "MATBTLBLACK-P2",
+          "options": {
+            "Color": "Black"
+          },
+          "price": 967.39,
+          "compare_at_price": 1198.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FK431HP2",
+            "source_price": 599.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-insulated-travel-coffee-mug-380ml-flip-lid-leakproof",
+      "name": "JIKRA Insulated Travel Coffee Mug 380ml (Flip Lid, Leakproof)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Drinkware",
+        "Coffee Mugs"
+      ],
+      "tags": [
+        "coffee-mug",
+        "travel",
+        "insulated",
+        "leakproof",
+        "flip-lid",
+        "stainless-steel",
+        "hot-cold",
+        "380ml"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "insulated travel coffee mug 380ml | Jikra India",
+        "meta_description": "Leakproof mug for commute, office desk, and car cup holder. Shop insulated travel coffee mug 380ml with practical features like stainless steel coffee mug with.",
+        "primary_keyword": "insulated travel coffee mug 380ml",
+        "secondary_keywords": [
+          "stainless steel coffee mug with lid",
+          "leakproof travel mug",
+          "vacuum coffee tumbler 380ml"
+        ],
+        "long_tail_keywords": [
+          "380ml insulated coffee mug for office and car",
+          "stainless steel travel mug with flip lid leakproof",
+          "vacuum insulated mug for hot and cold drinks 380ml"
+        ],
+        "opportunity_score": 82,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Insulated Travel Coffee Mug 380ml (Flip Lid, Leakproof) is built for real everyday use. If you are searching for insulated travel coffee mug 380ml, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Leakproof mug for commute, office desk, and car cup holder.",
+          "Vacuum-insulated style build to help keep drinks hot or cold longer (actual performance varies by use).",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Capacity: 380 ml"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "COFFEE-BLACK1FBA",
+          "options": {
+            "Color": "Black"
+          },
+          "price": 949.05,
+          "compare_at_price": 999.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FN3VZ78S",
+            "source_price": 999.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-insulated-travel-coffee-mug-380ml-flip-lid-leakproof-pack-of-2",
+      "name": "JIKRA Insulated Travel Coffee Mug 380ml (Flip Lid, Leakproof) (Pack of 2)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Drinkware",
+        "Coffee Mugs"
+      ],
+      "tags": [
+        "coffee-mug",
+        "travel",
+        "insulated",
+        "leakproof",
+        "flip-lid",
+        "stainless-steel",
+        "hot-cold",
+        "380ml",
+        "pack-of-2",
+        "bundle-deal"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "insulated travel coffee mug 380ml pack of 2 | Jikra India",
+        "meta_description": "Leakproof mug for commute, office desk, and car cup holder. Shop insulated travel coffee mug 380ml pack of 2 with practical features like stainless steel coffee.",
+        "primary_keyword": "insulated travel coffee mug 380ml pack of 2",
+        "secondary_keywords": [
+          "stainless steel coffee mug with lid",
+          "leakproof travel mug",
+          "vacuum coffee tumbler 380ml"
+        ],
+        "long_tail_keywords": [
+          "380ml insulated coffee mug for office and car pack of 2",
+          "stainless steel travel mug with flip lid leakproof pack of 2",
+          "vacuum insulated mug for hot and cold drinks 380ml pack of 2"
+        ],
+        "opportunity_score": 84,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Insulated Travel Coffee Mug 380ml (Flip Lid, Leakproof) - Pack of 2 is built for real everyday use. If you are searching for insulated travel coffee mug 380ml, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Leakproof mug for commute, office desk, and car cup holder.",
+          "Vacuum-insulated style build to help keep drinks hot or cold longer (actual performance varies by use).",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Capacity: 380 ml",
+          "Pack: 2 units (bundle pricing)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "COFFEE-BLACK1FBA-P2",
+          "options": {
+            "Color": "Black"
+          },
+          "price": 1613.39,
+          "compare_at_price": 1998.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FN3VZ78S",
+            "source_price": 999.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-grip-insulated-coffee-mug-380ml-leakproof-lid",
+      "name": "JIKRA Grip Insulated Coffee Mug 380ml (Leakproof Lid)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Drinkware",
+        "Coffee Mugs"
+      ],
+      "tags": [
+        "coffee-mug",
+        "insulated",
+        "leakproof",
+        "stainless-steel",
+        "vacuum-insulated",
+        "office",
+        "travel",
+        "reusable"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "insulated coffee mug 380ml | Jikra India",
+        "meta_description": "Compact thermal mug for everyday coffee, tea, and cold drinks. Shop insulated coffee mug 380ml with practical features like leakproof coffee mug with lid,.",
+        "primary_keyword": "insulated coffee mug 380ml",
+        "secondary_keywords": [
+          "leakproof coffee mug with lid",
+          "stainless steel travel mug",
+          "vacuum thermal mug"
+        ],
+        "long_tail_keywords": [
+          "380ml insulated coffee mug for hot and iced drinks",
+          "leakproof stainless steel mug for office and travel",
+          "vacuum thermal coffee mug with secure lid 380ml"
+        ],
+        "opportunity_score": 82,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Grip Insulated Coffee Mug 380ml (Leakproof Lid) is built for real everyday use. If you are searching for insulated coffee mug 380ml, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Compact thermal mug for everyday coffee, tea, and cold drinks.",
+          "Vacuum-insulated style build to help keep drinks hot or cold longer (actual performance varies by use).",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Capacity: 380 ml"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "GRIP-BLCK-FBA",
+          "options": {
+            "Color": "Black"
+          },
+          "price": 284.05,
+          "compare_at_price": 299.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FSDGCHVV",
+            "source_price": 299.0
+          }
+        },
+        {
+          "sku": "GRIP-GREEN1",
+          "options": {
+            "Color": "Green"
+          },
+          "price": 474.05,
+          "compare_at_price": 499.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FZMD3YGT",
+            "source_price": 499.0
+          }
+        },
+        {
+          "sku": "GRIP-BLUE1-FBA",
+          "options": {
+            "Color": "Blue"
+          },
+          "price": 474.05,
+          "compare_at_price": 499.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FZRQF4J4",
+            "source_price": 499.0
+          }
+        },
+        {
+          "sku": "GRIP-RED1-FBA",
+          "options": {
+            "Color": "Red"
+          },
+          "price": 474.05,
+          "compare_at_price": 499.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FZS9J64V",
+            "source_price": 499.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-grip-insulated-coffee-mug-380ml-leakproof-lid-pack-of-2",
+      "name": "JIKRA Grip Insulated Coffee Mug 380ml (Leakproof Lid) (Pack of 2)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Drinkware",
+        "Coffee Mugs"
+      ],
+      "tags": [
+        "coffee-mug",
+        "insulated",
+        "leakproof",
+        "stainless-steel",
+        "vacuum-insulated",
+        "office",
+        "travel",
+        "reusable",
+        "pack-of-2",
+        "bundle-deal"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "insulated coffee mug 380ml pack of 2 | Jikra India",
+        "meta_description": "Compact thermal mug for everyday coffee, tea, and cold drinks. Shop insulated coffee mug 380ml pack of 2 with practical features like leakproof coffee mug with.",
+        "primary_keyword": "insulated coffee mug 380ml pack of 2",
+        "secondary_keywords": [
+          "leakproof coffee mug with lid",
+          "stainless steel travel mug",
+          "vacuum thermal mug"
+        ],
+        "long_tail_keywords": [
+          "380ml insulated coffee mug for hot and iced drinks pack of 2",
+          "leakproof stainless steel mug for office and travel pack of 2",
+          "vacuum thermal coffee mug with secure lid 380ml pack of 2"
+        ],
+        "opportunity_score": 84,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Grip Insulated Coffee Mug 380ml (Leakproof Lid) - Pack of 2 is built for real everyday use. If you are searching for insulated coffee mug 380ml, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Compact thermal mug for everyday coffee, tea, and cold drinks.",
+          "Vacuum-insulated style build to help keep drinks hot or cold longer (actual performance varies by use).",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Capacity: 380 ml",
+          "Pack: 2 units (bundle pricing)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "GRIP-BLCK-FBA-P2",
+          "options": {
+            "Color": "Black"
+          },
+          "price": 482.89,
+          "compare_at_price": 598.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FSDGCHVV",
+            "source_price": 299.0
+          }
+        },
+        {
+          "sku": "GRIP-GREEN1-P2",
+          "options": {
+            "Color": "Green"
+          },
+          "price": 805.89,
+          "compare_at_price": 998.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FZMD3YGT",
+            "source_price": 499.0
+          }
+        },
+        {
+          "sku": "GRIP-BLUE1-FBA-P2",
+          "options": {
+            "Color": "Blue"
+          },
+          "price": 805.89,
+          "compare_at_price": 998.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FZRQF4J4",
+            "source_price": 499.0
+          }
+        },
+        {
+          "sku": "GRIP-RED1-FBA-P2",
+          "options": {
+            "Color": "Red"
+          },
+          "price": 805.89,
+          "compare_at_price": 998.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FZS9J64V",
+            "source_price": 499.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-insulated-thermos-bottle-510ml-rope-handle-leakproof",
+      "name": "JIKRA Insulated Thermos Bottle 510ml (Rope Handle, Leakproof)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Drinkware",
+        "Bottles"
+      ],
+      "tags": [
+        "bottle",
+        "thermos",
+        "insulated",
+        "vacuum-insulated",
+        "leakproof",
+        "510ml",
+        "travel",
+        "rope-handle"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "insulated water bottle 510ml | Jikra India",
+        "meta_description": "Vacuum insulated bottle for hot and cold beverages with easy carry handle. Shop insulated water bottle 510ml with practical features like thermos bottle 510ml,.",
+        "primary_keyword": "insulated water bottle 510ml",
+        "secondary_keywords": [
+          "thermos bottle 510ml",
+          "stainless steel vacuum bottle",
+          "leakproof travel bottle"
+        ],
+        "long_tail_keywords": [
+          "510ml insulated thermos bottle with rope handle for travel",
+          "stainless steel vacuum bottle for hot and cold drinks 510ml",
+          "leakproof thermos water bottle for office and home"
+        ],
+        "opportunity_score": 82,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Insulated Thermos Bottle 510ml (Rope Handle, Leakproof) is built for real everyday use. If you are searching for insulated water bottle 510ml, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Vacuum insulated bottle for hot and cold beverages with easy carry handle.",
+          "Vacuum-insulated style build to help keep drinks hot or cold longer (actual performance varies by use).",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Capacity: 510 ml"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "DORIBOTTLE-BLCK1",
+          "options": {
+            "Color": "Black"
+          },
+          "price": 949.05,
+          "compare_at_price": 999.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0G3KXZDV6",
+            "source_price": 999.0
+          }
+        },
+        {
+          "sku": "DORI-BOTTLESILVER",
+          "options": {
+            "Color": "Silver"
+          },
+          "price": 949.05,
+          "compare_at_price": 999.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0G3KYR448",
+            "source_price": 999.0
+          }
+        },
+        {
+          "sku": "DORI-BOTTLEBLUE",
+          "options": {
+            "Color": "Blue"
+          },
+          "price": 949.05,
+          "compare_at_price": 999.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0G3LBXWVY",
+            "source_price": 999.0
+          }
+        },
+        {
+          "sku": "DORI-BOTTLEPINK",
+          "options": {
+            "Color": "Pink"
+          },
+          "price": 949.05,
+          "compare_at_price": 999.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0G3P7WRTG",
+            "source_price": 999.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-insulated-thermos-bottle-510ml-rope-handle-leakproof-pack-of-2",
+      "name": "JIKRA Insulated Thermos Bottle 510ml (Rope Handle, Leakproof) (Pack of 2)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Drinkware",
+        "Bottles"
+      ],
+      "tags": [
+        "bottle",
+        "thermos",
+        "insulated",
+        "vacuum-insulated",
+        "leakproof",
+        "510ml",
+        "travel",
+        "rope-handle",
+        "pack-of-2",
+        "bundle-deal"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "insulated water bottle 510ml pack of 2 | Jikra India",
+        "meta_description": "Vacuum insulated bottle for hot and cold beverages with easy carry handle. Shop insulated water bottle 510ml pack of 2 with practical features like thermos.",
+        "primary_keyword": "insulated water bottle 510ml pack of 2",
+        "secondary_keywords": [
+          "thermos bottle 510ml",
+          "stainless steel vacuum bottle",
+          "leakproof travel bottle"
+        ],
+        "long_tail_keywords": [
+          "510ml insulated thermos bottle with rope handle for travel pack of 2",
+          "stainless steel vacuum bottle for hot and cold drinks 510ml pack of 2",
+          "leakproof thermos water bottle for office and home pack of 2"
+        ],
+        "opportunity_score": 84,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA Insulated Thermos Bottle 510ml (Rope Handle, Leakproof) - Pack of 2 is built for real everyday use. If you are searching for insulated water bottle 510ml, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Vacuum insulated bottle for hot and cold beverages with easy carry handle.",
+          "Vacuum-insulated style build to help keep drinks hot or cold longer (actual performance varies by use).",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Capacity: 510 ml",
+          "Pack: 2 units (bundle pricing)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "DORIBOTTLE-BLCK1-P2",
+          "options": {
+            "Color": "Black"
+          },
+          "price": 1613.39,
+          "compare_at_price": 1998.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0G3KXZDV6",
+            "source_price": 999.0
+          }
+        },
+        {
+          "sku": "DORI-BOTTLESILVER-P2",
+          "options": {
+            "Color": "Silver"
+          },
+          "price": 1613.39,
+          "compare_at_price": 1998.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0G3KYR448",
+            "source_price": 999.0
+          }
+        },
+        {
+          "sku": "DORI-BOTTLEBLUE-P2",
+          "options": {
+            "Color": "Blue"
+          },
+          "price": 1613.39,
+          "compare_at_price": 1998.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0G3LBXWVY",
+            "source_price": 999.0
+          }
+        },
+        {
+          "sku": "DORI-BOTTLEPINK-P2",
+          "options": {
+            "Color": "Pink"
+          },
+          "price": 1613.39,
+          "compare_at_price": 1998.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0G3P7WRTG",
+            "source_price": 999.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-5-digit-tally-counter-finger-ring-clicker",
+      "name": "JIKRA 5-Digit Tally Counter Finger Ring (Clicker)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Safety & Utility",
+        "Counters & Tools"
+      ],
+      "tags": [
+        "tally-counter",
+        "clicker",
+        "counter",
+        "portable",
+        "finger-ring",
+        "5-digit",
+        "japa",
+        "sports"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "tally counter finger ring | Jikra India",
+        "meta_description": "Quick counting for chanting, sports, inventory, and events. Shop tally counter finger ring with practical features like 5 digit clicker counter, hand tally.",
+        "primary_keyword": "tally counter finger ring",
+        "secondary_keywords": [
+          "5 digit clicker counter",
+          "hand tally counter",
+          "japa counter ring"
+        ],
+        "long_tail_keywords": [
+          "5 digit tally clicker counter for japa mantra",
+          "finger ring tally counter for sports umpire",
+          "compact hand tally counter for events and counting"
+        ],
+        "opportunity_score": 79,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA 5-Digit Tally Counter Finger Ring (Clicker) is built for real everyday use. If you are searching for tally counter finger ring, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Quick counting for chanting, sports, inventory, and events.",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Digits: 5-digit counter",
+          "Form: finger ring"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "TALLYCOUNTER-W1",
+          "options": {
+            "Color": "Mix"
+          },
+          "price": 284.05,
+          "compare_at_price": 299.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FMYFLT1R",
+            "source_price": 299.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-5-digit-tally-counter-finger-ring-clicker-pack-of-2",
+      "name": "JIKRA 5-Digit Tally Counter Finger Ring (Clicker) (Pack of 2)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Safety & Utility",
+        "Counters & Tools"
+      ],
+      "tags": [
+        "tally-counter",
+        "clicker",
+        "counter",
+        "portable",
+        "finger-ring",
+        "5-digit",
+        "japa",
+        "sports",
+        "pack-of-2",
+        "bundle-deal"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "tally counter finger ring pack of 2 | Jikra India",
+        "meta_description": "Quick counting for chanting, sports, inventory, and events. Shop tally counter finger ring pack of 2 with practical features like 5 digit clicker counter, hand.",
+        "primary_keyword": "tally counter finger ring pack of 2",
+        "secondary_keywords": [
+          "5 digit clicker counter",
+          "hand tally counter",
+          "japa counter ring"
+        ],
+        "long_tail_keywords": [
+          "5 digit tally clicker counter for japa mantra pack of 2",
+          "finger ring tally counter for sports umpire pack of 2",
+          "compact hand tally counter for events and counting pack of 2"
+        ],
+        "opportunity_score": 81,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA 5-Digit Tally Counter Finger Ring (Clicker) - Pack of 2 is built for real everyday use. If you are searching for tally counter finger ring, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Quick counting for chanting, sports, inventory, and events.",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Digits: 5-digit counter",
+          "Form: finger ring",
+          "Pack: 2 units (bundle pricing)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "TALLYCOUNTER-W1-P2",
+          "options": {
+            "Color": "Mix"
+          },
+          "price": 482.89,
+          "compare_at_price": 598.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0FMYFLT1R",
+            "source_price": 299.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-usb-rechargeable-milk-frother-dual-spring-whisk",
+      "name": "JIKRA USB Rechargeable Milk Frother (Dual Spring Whisk)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Kitchen & Home",
+        "Coffee Accessories"
+      ],
+      "tags": [
+        "frother",
+        "milk-frother",
+        "coffee",
+        "rechargeable",
+        "usb",
+        "whisk",
+        "dual-spring",
+        "kitchen"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "usb rechargeable milk frother | Jikra India",
+        "meta_description": "Make creamy foam for coffee, latte, cappuccino, and hot chocolate. Shop usb rechargeable milk frother with practical features like electric coffee frother,.",
+        "primary_keyword": "usb rechargeable milk frother",
+        "secondary_keywords": [
+          "electric coffee frother",
+          "handheld milk whisk",
+          "dual spring frother"
+        ],
+        "long_tail_keywords": [
+          "usb rechargeable milk frother for latte cappuccino",
+          "handheld electric coffee frother with dual spring whisk",
+          "portable milk frother for hot chocolate and coffee"
+        ],
+        "opportunity_score": 78,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA USB Rechargeable Milk Frother (Dual Spring Whisk) is built for real everyday use. If you are searching for usb rechargeable milk frother, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Make creamy foam for coffee, latte, cappuccino, and hot chocolate.",
+          "Quick foam for latte, cappuccino, and hot chocolate.",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Power: USB rechargeable",
+          "Whisk: dual spring style"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "FROTHER-R-FBA1",
+          "options": {
+            "Color": "Default"
+          },
+          "price": 189.05,
+          "compare_at_price": 199.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0G6SJXPB2",
+            "source_price": 199.0
+          }
+        }
+      ]
+    },
+    {
+      "handle": "jikra-usb-rechargeable-milk-frother-dual-spring-whisk-pack-of-2",
+      "name": "JIKRA USB Rechargeable Milk Frother (Dual Spring Whisk) (Pack of 2)",
+      "vendor": "Jikra India",
+      "brand": "JIKRA",
+      "status": "active",
+      "published_at": "2025-12-18T10:00:00+05:30",
+      "category_path": [
+        "Kitchen & Home",
+        "Coffee Accessories"
+      ],
+      "tags": [
+        "frother",
+        "milk-frother",
+        "coffee",
+        "rechargeable",
+        "usb",
+        "whisk",
+        "dual-spring",
+        "kitchen",
+        "pack-of-2",
+        "bundle-deal"
+      ],
+      "a_plus_components": [],
+      "seo": {
+        "meta_title": "usb rechargeable milk frother pack of 2 | Jikra India",
+        "meta_description": "Make creamy foam for coffee, latte, cappuccino, and hot chocolate. Shop usb rechargeable milk frother pack of 2 with practical features like electric coffee.",
+        "primary_keyword": "usb rechargeable milk frother pack of 2",
+        "secondary_keywords": [
+          "electric coffee frother",
+          "handheld milk whisk",
+          "dual spring frother"
+        ],
+        "long_tail_keywords": [
+          "usb rechargeable milk frother for latte cappuccino pack of 2",
+          "handheld electric coffee frother with dual spring whisk pack of 2",
+          "portable milk frother for hot chocolate and coffee pack of 2"
+        ],
+        "opportunity_score": 80,
+        "keyword_usage_check": {
+          "primary_in_h1": true,
+          "primary_in_meta_title": true,
+          "primary_in_meta_description": true,
+          "primary_in_intro": true
+        }
+      },
+      "content": {
+        "intro": "JIKRA USB Rechargeable Milk Frother (Dual Spring Whisk) - Pack of 2 is built for real everyday use. If you are searching for usb rechargeable milk frother, this gives you a clean design, practical features, and reliable build quality from Jikra India.",
+        "benefits": [
+          "Designed for Make creamy foam for coffee, latte, cappuccino, and hot chocolate.",
+          "Quick foam for latte, cappuccino, and hot chocolate.",
+          "Made for daily use with a focus on durability and comfort.",
+          "Easy to maintain and suitable for home, office, and travel."
+        ],
+        "specs": [
+          "Power: USB rechargeable",
+          "Whisk: dual spring style",
+          "Pack: 2 units (bundle pricing)"
+        ],
+        "trust": "Authentic listing for our own store. Product details are reviewed before publish; images and A+ style modules can be added later."
+      },
+      "variants": [
+        {
+          "sku": "FROTHER-R-FBA1-P2",
+          "options": {
+            "Color": "Default"
+          },
+          "price": 321.39,
+          "compare_at_price": 398.0,
+          "stock_qty": 100,
+          "is_active": true,
+          "source": {
+            "asin": "B0G6SJXPB2",
+            "source_price": 199.0
+          }
+        }
+      ]
+    }
+  ]
+}

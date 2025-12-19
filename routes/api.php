@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\PersonalizationController;
 use Illuminate\Http\Request;
@@ -10,15 +9,8 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// Cart Routes (guest & authenticated)
-Route::prefix('cart')->name('api.cart.')->group(function () {
-    Route::get('count', [CartController::class, 'count'])->name('count');
-    Route::get('/', [CartController::class, 'index'])->name('index');
-    Route::post('add', [CartController::class, 'add'])->name('add');
-    Route::put('{item}', [CartController::class, 'update'])->name('update');
-    Route::delete('{item}', [CartController::class, 'remove'])->name('remove');
-    Route::delete('/', [CartController::class, 'clear'])->name('clear');
-});
+// Note: Cart routes moved to web.php for proper session handling
+// The routes are at /api/cart/* but defined in web.php to share the session
 
 // Favorites Routes (requires auth)
 Route::middleware('auth:sanctum')->prefix('favorites')->name('api.favorites.')->group(function () {

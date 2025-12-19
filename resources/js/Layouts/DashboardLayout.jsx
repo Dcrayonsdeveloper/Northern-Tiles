@@ -25,17 +25,6 @@ function IconUser(props) {
     );
 }
 
-function IconShield(props) {
-    return (
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-            <path
-                d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Z"
-                fill="currentColor"
-            />
-        </svg>
-    );
-}
-
 function IconPaint(props) {
     return (
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -124,11 +113,44 @@ function IconBook(props) {
     );
 }
 
+function IconDocument(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+            <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm4 18H6V4h7v5h5v11ZM8 12h8v2H8v-2Zm0 4h8v2H8v-2Z"
+                fill="currentColor"
+            />
+        </svg>
+    );
+}
+
 function IconMenu(props) {
     return (
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
             <path
                 d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z"
+                fill="currentColor"
+            />
+        </svg>
+    );
+}
+
+function IconCoupon(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+            <path
+                d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"
+                fill="currentColor"
+            />
+        </svg>
+    );
+}
+
+function IconStar(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+            <path
+                d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
                 fill="currentColor"
             />
         </svg>
@@ -187,22 +209,36 @@ export default function DashboardLayout({ title, children }) {
     }, []);
 
     const navItems = useMemo(() => {
-        const items = [
-            {
+        const items = [];
+
+        // For admin users, show Admin Dashboard as main dashboard
+        if (user?.is_admin) {
+            items.push({
+                key: 'dashboard',
+                label: 'Dashboard',
+                href: route('admin.dashboard'),
+                active: route().current('admin.dashboard'),
+                icon: <IconDashboard className="h-5 w-5" />,
+            });
+        } else {
+            // For regular users, show user dashboard
+            items.push({
                 key: 'dashboard',
                 label: 'Dashboard',
                 href: route('dashboard'),
                 active: route().current('dashboard'),
                 icon: <IconDashboard className="h-5 w-5" />,
-            },
-            {
-                key: 'profile',
-                label: 'Profile',
-                href: route('profile.edit'),
-                active: route().current('profile.*'),
-                icon: <IconUser className="h-5 w-5" />,
-            },
-        ];
+            });
+        }
+
+        // Profile for all users
+        items.push({
+            key: 'profile',
+            label: 'Profile',
+            href: route('profile.edit'),
+            active: route().current('profile.*'),
+            icon: <IconUser className="h-5 w-5" />,
+        });
 
         if (user?.is_seller) {
             items.push({
@@ -216,13 +252,6 @@ export default function DashboardLayout({ title, children }) {
 
         if (user?.is_admin) {
             items.push(
-                {
-                    key: 'admin',
-                    label: 'Admin',
-                    href: route('admin.dashboard'),
-                    active: route().current('admin.dashboard'),
-                    icon: <IconShield className="h-5 w-5" />,
-                },
                 {
                     key: 'orders',
                     label: 'Orders',
@@ -243,6 +272,20 @@ export default function DashboardLayout({ title, children }) {
                     href: route('admin.products.index'),
                     active: route().current('admin.products.*'),
                     icon: <IconBox className="h-5 w-5" />,
+                },
+                {
+                    key: 'coupons',
+                    label: 'Coupons',
+                    href: route('admin.coupons.index'),
+                    active: route().current('admin.coupons.*'),
+                    icon: <IconCoupon className="h-5 w-5" />,
+                },
+                {
+                    key: 'reviews',
+                    label: 'Reviews',
+                    href: route('admin.reviews.index'),
+                    active: route().current('admin.reviews.*'),
+                    icon: <IconStar className="h-5 w-5" />,
                 },
                 {
                     key: 'messages',
@@ -278,6 +321,13 @@ export default function DashboardLayout({ title, children }) {
                     href: route('admin.announcements.index'),
                     active: route().current('admin.announcements.*'),
                     icon: <IconChat className="h-5 w-5" />,
+                },
+                {
+                    key: 'pages',
+                    label: 'Pages',
+                    href: route('admin.pages.index'),
+                    active: route().current('admin.pages.*'),
+                    icon: <IconDocument className="h-5 w-5" />,
                 },
                 {
                     key: 'configuration',
@@ -514,7 +564,7 @@ export default function DashboardLayout({ title, children }) {
                     </div>
                 </header>
 
-                <main className="mx-auto max-w-7xl p-3 md:p-4">{children}</main>
+                <main className="mx-auto max-w-7xl p-3 md:p-4 overflow-visible">{children}</main>
             </div>
         </div>
     );

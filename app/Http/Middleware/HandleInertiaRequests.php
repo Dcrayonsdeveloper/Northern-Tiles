@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Cart\Services\CartService;
 use App\Domain\Dictionary\Services\DictionaryService;
 use App\Domain\Menu\Services\MenuService;
 use App\Domain\Settings\Models\Setting;
@@ -35,8 +36,6 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $cart = $request->session()->get('cart', []);
-
         return [
             ...parent::share($request),
             'dictionary' => fn () => [
@@ -56,8 +55,11 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
-            'cart' => [
-                'count' => array_sum(array_map('intval', $cart)),
+            'cart' => fn () => [
+                'count' => app(CartService::class)->getCount(
+                    $request->user()?->id,
+                    $request->session()->getId()
+                ),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

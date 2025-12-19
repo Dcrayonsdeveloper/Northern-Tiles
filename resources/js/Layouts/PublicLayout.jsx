@@ -1,5 +1,6 @@
 import StorefrontHeader from '@/Components/Storefront/StorefrontHeader';
 import { Footer } from '@/Components/Footer';
+import Container from '@/Components/Container';
 import { Head, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 
@@ -137,7 +138,7 @@ export default function PublicLayout({ children }) {
             <StorefrontHeader user={user} cartCount={cartCount} topBar={topBar} menus={menus} />
 
             {(success || error) && (
-                <div className="w-full px-4 pt-4 sm:px-6 lg:px-8">
+                <Container className="pt-4">
                     {success && (
                         <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
                             {success}
@@ -148,10 +149,10 @@ export default function PublicLayout({ children }) {
                             {error}
                         </div>
                     )}
-                </div>
+                </Container>
             )}
 
-            <main className="w-full px-4 py-10 sm:px-6 lg:px-8">
+            <main className="py-10">
                 {children}
             </main>
 

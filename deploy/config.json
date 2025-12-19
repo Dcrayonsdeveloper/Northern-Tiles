@@ -1,0 +1,42 @@
+{
+    "ssh": {
+        "host": "hostinger",
+        "remote_path": "~/domains/jikra.dcrayons.app/public_html"
+    },
+    "php_path": "/opt/alt/php82/usr/bin/lsphp",
+    "watch_paths": [
+        "app/**/*.php",
+        "resources/js/**/*.jsx",
+        "resources/js/**/*.js",
+        "resources/scss/**/*.scss",
+        "resources/css/**/*.css",
+        "routes/*.php",
+        "config/*.php",
+        "database/migrations/*.php",
+        "database/seeders/*.php"
+    ],
+    "ignore_patterns": [
+        "node_modules",
+        "vendor",
+        ".git",
+        "storage/logs",
+        "storage/framework",
+        "bootstrap/cache",
+        ".env",
+        "*.log"
+    ],
+    "build_triggers": [
+        "resources/js/**/*",
+        "resources/scss/**/*",
+        "resources/css/**/*",
+        "vite.config.js",
+        "tailwind.config.js",
+        "package.json"
+    ],
+    "post_deploy_commands": [
+        "cache:clear",
+        "config:clear",
+        "view:clear",
+        "route:clear"
+    ]
+}

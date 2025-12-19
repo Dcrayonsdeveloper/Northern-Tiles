@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Storefront;
 
+use App\Domain\Cart\Services\CartService;
+use App\Domain\Cart\Services\PricingService;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
@@ -12,28 +14,38 @@ use Inertia\Response;
 
 class CartController extends Controller
 {
+    public function __construct(
+        protected CartService $cartService,
+        protected PricingService $pricingService
+    ) {}
+
     public function index(Request $request): Response
     {
-        $cart = $request->session()->get('cart', []);
-        $productIds = array_keys($cart);
+        $userId = $request->user()?->id;
+        $sessionId = $request->session()->getId();
 
-        $products = Product::query()
-            ->whereIn('id', $productIds)
-            ->where('is_active', true)
-            ->get(['id', 'name', 'slug', 'price', 'image_url', 'stock']);
+        $cart = $this->cartService->getCart($userId, $sessionId);
 
-        $items = $products->map(function (Product $product) use ($cart) {
-            $qty = (int) ($cart[$product->id] ?? 0);
-            $lineTotal = (float) $product->price * $qty;
+        $items = [];
+        $subtotal = 0;
 
-            return [
-                'product' => $product,
-                'quantity' => $qty,
-                'line_total' => round($lineTotal, 2),
-            ];
-        })->values();
+        if ($cart) {
+            $cart->load(['items.product', 'items.variant']);
 
-        $subtotal = round($items->sum('line_total'), 2);
+            $items = $cart->items->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'product' => $item->product,
+                    'variant' => $item->variant,
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'line_total' => $item->price * $item->quantity,
+                ];
+            })->values();
+
+            $totals = $this->pricingService->computeTotals($cart);
+            $subtotal = $totals['subtotal'];
+        }
 
         return Inertia::render('Storefront/Cart/Index', [
             'items' => $items,
@@ -45,38 +57,59 @@ class CartController extends Controller
     {
         $validated = $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
+            'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:99'],
         ]);
 
-        $productId = (int) $validated['product_id'];
-        $quantity = (int) ($validated['quantity'] ?? 1);
+        $userId = $request->user()?->id;
+        $sessionId = $request->session()->getId();
 
-        $cart = $request->session()->get('cart', []);
-        $cart[$productId] = (int) ($cart[$productId] ?? 0) + $quantity;
+        $cart = $this->cartService->getOrCreate($userId, $sessionId);
 
-        $request->session()->put('cart', $cart);
+        $this->cartService->addItem(
+            $cart,
+            $validated['product_id'],
+            $validated['variant_id'] ?? null,
+            $validated['quantity'] ?? 1
+        );
 
         return Redirect::back()->with('success', 'Added to cart.');
     }
 
-    public function update(Request $request, Product $product): RedirectResponse
+    public function update(Request $request, int $itemId): RedirectResponse
     {
         $validated = $request->validate([
             'quantity' => ['required', 'integer', 'min:1', 'max:99'],
         ]);
 
-        $cart = $request->session()->get('cart', []);
-        $cart[$product->id] = (int) $validated['quantity'];
-        $request->session()->put('cart', $cart);
+        $userId = $request->user()?->id;
+        $sessionId = $request->session()->getId();
+
+        $cart = $this->cartService->getCart($userId, $sessionId);
+
+        if ($cart) {
+            $item = $cart->items()->find($itemId);
+            if ($item) {
+                $this->cartService->updateItemQuantity($item, $validated['quantity']);
+            }
+        }
 
         return Redirect::back();
     }
 
-    public function destroy(Request $request, Product $product): RedirectResponse
+    public function destroy(Request $request, int $itemId): RedirectResponse
     {
-        $cart = $request->session()->get('cart', []);
-        unset($cart[$product->id]);
-        $request->session()->put('cart', $cart);
+        $userId = $request->user()?->id;
+        $sessionId = $request->session()->getId();
+
+        $cart = $this->cartService->getCart($userId, $sessionId);
+
+        if ($cart) {
+            $item = $cart->items()->find($itemId);
+            if ($item) {
+                $this->cartService->removeItem($item);
+            }
+        }
 
         return Redirect::back();
     }

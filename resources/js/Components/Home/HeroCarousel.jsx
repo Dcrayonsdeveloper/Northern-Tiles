@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Container from '@/Components/Container';
 
 // Icons
 function ChevronLeftIcon({ className }) {
@@ -217,87 +218,95 @@ export default function HeroCarousel({
     // Single slide - no controls needed
     if (activeSlides.length === 1) {
         return (
-            <div className={`relative h-[50vh] min-h-[360px] max-h-[620px] overflow-hidden rounded-2xl border border-slate-200 ${className}`}>
-                <Slide slide={activeSlides[0]} isActive={true} isFirst={true} d={d} />
-            </div>
+            <section className={`hero-carousel -mt-10 ${className}`}>
+                <Container className="!pl-0">
+                    <div className="relative h-[50vh] min-h-[360px] max-h-[620px] overflow-hidden">
+                        <Slide slide={activeSlides[0]} isActive={true} isFirst={true} d={d} />
+                    </div>
+                </Container>
+            </section>
         );
     }
 
     return (
-        <div
-            ref={containerRef}
-            className={`hero-carousel relative h-[50vh] min-h-[360px] max-h-[620px] overflow-hidden rounded-2xl border border-slate-200 ${className}`}
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            tabIndex={0}
-            role="region"
-            aria-roledescription="carousel"
-            aria-label="Hero banner carousel"
-        >
-            {/* Slides */}
-            <div className="relative h-full w-full">
-                {activeSlides.map((slide, index) => (
-                    <Slide
-                        key={slide.id || index}
-                        slide={slide}
-                        isActive={index === currentIndex}
-                        isFirst={index === 0 && currentIndex === 0}
-                        d={d}
-                    />
-                ))}
-            </div>
+        <section className={`hero-carousel -mt-10 ${className}`}>
+            <Container className="!pl-0">
+                <div
+                    ref={containerRef}
+                    className="relative h-[50vh] min-h-[360px] max-h-[620px] overflow-hidden"
+                    onMouseEnter={() => setIsPaused(true)}
+                    onMouseLeave={() => setIsPaused(false)}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    tabIndex={0}
+                    role="region"
+                    aria-roledescription="carousel"
+                    aria-label="Hero banner carousel"
+                >
+                    {/* Slides */}
+                    <div className="relative h-full w-full">
+                        {activeSlides.map((slide, index) => (
+                            <Slide
+                                key={slide.id || index}
+                                slide={slide}
+                                isActive={index === currentIndex}
+                                isFirst={index === 0 && currentIndex === 0}
+                                d={d}
+                            />
+                        ))}
+                    </div>
 
-            {/* Arrow Controls */}
-            <button
-                type="button"
-                onClick={goPrev}
-                className="absolute left-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/10 p-2.5 ring-1 ring-white/20 backdrop-blur transition-all hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:left-4 sm:p-3"
-                aria-label="Previous slide"
-            >
-                <ChevronLeftIcon className="h-5 w-5 text-white sm:h-6 sm:w-6" />
-            </button>
-
-            <button
-                type="button"
-                onClick={goNext}
-                className="absolute right-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/10 p-2.5 ring-1 ring-white/20 backdrop-blur transition-all hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:right-4 sm:p-3"
-                aria-label="Next slide"
-            >
-                <ChevronRightIcon className="h-5 w-5 text-white sm:h-6 sm:w-6" />
-            </button>
-
-            {/* Dot Indicators */}
-            <div
-                className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 flex items-center gap-2 rounded-full bg-black/20 px-3 py-2 ring-1 ring-white/15 backdrop-blur"
-                role="tablist"
-                aria-label="Slide indicators"
-            >
-                {activeSlides.map((_, index) => (
+                    {/* Arrow Controls */}
                     <button
-                        key={index}
                         type="button"
-                        onClick={() => goToSlide(index)}
-                        className={`h-2 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
-                            index === currentIndex
-                                ? 'w-6 bg-white'
-                                : 'w-2 bg-white/50 hover:bg-white/70'
-                        }`}
-                        role="tab"
-                        aria-selected={index === currentIndex}
-                        aria-label={`Go to slide ${index + 1}`}
-                    />
-                ))}
-            </div>
+                        onClick={goPrev}
+                        className="absolute left-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/10 p-2.5 ring-1 ring-white/20 backdrop-blur transition-all hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:left-4 sm:p-3"
+                        aria-label="Previous slide"
+                    >
+                        <ChevronLeftIcon className="h-5 w-5 text-white sm:h-6 sm:w-6" />
+                    </button>
 
-            {/* Pause indicator (optional visual feedback) */}
-            {isPaused && (
-                <div className="absolute right-4 top-4 z-20 rounded-full bg-black/30 px-2 py-1 text-[10px] font-medium text-white/80 backdrop-blur">
-                    Paused
+                    <button
+                        type="button"
+                        onClick={goNext}
+                        className="absolute right-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/10 p-2.5 ring-1 ring-white/20 backdrop-blur transition-all hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:right-4 sm:p-3"
+                        aria-label="Next slide"
+                    >
+                        <ChevronRightIcon className="h-5 w-5 text-white sm:h-6 sm:w-6" />
+                    </button>
+
+                    {/* Dot Indicators */}
+                    <div
+                        className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 flex items-center gap-2 rounded-full bg-black/20 px-3 py-2 ring-1 ring-white/15 backdrop-blur"
+                        role="tablist"
+                        aria-label="Slide indicators"
+                    >
+                        {activeSlides.map((_, index) => (
+                            <button
+                                key={index}
+                                type="button"
+                                onClick={() => goToSlide(index)}
+                                className={`h-2 rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
+                                    index === currentIndex
+                                        ? 'w-6 bg-white'
+                                        : 'w-2 bg-white/50 hover:bg-white/70'
+                                }`}
+                                role="tab"
+                                aria-selected={index === currentIndex}
+                                aria-label={`Go to slide ${index + 1}`}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Pause indicator (optional visual feedback) */}
+                    {isPaused && (
+                        <div className="absolute right-4 top-4 z-20 rounded-full bg-black/30 px-2 py-1 text-[10px] font-medium text-white/80 backdrop-blur">
+                            Paused
+                        </div>
+                    )}
                 </div>
-            )}
-        </div>
+            </Container>
+        </section>
     );
 }

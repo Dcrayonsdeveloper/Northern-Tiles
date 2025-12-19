@@ -109,6 +109,55 @@ class SettingsSeeder extends Seeder
 
         // Home hero slides
         $this->seedHeroSlides();
+
+        // Marketplace settings (currency, shipping, tax)
+        $this->seedMarketplaceSettings();
+    }
+
+    protected function seedMarketplaceSettings(): void
+    {
+        // Currency settings
+        if (Setting::getValue('marketplace.currency') === null) {
+            Setting::query()->updateOrCreate(
+                ['key' => 'marketplace.currency'],
+                ['group' => 'marketplace', 'value_text' => 'INR'],
+            );
+            Setting::forgetCache('marketplace.currency');
+        }
+
+        if (Setting::getValue('marketplace.currency_symbol') === null) {
+            Setting::query()->updateOrCreate(
+                ['key' => 'marketplace.currency_symbol'],
+                ['group' => 'marketplace', 'value_text' => '₹'],
+            );
+            Setting::forgetCache('marketplace.currency_symbol');
+        }
+
+        // Shipping settings
+        if (Setting::getValue('shipping.free_threshold') === null) {
+            Setting::query()->updateOrCreate(
+                ['key' => 'shipping.free_threshold'],
+                ['group' => 'shipping', 'value_text' => '999'],
+            );
+            Setting::forgetCache('shipping.free_threshold');
+        }
+
+        if (Setting::getValue('shipping.flat_rate') === null) {
+            Setting::query()->updateOrCreate(
+                ['key' => 'shipping.flat_rate'],
+                ['group' => 'shipping', 'value_text' => '50'],
+            );
+            Setting::forgetCache('shipping.flat_rate');
+        }
+
+        // Tax settings
+        if (Setting::getValue('tax.default_rate') === null) {
+            Setting::query()->updateOrCreate(
+                ['key' => 'tax.default_rate'],
+                ['group' => 'tax', 'value_text' => '0'],  // 0% default, can be set to 18 for GST
+            );
+            Setting::forgetCache('tax.default_rate');
+        }
     }
 
     protected function seedFooterMenus(): void

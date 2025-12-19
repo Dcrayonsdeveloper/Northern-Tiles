@@ -74,7 +74,12 @@ class CartService
     public function getCount(?int $userId, ?string $sessionId): int
     {
         $cart = $this->getCart($userId, $sessionId);
-        return $cart ? $cart->getItemCount() : 0;
+        if (!$cart) {
+            return 0;
+        }
+        // Ensure items are loaded for accurate count
+        $cart->loadMissing('items');
+        return $cart->getItemCount();
     }
 
     public function getSubtotal(Cart $cart): float

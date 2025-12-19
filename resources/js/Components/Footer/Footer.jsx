@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import Container from '@/Components/Container';
 import FooterColumn from './FooterColumn';
 
 export default function Footer() {
@@ -19,7 +20,7 @@ export default function Footer() {
 
     return (
         <footer className="border-t border-slate-200 bg-white">
-            <div className="mx-auto max-w-7xl px-4 py-10">
+            <Container className="py-10">
                 <div className="grid gap-8 md:grid-cols-5">
                     {/* Column 1: Brand */}
                     <div>
@@ -92,16 +93,16 @@ export default function Footer() {
                         items={menus.policies?.items}
                     />
                 </div>
-            </div>
+            </Container>
 
             {/* Bottom Bar */}
             <div className="border-t border-slate-200">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 text-xs text-slate-500">
+                <Container className="flex items-center justify-between py-4 text-xs text-slate-500">
                     <p>
                         &copy; <span>{year}</span> {brandName}. All rights
                         reserved.
                     </p>
-                </div>
+                </Container>
             </div>
         </footer>
     );

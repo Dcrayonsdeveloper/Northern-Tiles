@@ -2,122 +2,162 @@
 
 namespace App\Http\Controllers\Storefront;
 
+use App\Domain\Cart\Services\CartService;
+use App\Domain\Cart\Services\CheckoutService;
+use App\Domain\Cart\Services\PricingService;
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CheckoutController extends Controller
 {
-    public function create(Request $request): Response
-    {
-        $cart = $request->session()->get('cart', []);
+    public function __construct(
+        protected CartService $cartService,
+        protected CheckoutService $checkoutService,
+        protected PricingService $pricingService
+    ) {}
 
-        if (count($cart) === 0) {
-            return Inertia::render('Storefront/Checkout/Index', [
-                'items' => [],
-                'subtotal' => 0,
-            ]);
+    /**
+     * Display checkout page.
+     * Supports both guest and logged-in users.
+     */
+    public function create(Request $request): Response|RedirectResponse
+    {
+        $userId = $request->user()?->id;
+        $sessionId = $request->session()->getId();
+
+        $cart = $this->cartService->getCart($userId, $sessionId);
+
+        if (!$cart || $cart->isEmpty()) {
+            return Redirect::route('shop.index')->with('info', 'Your cart is empty.');
         }
 
-        $productIds = array_keys($cart);
-        $products = Product::query()
-            ->whereIn('id', $productIds)
-            ->where('is_active', true)
-            ->get(['id', 'name', 'slug', 'price', 'image_url', 'stock']);
-
-        $items = $products->map(function (Product $product) use ($cart) {
-            $qty = (int) ($cart[$product->id] ?? 0);
-            $lineTotal = (float) $product->price * $qty;
-
-            return [
-                'product' => $product,
-                'quantity' => $qty,
-                'line_total' => round($lineTotal, 2),
-            ];
-        })->values();
-
-        $subtotal = round($items->sum('line_total'), 2);
+        $summary = $this->checkoutService->getCheckoutSummary($cart);
+        $user = $request->user();
 
         return Inertia::render('Storefront/Checkout/Index', [
-            'items' => $items,
-            'subtotal' => $subtotal,
+            'items' => $summary['items'],
+            'totals' => $summary['totals'],
+            'shippingMethods' => $summary['shipping_methods'],
+            'paymentMethods' => $summary['payment_methods'],
+            'isGuest' => !$user,
+            'user' => $user ? [
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone ?? null,
+            ] : null,
+            'savedAddresses' => $user ? $this->getSavedAddresses($user) : [],
         ]);
     }
 
+    /**
+     * Process checkout and create order.
+     */
     public function store(Request $request): RedirectResponse
     {
-        $cart = $request->session()->get('cart', []);
+        $userId = $request->user()?->id;
+        $sessionId = $request->session()->getId();
 
-        if (count($cart) === 0) {
-            return Redirect::route('cart.index');
+        $cart = $this->cartService->getCart($userId, $sessionId);
+
+        if (!$cart || $cart->isEmpty()) {
+            return Redirect::route('shop.index')->with('error', 'Your cart is empty.');
         }
 
-        $validated = $request->validate([
-            'customer_name' => ['required', 'string', 'max:255'],
-            'customer_email' => ['required', 'email', 'max:255'],
-            'customer_phone' => ['nullable', 'string', 'max:50'],
-            'notes' => ['nullable', 'string', 'max:2000'],
+        $isGuest = !$userId;
+
+        // Validate checkout data
+        $validated = $request->validate(
+            $this->checkoutService->validateCheckoutData($request->all(), $isGuest)
+        );
+
+        // Prepare checkout data
+        $checkoutData = [
+            'contact' => [
+                'name' => $validated['contact']['name'] ?? $validated['shipping_address']['name'],
+                'email' => $validated['contact']['email'],
+                'phone' => $validated['contact']['phone'] ?? null,
+                'marketing_opt_in' => $request->boolean('marketing_opt_in', false),
+            ],
+            'shipping_address' => $validated['shipping_address'],
+            'billing_address' => $request->boolean('billing_same_as_shipping', true)
+                ? $validated['shipping_address']
+                : ($validated['billing_address'] ?? $validated['shipping_address']),
+            'shipping_method' => $validated['shipping_method'],
+            'payment_method' => $validated['payment_method'],
+            'notes' => $validated['notes'] ?? null,
+        ];
+
+        try {
+            $order = $this->checkoutService->processCheckout($cart, $checkoutData);
+
+            return Redirect::route('checkout.success', ['order' => $order->order_number])
+                ->with('success', 'Order placed successfully!');
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            return Redirect::back()
+                ->withErrors(['checkout' => 'Failed to process order. Please try again.'])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Display order confirmation page.
+     */
+    public function success(Request $request, string $order): Response|RedirectResponse
+    {
+        $orderModel = \App\Models\Order::where('order_number', $order)->first();
+
+        if (!$orderModel) {
+            return Redirect::route('shop.index')->with('error', 'Order not found.');
+        }
+
+        // Only show order to owner or if recently placed (within session)
+        $userId = $request->user()?->id;
+        if ($orderModel->user_id && $orderModel->user_id !== $userId) {
+            return Redirect::route('shop.index')->with('error', 'Order not found.');
+        }
+
+        $orderModel->load('items');
+
+        return Inertia::render('Storefront/Checkout/Success', [
+            'order' => [
+                'order_number' => $orderModel->order_number,
+                'status' => $orderModel->status,
+                'customer_name' => $orderModel->customer_name,
+                'customer_email' => $orderModel->customer_email,
+                'subtotal' => $orderModel->subtotal,
+                'tax' => $orderModel->tax,
+                'shipping_cost' => $orderModel->shipping_cost,
+                'discount' => $orderModel->discount,
+                'total' => $orderModel->total,
+                'shipping_address' => $orderModel->shipping_address,
+                'payment_method' => $orderModel->payment_method,
+                'created_at' => $orderModel->created_at->format('M d, Y h:i A'),
+                'items' => $orderModel->items->map(function ($item) {
+                    return [
+                        'name' => $item->name,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'line_total' => $item->price * $item->quantity,
+                    ];
+                }),
+            ],
         ]);
+    }
 
-        $productIds = array_keys($cart);
-        $products = Product::query()
-            ->whereIn('id', $productIds)
-            ->where('is_active', true)
-            ->get(['id', 'name', 'price']);
-
-        return DB::transaction(function () use ($request, $validated, $cart, $products) {
-            $items = $products->map(function (Product $product) use ($cart) {
-                $qty = (int) ($cart[$product->id] ?? 0);
-                $lineTotal = (float) $product->price * $qty;
-
-                return [
-                    'product' => $product,
-                    'quantity' => $qty,
-                    'line_total' => round($lineTotal, 2),
-                ];
-            })->values();
-
-            $subtotal = round($items->sum('line_total'), 2);
-            $tax = 0;
-            $total = $subtotal + $tax;
-
-            $order = Order::create([
-                'user_id' => $request->user()?->id,
-                'status' => 'pending',
-                'customer_name' => $validated['customer_name'],
-                'customer_email' => $validated['customer_email'],
-                'customer_phone' => $validated['customer_phone'] ?? null,
-                'currency' => 'INR',
-                'subtotal' => $subtotal,
-                'tax' => $tax,
-                'total' => $total,
-                'notes' => $validated['notes'] ?? null,
-            ]);
-
-            foreach ($items as $item) {
-                /** @var Product $product */
-                $product = $item['product'];
-
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'quantity' => $item['quantity'],
-                    'line_total' => $item['line_total'],
-                ]);
-            }
-
-            $request->session()->forget('cart');
-
-            return Redirect::route('home')->with('success', 'Order placed successfully.');
-        });
+    /**
+     * Get saved addresses for logged-in user.
+     */
+    protected function getSavedAddresses($user): array
+    {
+        // TODO: Implement address book feature
+        // For now, return empty array
+        return [];
     }
 }

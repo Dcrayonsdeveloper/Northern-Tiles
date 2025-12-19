@@ -45,7 +45,7 @@ class FooterConfigService
                 'defaultTitle' => 'Shop',
                 'defaultItems' => [
                     ['label' => 'All Products', 'url' => '/shop', 'sort' => 10],
-                    ['label' => 'Categories', 'url' => '/categories', 'sort' => 20],
+                    ['label' => 'Collections', 'url' => '/collections', 'sort' => 20],
                     ['label' => 'New Arrivals', 'url' => '/shop?sort=newest', 'sort' => 30],
                     ['label' => 'Best Sellers', 'url' => '/shop?sort=popular', 'sort' => 40],
                 ],
@@ -55,10 +55,10 @@ class FooterConfigService
                 'titleKey' => 'footer.company.title',
                 'defaultTitle' => 'Company',
                 'defaultItems' => [
-                    ['label' => 'About Us', 'url' => '/pages/about', 'sort' => 10],
-                    ['label' => 'Contact', 'url' => '/pages/contact', 'sort' => 20],
-                    ['label' => 'Careers', 'url' => '/pages/careers', 'sort' => 30],
-                    ['label' => 'Press', 'url' => '/pages/press', 'sort' => 40],
+                    ['label' => 'About Us', 'url' => '/about', 'sort' => 10],
+                    ['label' => 'Contact', 'url' => '/contact', 'sort' => 20],
+                    ['label' => 'Careers', 'url' => '/page/careers', 'sort' => 30],
+                    ['label' => 'Press', 'url' => '/page/press', 'sort' => 40],
                 ],
             ],
             'help' => [
@@ -66,9 +66,9 @@ class FooterConfigService
                 'titleKey' => 'footer.help.title',
                 'defaultTitle' => 'Help & Support',
                 'defaultItems' => [
-                    ['label' => 'FAQs', 'url' => '/pages/faqs', 'sort' => 10],
-                    ['label' => 'Track Order', 'url' => '/pages/track-order', 'sort' => 20],
-                    ['label' => 'Guides', 'url' => '/pages/guides', 'sort' => 30],
+                    ['label' => 'FAQs', 'url' => '/page/faqs', 'sort' => 10],
+                    ['label' => 'Track Order', 'url' => '/page/track-order', 'sort' => 20],
+                    ['label' => 'Guides', 'url' => '/page/guides', 'sort' => 30],
                 ],
             ],
             'policies' => [
@@ -76,11 +76,11 @@ class FooterConfigService
                 'titleKey' => 'footer.policies.title',
                 'defaultTitle' => 'Policies',
                 'defaultItems' => [
-                    ['label' => 'Payment Policy', 'url' => '/pages/payment-policy', 'sort' => 10],
-                    ['label' => 'Warranty', 'url' => '/pages/warranty', 'sort' => 20],
-                    ['label' => 'Returns & Refunds', 'url' => '/pages/returns-and-refunds', 'sort' => 30],
-                    ['label' => 'Shipping Policy', 'url' => '/pages/shipping-policy', 'sort' => 40],
-                    ['label' => 'Terms & Conditions', 'url' => '/pages/terms-and-conditions', 'sort' => 50],
+                    ['label' => 'Payment Policy', 'url' => '/page/payment-policy', 'sort' => 10],
+                    ['label' => 'Warranty', 'url' => '/page/warranty', 'sort' => 20],
+                    ['label' => 'Returns & Refunds', 'url' => '/page/returns-and-refunds', 'sort' => 30],
+                    ['label' => 'Shipping Policy', 'url' => '/page/shipping-policy', 'sort' => 40],
+                    ['label' => 'Terms & Conditions', 'url' => '/page/terms-and-conditions', 'sort' => 50],
                 ],
             ],
         ];

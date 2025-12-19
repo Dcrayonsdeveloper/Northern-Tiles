@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import Container from '@/Components/Container';
 
 function MenuLink({ item }) {
     const href = item?.url ?? '#';
@@ -42,9 +43,9 @@ export default function TopBar({ topBar, menuItems = [] }) {
 
     return (
         <div className="text-xs" style={{ backgroundColor, color: textColor }}>
-            <div
+            <Container
                 className={
-                    'mx-auto flex max-w-7xl items-center px-4 py-2 sm:px-6 lg:px-8' +
+                    'flex items-center py-2' +
                     (showAnnouncement ? ' justify-between' : ' justify-end')
                 }
             >
@@ -61,7 +62,7 @@ export default function TopBar({ topBar, menuItems = [] }) {
                         <MenuLink key={(item?.label ?? 'item') + idx} item={item} />
                     ))}
                 </div>
-            </div>
+            </Container>
         </div>
     );
 }

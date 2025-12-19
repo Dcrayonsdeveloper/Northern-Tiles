@@ -84,6 +84,35 @@ class DictionarySeeder extends Seeder
             ['locale' => 'en', 'dkey' => 'home.hero.slide3.p', 'value_text' => 'Join thousands of satisfied customers. Our most popular products chosen by people who know quality when they see it.', 'group' => 'home'],
             ['locale' => 'en', 'dkey' => 'home.hero.slide3.cta_primary', 'value_text' => 'View Best Sellers', 'group' => 'home'],
             ['locale' => 'en', 'dkey' => 'home.hero.slide3.image_alt', 'value_text' => 'Best sellers collection', 'group' => 'home'],
+
+            // Home Hero Slides (alternate keys used in HomePageSeeder)
+            ['locale' => 'en', 'dkey' => 'home.hero.slide1.heading', 'value_text' => 'Discover Premium Quality Products', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide1.description', 'value_text' => 'Explore our curated collection of high-quality products designed to enhance your lifestyle.', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide1.alt', 'value_text' => 'Premium products collection', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide1.cta1', 'value_text' => 'Shop Now', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide1.cta2', 'value_text' => 'Browse Categories', 'group' => 'home'],
+
+            ['locale' => 'en', 'dkey' => 'home.hero.slide2.heading', 'value_text' => 'New Arrivals Just Landed', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide2.description', 'value_text' => 'Be the first to discover our latest additions. Fresh styles updated weekly.', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide2.alt', 'value_text' => 'New arrivals collection', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.slide2.cta1', 'value_text' => 'View New Arrivals', 'group' => 'home'],
+
+            // Common Hero CTAs
+            ['locale' => 'en', 'dkey' => 'home.hero.cta.shop_now', 'value_text' => 'Shop Now', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.cta.learn_more', 'value_text' => 'Learn More', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.cta.browse_categories', 'value_text' => 'Browse Categories', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.hero.cta.view_deals', 'value_text' => 'View Deals', 'group' => 'home'],
+
+            // Home Section Titles
+            ['locale' => 'en', 'dkey' => 'home.categories.title', 'value_text' => 'Shop by Category', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.new_arrivals.title', 'value_text' => 'New Arrivals', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.discounts.title', 'value_text' => 'Hot Deals', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.gallery.title', 'value_text' => 'Gallery', 'group' => 'home'],
+
+            // Home Video Section
+            ['locale' => 'en', 'dkey' => 'home.video.heading', 'value_text' => 'Our Story', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.video.subheading', 'value_text' => 'Discover the passion behind our products', 'group' => 'home'],
+            ['locale' => 'en', 'dkey' => 'home.video.cta', 'value_text' => 'Learn More About Us', 'group' => 'home'],
         ];
 
         foreach ($items as $item) {

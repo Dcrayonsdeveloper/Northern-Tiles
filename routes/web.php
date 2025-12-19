@@ -5,12 +5,12 @@ use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\SiteSettingsController;
 use App\Http\Controllers\Admin\UiSettingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CheckoutController;
+use App\Http\Controllers\Storefront\CollectionController;
 use App\Http\Controllers\Storefront\ContactController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\PageController;
@@ -31,16 +31,51 @@ use Inertia\Inertia;
 
 Route::get('/', HomeController::class)->name('home');
 
+// Shop routes
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/shop/{category}', [ShopController::class, 'index'])->name('shop.category');
+Route::get('/shop/{category}/{subcategory}', [ShopController::class, 'index'])->name('shop.subcategory');
 Route::get('/products/{product}', [ShopController::class, 'show'])->name('products.show');
 
+// Collections routes
+Route::get('/collections', [CollectionController::class, 'index'])->name('collections.index');
+Route::get('/collections/{handle}', [CollectionController::class, 'show'])->name('collections.show');
+
+// Cart routes (Inertia pages)
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
-Route::put('/cart/{product}', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
+Route::patch('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
 
+// Cart API routes (JSON endpoints for AJAX - must be in web routes for session access)
+Route::prefix('api/cart')->name('api.cart.')->group(function () {
+    Route::get('count', [\App\Http\Controllers\Api\CartController::class, 'count'])->name('count');
+    Route::get('/', [\App\Http\Controllers\Api\CartController::class, 'index'])->name('index');
+    Route::post('add', [\App\Http\Controllers\Api\CartController::class, 'add'])->name('add');
+    Route::post('buy-now', [\App\Http\Controllers\Api\CartController::class, 'buyNow'])->name('buy-now');
+    Route::put('{item}', [\App\Http\Controllers\Api\CartController::class, 'update'])->name('update');
+    Route::delete('{item}', [\App\Http\Controllers\Api\CartController::class, 'remove'])->name('remove');
+    Route::delete('/', [\App\Http\Controllers\Api\CartController::class, 'clear'])->name('clear');
+
+    // Coupon routes
+    Route::post('coupon/apply', [\App\Http\Controllers\Api\CouponController::class, 'apply'])->name('coupon.apply');
+    Route::delete('coupon', [\App\Http\Controllers\Api\CouponController::class, 'remove'])->name('coupon.remove');
+    Route::post('coupon/validate', [\App\Http\Controllers\Api\CouponController::class, 'validate'])->name('coupon.validate');
+});
+
+// Reviews API routes
+Route::prefix('api/reviews')->name('api.reviews.')->group(function () {
+    Route::get('products/{productId}', [\App\Http\Controllers\Api\ReviewController::class, 'index'])->name('index');
+    Route::get('products/{productId}/stats', [\App\Http\Controllers\Api\ReviewController::class, 'stats'])->name('stats');
+    Route::post('products/{productId}', [\App\Http\Controllers\Api\ReviewController::class, 'store'])->name('store');
+    Route::get('products/{productId}/can-review', [\App\Http\Controllers\Api\ReviewController::class, 'canReview'])->name('can-review');
+    Route::post('{reviewId}/helpful', [\App\Http\Controllers\Api\ReviewController::class, 'markHelpful'])->name('helpful');
+});
+
+// Checkout routes (guest checkout allowed)
 Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.index');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 
 Route::get('/about', [PageController::class, 'about'])->name('pages.about');
 Route::get('/contact', [PageController::class, 'contact'])->name('pages.contact');
@@ -93,7 +128,6 @@ Route::middleware(['auth', 'verified', AdminMiddleware::class])
         Route::put('/dashboard/layout', [DashboardLayoutController::class, 'update'])->name('dashboard.layout.update');
         Route::resource('orders', OrderController::class)->only(['index', 'show', 'update']);
         Route::resource('categories', CategoryController::class)->except(['show']);
-        Route::resource('products', ProductController::class)->except(['show']);
         Route::resource('users', UserController::class)->only(['index', 'edit', 'update']);
         Route::resource('messages', ContactMessageController::class)->only(['index', 'show', 'update', 'destroy']);
         Route::get('/settings/ui', [UiSettingsController::class, 'edit'])->name('settings.ui.edit');

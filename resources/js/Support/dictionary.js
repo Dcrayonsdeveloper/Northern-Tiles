@@ -12,6 +12,9 @@ function replacePlaceholders(value, params) {
     return out;
 }
 
+/**
+ * Hook version - uses Inertia page props for dictionary.
+ */
 export function useD() {
     const { dictionary } = usePage().props;
     const items = dictionary?.items ?? {};
@@ -20,6 +23,26 @@ export function useD() {
         const val = items?.[key] ?? defaultValue ?? key;
         return replacePlaceholders(val, params);
     };
+}
+
+/**
+ * Simple function version - returns default value if key not found.
+ * Useful in components where hook usage isn't necessary.
+ * Usage: d('cart.title', 'Shopping Cart')
+ */
+export function d(key, defaultValue = null, params = {}) {
+    // Try to get dictionary from global window if available
+    const items = window.__INERTIA_DICTIONARY_ITEMS__ ?? {};
+    const val = items?.[key] ?? defaultValue ?? key;
+    return replacePlaceholders(val, params);
+}
+
+/**
+ * Initialize dictionary items for non-hook usage.
+ * Should be called once on app initialization.
+ */
+export function initDictionary(items) {
+    window.__INERTIA_DICTIONARY_ITEMS__ = items ?? {};
 }
 
 export function previewValue(valueText) {

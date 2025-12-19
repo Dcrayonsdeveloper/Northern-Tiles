@@ -1,14 +1,57 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import CartSidebar from '@/Components/Cart/CartSidebar';
+import Container from '@/Components/Container';
 import { Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { CartIcon, MenuIcon, SearchIcon, UserIcon } from './Icons';
 import MegaMenu from './MegaMenu';
 import MobileMenu from './MobileMenu';
 import TopBar from './TopBar';
 
-export default function StorefrontHeader({ user, cartCount = 0, topBar, menus }) {
+export default function StorefrontHeader({ user, cartCount: initialCartCount = 0, topBar, menus }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [cartSidebarOpen, setCartSidebarOpen] = useState(false);
+    const [cartCount, setCartCount] = useState(initialCartCount);
+
+    // Sync cart count when props change (after Inertia page refresh)
+    useEffect(() => {
+        setCartCount(initialCartCount);
+    }, [initialCartCount]);
+
+    // Listen for cart-updated events to sync cart count
+    useEffect(() => {
+        const handleCartUpdate = async (event) => {
+            if (event.detail?.count !== undefined) {
+                setCartCount(event.detail.count);
+            } else {
+                // Fetch current count from API if not provided
+                try {
+                    const response = await fetch('/api/cart/count', {
+                        headers: { 'Accept': 'application/json' },
+                        credentials: 'same-origin',
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        setCartCount(data.count);
+                    }
+                } catch (e) {
+                    // Silently fail
+                }
+            }
+        };
+
+        const handleOpenCartSidebar = () => {
+            setCartSidebarOpen(true);
+        };
+
+        window.addEventListener('cart-updated', handleCartUpdate);
+        window.addEventListener('open-cart-sidebar', handleOpenCartSidebar);
+        return () => {
+            window.removeEventListener('cart-updated', handleCartUpdate);
+            window.removeEventListener('open-cart-sidebar', handleOpenCartSidebar);
+        };
+    }, []);
 
     const topMenuItems = menus?.header_top ?? [];
 
@@ -37,7 +80,7 @@ export default function StorefrontHeader({ user, cartCount = 0, topBar, menus })
         <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
             <TopBar topBar={topBar} menuItems={topMenuItems} />
 
-            <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+            <Container className="relative flex items-center justify-between py-3">
                 <Link href={route('home')} className="flex items-center">
                     <ApplicationLogo className="h-auto w-auto max-w-[110px]" />
                     <span className="sr-only">Jikra</span>
@@ -58,20 +101,22 @@ export default function StorefrontHeader({ user, cartCount = 0, topBar, menus })
                         <SearchIcon className="h-[19px] w-[19px]" />
                     </Link>
 
-                    <Link
-                        href={route('cart.index')}
+                    <button
+                        type="button"
+                        onClick={() => setCartSidebarOpen(true)}
                         className="relative rounded p-2 text-gray-400 hover:text-gray-600"
-                        aria-label="Cart"
+                        aria-label="Open cart"
                     >
                         <CartIcon className="h-[19px] w-[19px]" />
-                        <span
-                            className="cartCount absolute -right-1 -top-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-gray-900 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white"
-                            data-cart-count=""
-                            style={{ display: cartCount > 0 ? 'inline-flex' : 'none' }}
-                        >
-                            {cartCount}
-                        </span>
-                    </Link>
+                        {cartCount > 0 && (
+                            <span
+                                className="cartCount absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-[10px] font-semibold text-white"
+                                data-cart-count=""
+                            >
+                                {cartCount > 99 ? '99+' : cartCount}
+                            </span>
+                        )}
+                    </button>
 
                     {user ? (
                         <>
@@ -109,13 +154,18 @@ export default function StorefrontHeader({ user, cartCount = 0, topBar, menus })
                         <MenuIcon className="h-6 w-6" />
                     </button>
                 </div>
-            </div>
+            </Container>
 
             <MobileMenu
                 open={mobileMenuOpen}
                 onClose={() => setMobileMenuOpen(false)}
                 navItems={mobileItems}
                 user={user}
+            />
+
+            <CartSidebar
+                open={cartSidebarOpen}
+                onClose={() => setCartSidebarOpen(false)}
             />
         </header>
     );
