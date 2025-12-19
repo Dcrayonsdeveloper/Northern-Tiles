@@ -28,3 +28,6 @@ Thumbs.db
 /deploy/build.zip
 /deploy_*.zip
 nul
+
+# SSH Keys (NEVER commit these!)
+/.ssh-keys/
