@@ -140,10 +140,10 @@ jobs:
           chmod -R 644 public/build/assets/* 2>/dev/null || true
 
           echo "=== Clearing caches ==="
-          php artisan cache:clear
-          php artisan config:clear
-          php artisan view:clear
-          php artisan route:clear
+          /usr/bin/php8.3 artisan cache:clear || php artisan cache:clear
+          /usr/bin/php8.3 artisan config:clear || php artisan config:clear
+          /usr/bin/php8.3 artisan view:clear || php artisan view:clear
+          /usr/bin/php8.3 artisan route:clear || php artisan route:clear
 
           echo "=== Deployment complete! ==="
           DEPLOY_SCRIPT
@@ -152,13 +152,13 @@ jobs:
         run: |
           ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
-            "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && php artisan migrate --force"
+            "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && /usr/bin/php8.3 artisan migrate --force"
 
       - name: Run seeders
         run: |
           ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
-            "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && php artisan db:seed --force"
+            "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && /usr/bin/php8.3 artisan db:seed --force"
 
       - name: Deployment summary
         run: |
