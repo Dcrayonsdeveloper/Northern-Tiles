@@ -23,11 +23,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create/update main admin user
+        // Note: Don't use Hash::make() - User model has 'hashed' cast on password
         User::updateOrCreate(
             ['email' => 'admin@jikra.dcrayons.app'],
             [
                 'name' => 'Jikra Admin',
-                'password' => Hash::make('#defineRahul123.h'),
+                'password' => '#defineRahul123.h',
                 'is_admin' => true,
                 'email_verified_at' => now(),
             ]
@@ -38,7 +39,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'rahul@dcrayons.app'],
             [
                 'name' => 'Rahul Admin',
-                'password' => Hash::make('password'),
+                'password' => 'password',
                 'is_admin' => true,
                 'email_verified_at' => now(),
             ]
@@ -49,7 +50,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'test@example.com'],
             [
                 'name' => 'Test User',
-                'password' => Hash::make('password'),
+                'password' => 'password',
                 'is_admin' => true,
                 'email_verified_at' => now(),
             ]
