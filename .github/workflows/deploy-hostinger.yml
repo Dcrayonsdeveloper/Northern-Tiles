@@ -108,22 +108,25 @@ jobs:
         with:
           name: deployment-package
 
-      - name: Setup SSH
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.HOSTINGER_SSH_KEY }}
+
+      - name: Add host to known_hosts
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${{ secrets.HOSTINGER_SSH_PORT }} ${{ secrets.HOSTINGER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Upload to server
         run: |
-          scp -i ~/.ssh/deploy_key -P ${{ secrets.HOSTINGER_SSH_PORT }} \
+          scp -P ${{ secrets.HOSTINGER_SSH_PORT }} \
             deploy.tar.gz \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }}:${{ secrets.HOSTINGER_REMOTE_PATH }}/
 
       - name: Deploy on server
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} << 'DEPLOY_SCRIPT'
 
           cd ${{ secrets.HOSTINGER_REMOTE_PATH }}
@@ -148,20 +151,16 @@ jobs:
       - name: Run migrations (if requested)
         if: github.event.inputs.run_migrations == 'true'
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
             "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && php artisan migrate --force"
 
       - name: Run seeders (if requested)
         if: github.event.inputs.run_seeders == 'true'
         run: |
-          ssh -i ~/.ssh/deploy_key -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
             "cd ${{ secrets.HOSTINGER_REMOTE_PATH }} && php artisan db:seed --force"
-
-      - name: Cleanup SSH
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
 
       - name: Deployment summary
         run: |
