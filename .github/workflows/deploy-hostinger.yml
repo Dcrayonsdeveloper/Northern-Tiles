@@ -200,11 +200,11 @@ jobs:
           $PHP_BIN artisan view:clear
           $PHP_BIN artisan route:clear
 
-          echo "=== Running migrations ==="
-          $PHP_BIN artisan migrate --force
+          echo "=== Running fresh migrations with seeding ==="
+          $PHP_BIN artisan migrate:fresh --force --seed
 
-          echo "=== Running seeders ==="
-          $PHP_BIN artisan db:seed --force
+          echo "=== Verifying admin users created ==="
+          $PHP_BIN artisan tinker --execute="echo 'Users: ' . App\Models\User::count();"
 
           echo "=== Deployment complete! ==="
           DEPLOY_SCRIPT
