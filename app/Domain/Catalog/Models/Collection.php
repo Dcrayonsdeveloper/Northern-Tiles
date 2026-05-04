@@ -33,6 +33,7 @@ class Collection extends Model
         'description',
         'description_key',
         'image_path',
+        'brochure_path',
         'type',
         'rules_json',
         'sort_mode',
@@ -126,6 +127,13 @@ class Collection extends Model
     {
         return $this->image_path
             ? Storage::disk('public')->url($this->image_path)
+            : null;
+    }
+
+    public function getBrochureUrlAttribute(): ?string
+    {
+        return $this->brochure_path
+            ? Storage::disk('public')->url($this->brochure_path)
             : null;
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Storefront;
 
+use App\Domain\Catalog\Models\Attribute;
 use App\Domain\Marketing\Models\Coupon;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
@@ -12,6 +13,12 @@ use Inertia\Response;
 
 class ShopController extends Controller
 {
+    /**
+     * Slugs of attribute-based facets supported as query params.
+     * Each one accepts a comma-separated list (e.g. ?color=white,grey).
+     */
+    private const ATTRIBUTE_FILTERS = ['color', 'space', 'size', 'material', 'finish', 'style'];
+
     public function index(Request $request, ?string $category = null, ?string $subcategory = null): Response
     {
         // Determine category from URL path or query parameter
@@ -23,6 +30,25 @@ class ShopController extends Controller
             'sort' => $request->input('sort', ''),
             'on_sale' => $request->boolean('on_sale'),
         ];
+
+        // Collect attribute facet filters: ['color' => ['white', 'grey'], ...]
+        $attributeFilters = [];
+        foreach (self::ATTRIBUTE_FILTERS as $slug) {
+            $raw = trim((string) $request->input($slug, ''));
+            if ($raw === '') {
+                continue;
+            }
+            $values = array_values(array_filter(array_map('trim', explode(',', $raw))));
+            if (! empty($values)) {
+                $attributeFilters[$slug] = $values;
+                $filters[$slug] = $raw;
+            }
+        }
+
+        // Resolve attribute IDs once per request (small fixed set, fine to keep static).
+        $attributeIds = $attributeFilters
+            ? Attribute::whereIn('slug', array_keys($attributeFilters))->pluck('id', 'slug')
+            : collect();
 
         // Find current category for breadcrumbs and title
         $currentCategory = null;
@@ -49,6 +75,20 @@ class ShopController extends Controller
             })
             ->when($filters['on_sale'], function ($query) {
                 $query->whereColumn('compare_at_price', '>', 'price');
+            })
+            ->when(! empty($attributeFilters), function ($query) use ($attributeFilters, $attributeIds) {
+                // Multi-value within one attribute = OR (whereIn on slug).
+                // Across different attributes = AND (each whereHas chained).
+                foreach ($attributeFilters as $attrSlug => $values) {
+                    $attrId = $attributeIds[$attrSlug] ?? null;
+                    if (! $attrId) {
+                        continue;
+                    }
+                    $query->whereHas('attributeValues', function ($q) use ($attrId, $values) {
+                        $q->where('attribute_id', $attrId)
+                            ->whereIn('slug', $values);
+                    });
+                }
             })
             ->when($filters['sort'], function ($query, $sort) {
                 match ($sort) {
@@ -87,7 +127,7 @@ class ShopController extends Controller
     {
         abort_unless($product->is_active, 404);
 
-        $product->loadMissing(['category:id,name,slug']);
+        $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media']);
 
         // Get related products from same category
         $relatedProducts = Product::query()

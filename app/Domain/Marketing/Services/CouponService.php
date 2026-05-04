@@ -78,7 +78,7 @@ class CouponService
         if ($coupon->minimum_purchase && $subtotal < $coupon->minimum_purchase) {
             return [
                 'success' => false,
-                'error' => "Minimum purchase of ₹{$coupon->minimum_purchase} required for this coupon.",
+                'error' => "Minimum purchase of A\${$coupon->minimum_purchase} required for this coupon.",
                 'error_code' => 'minimum_not_met',
                 'minimum_purchase' => $coupon->minimum_purchase,
                 'current_subtotal' => $subtotal,
@@ -189,7 +189,7 @@ class CouponService
         if ($coupon->minimum_purchase && $subtotal < $coupon->minimum_purchase) {
             return [
                 'valid' => false,
-                'error' => "Minimum purchase of ₹{$coupon->minimum_purchase} required.",
+                'error' => "Minimum purchase of A\${$coupon->minimum_purchase} required.",
             ];
         }
 
@@ -233,9 +233,9 @@ class CouponService
         }
 
         if ($coupon->type === Coupon::TYPE_PERCENTAGE) {
-            return "Coupon applied! You save {$coupon->value}% (₹" . number_format($discount, 2) . ")";
+            return "Coupon applied! You save {$coupon->value}% ($" . number_format($discount, 2) . ")";
         }
 
-        return "Coupon applied! You save ₹" . number_format($discount, 2);
+        return "Coupon applied! You save $" . number_format($discount, 2);
     }
 }

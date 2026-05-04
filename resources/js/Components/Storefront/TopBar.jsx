@@ -35,7 +35,7 @@ export default function TopBar({ topBar, menuItems = [] }) {
 
     const showAnnouncement = Boolean(topBar?.enabled);
 
-    const backgroundColor = topBar?.backgroundColor ?? '#205258';
+    const backgroundColor = topBar?.backgroundColor ?? '#138ee9';
     const textColor = topBar?.textColor ?? '#ffffff';
     const message = topBar?.message ?? '';
     const linkLabel = topBar?.link?.label;

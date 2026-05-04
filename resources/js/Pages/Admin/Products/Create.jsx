@@ -92,6 +92,7 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
         length_mm: '',
         width_mm: '',
         height_mm: '',
+        sqm_per_box: '',
         is_digital: false,
         requires_shipping: true,
         status: 'draft',
@@ -302,6 +303,19 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
                                             onChange={(e) => setData('height_mm', e.target.value)}
                                             className="mt-1 admin-input w-full"
                                         />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700">m² per box</label>
+                                        <input
+                                            type="number"
+                                            step="0.0001"
+                                            min="0"
+                                            value={data.sqm_per_box}
+                                            onChange={(e) => setData('sqm_per_box', e.target.value)}
+                                            className="mt-1 admin-input w-full"
+                                            placeholder="e.g. 1.44"
+                                        />
+                                        <p className="mt-1 text-[10px] text-gray-400">Coverage per box (used for cart box count)</p>
                                     </div>
                                 </div>
                             )}

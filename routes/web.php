@@ -63,6 +63,9 @@ Route::prefix('api/cart')->name('api.cart.')->group(function () {
     Route::post('coupon/validate', [\App\Http\Controllers\Api\CouponController::class, 'validate'])->name('coupon.validate');
 });
 
+// Live product search (JSON)
+Route::get('api/search', [\App\Http\Controllers\Api\SearchController::class, 'search'])->name('api.search');
+
 // Reviews API routes
 Route::prefix('api/reviews')->name('api.reviews.')->group(function () {
     Route::get('products/{productId}', [\App\Http\Controllers\Api\ReviewController::class, 'index'])->name('index');
@@ -88,6 +91,17 @@ Route::prefix('blog')->name('blog.')->group(function () {
     Route::get('/author/{slug}', [BlogController::class, 'author'])->name('author');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
 });
+
+// Policy pages - clean URLs
+Route::get('/privacy-policy', [PublicPageController::class, 'show'])
+    ->defaults('slug', 'privacy-policy')
+    ->name('privacy-policy');
+Route::get('/terms-of-service', [PublicPageController::class, 'show'])
+    ->defaults('slug', 'terms-of-service')
+    ->name('terms-of-service');
+Route::get('/return-policy', [PublicPageController::class, 'show'])
+    ->defaults('slug', 'return-policy')
+    ->name('return-policy');
 
 // CMS Pages - supports hierarchical slugs like /page/about/team
 Route::get('/page/{slug}', [PublicPageController::class, 'show'])

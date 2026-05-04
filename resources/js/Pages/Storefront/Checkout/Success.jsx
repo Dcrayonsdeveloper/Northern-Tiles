@@ -28,7 +28,7 @@ function OrderItem({ item, currency }) {
 }
 
 export default function Success({ order }) {
-    const currency = '₹';
+    const currency = '$';
 
     return (
         <PublicLayout>

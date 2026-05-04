@@ -91,9 +91,9 @@ export default function Create({ template = null, types, variables }) {
             '{{customer_email}}': 'customer@example.com',
             '{{customer_name}}': 'John Doe',
             '{{cart_url}}': '#',
-            '{{cart_items}}': '<p>Sample Product - ₹999</p>',
+            '{{cart_items}}': '<p>Sample Product - $999</p>',
             '{{cart_items_count}}': '3',
-            '{{cart_total}}': '₹2,997',
+            '{{cart_total}}': '$2,997',
             '{{unsubscribe_url}}': '#',
             '{{subject}}': data.subject || 'Email Subject',
         };

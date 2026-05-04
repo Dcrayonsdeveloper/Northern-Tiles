@@ -23,11 +23,17 @@ export default {
         extend: {
             colors: {
                 brand: {
-                    DEFAULT: '#697416',
+                    DEFAULT: '#085a9c',
+                    light: '#0b6fbf',
+                    dark: '#063d6b',
                 },
+                dark: '#222222',
+                muted: '#555555',
+                light: '#f5f5f5',
             },
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['DM Sans', ...defaultTheme.fontFamily.sans],
+                heading: ['Playfair Display', ...defaultTheme.fontFamily.serif],
             },
         },
     },

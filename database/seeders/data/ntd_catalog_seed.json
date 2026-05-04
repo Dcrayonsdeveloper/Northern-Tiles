@@ -1,0 +1,532 @@
+{
+  "taxonomy": {
+    "categories": [
+      { "name": "Hybrid Flooring", "slug": "hybrid-flooring", "parent": null },
+      { "name": "Timber Oak", "slug": "timber-oak", "parent": "hybrid-flooring" },
+      { "name": "Herringbone", "slug": "herringbone", "parent": "hybrid-flooring" },
+      { "name": "Tile-Look", "slug": "tile-look", "parent": "hybrid-flooring" },
+
+      { "name": "Timber Products", "slug": "timber-products", "parent": null },
+      { "name": "Solid Oak Flooring", "slug": "solid-oak", "parent": "timber-products" },
+      { "name": "Engineered Oak Flooring", "slug": "engineered-oak", "parent": "timber-products" },
+
+      { "name": "NTD Tiles", "slug": "ntd-tiles", "parent": null },
+      { "name": "Porcelain Tiles", "slug": "porcelain", "parent": "ntd-tiles" },
+      { "name": "Subway Tiles", "slug": "subway", "parent": "ntd-tiles" },
+      { "name": "External Porcelain", "slug": "external-porcelain", "parent": "ntd-tiles" },
+      { "name": "Pool Coping", "slug": "pool-coping", "parent": "ntd-tiles" },
+      { "name": "Specialty Tiles", "slug": "specialty-tiles", "parent": "ntd-tiles" },
+
+      { "name": "Stone", "slug": "stone", "parent": null },
+
+      { "name": "Trade Supplies", "slug": "trade-supplies", "parent": null },
+      { "name": "Levelling Systems", "slug": "levelling-systems", "parent": "trade-supplies" },
+      { "name": "Waterproofing", "slug": "waterproofing", "parent": "trade-supplies" },
+      { "name": "Adhesives & Grouts", "slug": "adhesives-grouts", "parent": "trade-supplies" },
+
+      { "name": "Builders Range", "slug": "builders-range", "parent": null }
+    ],
+    "tags": [
+      "porcelain", "timber", "hybrid", "waterproof", "indoor", "outdoor",
+      "oak", "herringbone", "stone", "terrazzo", "subway", "pool",
+      "trade", "mapei", "ardex", "soudal", "20mm", "10mm", "builders"
+    ],
+    "collections": [
+      { "name": "Builders Range", "slug": "builders-range", "type": "manual", "rules": null },
+      { "name": "Specialty Tiles", "slug": "specialty-tiles", "type": "manual", "rules": null },
+      { "name": "Stone Collection", "slug": "stone", "type": "manual", "rules": null },
+      { "name": "New Arrivals", "slug": "new-arrivals", "type": "smart", "rules": { "field": "created_at", "operator": "last_n_days", "value": "30" } },
+      { "name": "All Tiles", "slug": "all-tiles", "type": "manual", "rules": null }
+    ]
+  },
+  "products": [
+    {
+      "name": "NTD Hybrid Flooring - Timber Oak 7mm",
+      "handle": "ntd-hybrid-flooring-timber-oak-7mm",
+      "brand": "NTD",
+      "category_path": ["Hybrid Flooring", "Timber Oak"],
+      "tags": ["hybrid", "waterproof", "oak", "indoor"],
+      "seo": {
+        "meta_title": "NTD Hybrid Flooring Timber Oak 7mm | Northern TILE Distributors",
+        "meta_description": "Waterproof rigid core hybrid flooring in timber oak finish. 7mm thickness. Available at Northern TILE Distributors, Thomastown VIC."
+      },
+      "content": {
+        "intro": "Premium waterproof hybrid flooring with a beautiful timber oak finish. Rigid core construction makes it suitable for all areas including wet areas.",
+        "benefits": [
+          "100% waterproof rigid core",
+          "Suitable for wet areas",
+          "Click-lock installation",
+          "UV resistant surface",
+          "Suitable over underfloor heating"
+        ],
+        "specs": [
+          "Thickness: 7mm",
+          "Width: 182mm",
+          "Length: 1220mm",
+          "Wear layer: 0.3mm",
+          "Coverage: 2.22m² per box"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-HF-OAK-7MM", "options": { "Size": "Per Box" }, "price": 45.00, "compare_at_price": 55.00, "stock_qty": 200, "is_active": true }
+      ]
+    },
+    {
+      "name": "NTD Hybrid Flooring - Herringbone 8.5mm",
+      "handle": "ntd-hybrid-flooring-herringbone-8-5mm",
+      "brand": "NTD",
+      "category_path": ["Hybrid Flooring", "Herringbone"],
+      "tags": ["hybrid", "waterproof", "herringbone", "indoor"],
+      "seo": {
+        "meta_title": "NTD Herringbone Hybrid Flooring 8.5mm | Northern TILE Distributors",
+        "meta_description": "Elegant herringbone pattern hybrid flooring. 8.5mm waterproof rigid core. Available wholesale at Northern TILE Distributors."
+      },
+      "content": {
+        "intro": "Stunning herringbone pattern hybrid flooring combining classic style with modern waterproof technology.",
+        "benefits": [
+          "Classic herringbone pattern",
+          "100% waterproof rigid core",
+          "Pre-attached underlay",
+          "Commercial grade wear layer",
+          "Low VOC certified"
+        ],
+        "specs": [
+          "Thickness: 8.5mm",
+          "Width: 90mm",
+          "Length: 450mm",
+          "Wear layer: 0.5mm",
+          "Coverage: 2.43m² per box"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-HF-HERR-8.5MM", "options": { "Size": "Per Box" }, "price": 58.00, "compare_at_price": 72.00, "stock_qty": 150, "is_active": true }
+      ]
+    },
+    {
+      "name": "NTD Hybrid Flooring - Tile-Look 9.5mm",
+      "handle": "ntd-hybrid-flooring-tile-look-9-5mm",
+      "brand": "NTD",
+      "category_path": ["Hybrid Flooring", "Tile-Look"],
+      "tags": ["hybrid", "waterproof", "indoor", "outdoor"],
+      "seo": {
+        "meta_title": "NTD Tile-Look Hybrid Flooring 9.5mm | Northern TILE Distributors",
+        "meta_description": "Modern tile-look hybrid flooring with rigid core. 9.5mm thickness. Trade pricing at Northern TILE Distributors, Melbourne."
+      },
+      "content": {
+        "intro": "Modern tile-look hybrid flooring that combines the appearance of stone or ceramic tiles with the comfort and ease of installation of hybrid flooring.",
+        "benefits": [
+          "Realistic tile appearance",
+          "Waterproof rigid core",
+          "Comfortable underfoot",
+          "Easy DIY installation",
+          "Suitable for commercial use"
+        ],
+        "specs": [
+          "Thickness: 9.5mm",
+          "Width: 300mm",
+          "Length: 600mm",
+          "Wear layer: 0.5mm",
+          "Coverage: 2.16m² per box"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-HF-TILE-9.5MM", "options": { "Size": "Per Box" }, "price": 65.00, "compare_at_price": 80.00, "stock_qty": 120, "is_active": true }
+      ]
+    },
+    {
+      "name": "NTD Solid Oak Timber Flooring",
+      "handle": "ntd-solid-oak-timber-flooring",
+      "brand": "NTD",
+      "category_path": ["Timber Products", "Solid Oak Flooring"],
+      "tags": ["timber", "oak", "indoor"],
+      "seo": {
+        "meta_title": "NTD Solid Oak Timber Flooring | Northern TILE Distributors",
+        "meta_description": "Premium solid oak timber flooring at wholesale prices. Northern TILE Distributors, 324 Settlement Road Thomastown VIC."
+      },
+      "content": {
+        "intro": "Premium solid oak timber flooring offering timeless beauty and exceptional durability. Ethically sourced and sustainably certified.",
+        "benefits": [
+          "100% solid oak construction",
+          "Can be sanded and refinished multiple times",
+          "Natural variation in grain and colour",
+          "Sustainably sourced timber",
+          "Suitable for nail or glue down installation"
+        ],
+        "specs": [
+          "Thickness: 19mm",
+          "Width: 130mm",
+          "Length: Random (900-1800mm)",
+          "Grade: Select and Better",
+          "Coverage: approximately 1.5m² per box"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-TIM-SOL-OAK", "options": { "Size": "Per m²" }, "price": 125.00, "compare_at_price": 155.00, "stock_qty": 80, "is_active": true }
+      ]
+    },
+    {
+      "name": "NTD Engineered Oak Timber Flooring",
+      "handle": "ntd-engineered-oak-timber-flooring",
+      "brand": "NTD",
+      "category_path": ["Timber Products", "Engineered Oak Flooring"],
+      "tags": ["timber", "oak", "indoor", "builders"],
+      "seo": {
+        "meta_title": "NTD Engineered Oak Timber Flooring | Northern TILE Distributors",
+        "meta_description": "Engineered oak timber flooring for residential and commercial projects. Wholesale pricing at NTD, Thomastown Melbourne."
+      },
+      "content": {
+        "intro": "Engineered oak timber flooring combining a genuine oak veneer top layer with a stable multi-ply core for improved dimensional stability.",
+        "benefits": [
+          "Real oak veneer surface",
+          "More stable than solid timber",
+          "Suitable over underfloor heating",
+          "Can be floated, glued or secret nailed",
+          "Suitable for below grade installations"
+        ],
+        "specs": [
+          "Thickness: 14mm",
+          "Width: 190mm",
+          "Length: 1900mm",
+          "Top Layer: 3mm genuine oak",
+          "Coverage: approximately 2.16m² per box"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-TIM-ENG-OAK", "options": { "Size": "Per m²" }, "price": 95.00, "compare_at_price": 120.00, "stock_qty": 100, "is_active": true }
+      ]
+    },
+    {
+      "name": "NTD SWARD Porcelain Tiles",
+      "handle": "ntd-sward-porcelain-tiles",
+      "brand": "NTD Tiles",
+      "category_path": ["NTD Tiles", "Porcelain Tiles"],
+      "tags": ["porcelain", "indoor", "outdoor", "builders"],
+      "seo": {
+        "meta_title": "NTD SWARD Porcelain Tiles | Northern TILE Distributors",
+        "meta_description": "NTD SWARD porcelain tiles collection. Wholesale pricing for builders and contractors at Northern TILE Distributors Melbourne."
+      },
+      "content": {
+        "intro": "The NTD SWARD range features premium Italian-inspired porcelain tiles suitable for both residential and commercial applications.",
+        "benefits": [
+          "Premium Italian-inspired design",
+          "Frost resistant for outdoor use",
+          "Slip resistant surface",
+          "Easy to clean and maintain",
+          "Suitable for walls and floors"
+        ],
+        "specs": [
+          "Material: Porcelain",
+          "Finish: Matte",
+          "Slip Rating: P3",
+          "Frost Resistant: Yes",
+          "Coverage: 1.44m² per box"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-SWARD-600", "options": { "Format": "600x600mm" }, "price": 42.00, "compare_at_price": 55.00, "stock_qty": 300, "is_active": true },
+        { "sku": "NTD-SWARD-300", "options": { "Format": "300x600mm" }, "price": 38.00, "compare_at_price": 48.00, "stock_qty": 250, "is_active": true }
+      ]
+    },
+    {
+      "name": "NTD BALTIC STONE Porcelain Tiles",
+      "handle": "ntd-baltic-stone-porcelain-tiles",
+      "brand": "NTD Tiles",
+      "category_path": ["NTD Tiles", "Porcelain Tiles"],
+      "tags": ["porcelain", "stone", "indoor", "outdoor"],
+      "seo": {
+        "meta_title": "NTD BALTIC STONE Porcelain Tiles | Northern TILE Distributors",
+        "meta_description": "BALTIC STONE porcelain tiles from NTD. Natural stone look for floors and walls. Trade pricing, Melbourne."
+      },
+      "content": {
+        "intro": "The BALTIC STONE range captures the natural beauty of stone in a durable porcelain format, perfect for creating sophisticated spaces.",
+        "benefits": [
+          "Natural stone appearance",
+          "Highly durable porcelain",
+          "Low maintenance surface",
+          "Suitable for heavy foot traffic",
+          "Consistent colour and finish"
+        ],
+        "specs": [
+          "Material: Porcelain",
+          "Finish: Semi-polished",
+          "Thickness: 10mm",
+          "Size: 600x1200mm",
+          "Coverage: 1.44m² per box"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-BALT-600X1200", "options": { "Format": "600x1200mm" }, "price": 55.00, "compare_at_price": 68.00, "stock_qty": 200, "is_active": true }
+      ]
+    },
+    {
+      "name": "NTD External Porcelain 20mm",
+      "handle": "ntd-external-porcelain-20mm",
+      "brand": "NTD Tiles",
+      "category_path": ["NTD Tiles", "External Porcelain"],
+      "tags": ["porcelain", "outdoor", "20mm", "builders"],
+      "seo": {
+        "meta_title": "NTD External Porcelain 20mm Pavers | Northern TILE Distributors",
+        "meta_description": "Heavy duty 20mm external porcelain pavers for outdoor areas. Wholesale pricing at Northern TILE Distributors Thomastown."
+      },
+      "content": {
+        "intro": "Heavy-duty 20mm external porcelain pavers engineered for outdoor use. Suitable for driveways, pool surrounds, and high-traffic outdoor areas.",
+        "benefits": [
+          "Extra thick 20mm construction",
+          "Frost and UV resistant",
+          "High slip resistance P5 rating",
+          "Suitable for driveways",
+          "No sealing required"
+        ],
+        "specs": [
+          "Material: Porcelain",
+          "Thickness: 20mm",
+          "Slip Rating: P5",
+          "Sizes: 600x600mm, 600x900mm",
+          "Coverage: 1.08m² per box"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-EXT-600X600-20", "options": { "Format": "600x600mm" }, "price": 72.00, "compare_at_price": 90.00, "stock_qty": 180, "is_active": true },
+        { "sku": "NTD-EXT-600X900-20", "options": { "Format": "600x900mm" }, "price": 85.00, "compare_at_price": 105.00, "stock_qty": 120, "is_active": true }
+      ]
+    },
+    {
+      "name": "NTD Subway Tiles",
+      "handle": "ntd-subway-tiles",
+      "brand": "NTD Tiles",
+      "category_path": ["NTD Tiles", "Subway Tiles"],
+      "tags": ["subway", "porcelain", "indoor"],
+      "seo": {
+        "meta_title": "NTD Subway Tiles | Northern TILE Distributors",
+        "meta_description": "Classic and modern subway tiles at wholesale prices. Northern TILE Distributors, Melbourne tile wholesaler."
+      },
+      "content": {
+        "intro": "Classic subway tiles for timeless kitchen and bathroom designs. Available in a range of colours and finishes.",
+        "benefits": [
+          "Timeless classic design",
+          "Available in multiple colours",
+          "Easy to clean glossy finish",
+          "Suitable for walls",
+          "Versatile stacking patterns"
+        ],
+        "specs": [
+          "Material: Ceramic/Porcelain",
+          "Standard Size: 75x300mm",
+          "Finish: Gloss",
+          "Application: Wall",
+          "Coverage: 1.08m² per box"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-SUB-WHITE", "options": { "Colour": "White" }, "price": 28.00, "compare_at_price": 35.00, "stock_qty": 400, "is_active": true },
+        { "sku": "NTD-SUB-GREY", "options": { "Colour": "Grey" }, "price": 30.00, "compare_at_price": 38.00, "stock_qty": 300, "is_active": true },
+        { "sku": "NTD-SUB-BLACK", "options": { "Colour": "Black" }, "price": 32.00, "compare_at_price": 40.00, "stock_qty": 250, "is_active": true }
+      ]
+    },
+    {
+      "name": "NTD Pool Coping Tiles",
+      "handle": "ntd-pool-coping-tiles",
+      "brand": "NTD Tiles",
+      "category_path": ["NTD Tiles", "Pool Coping"],
+      "tags": ["pool", "porcelain", "outdoor", "builders"],
+      "seo": {
+        "meta_title": "NTD Pool Coping Tiles | Northern TILE Distributors",
+        "meta_description": "Specialist pool coping tiles for pool surrounds. Wholesale pricing for builders at Northern TILE Distributors, Thomastown."
+      },
+      "content": {
+        "intro": "Specialist pool coping tiles designed for pool edges and surrounds. High slip resistance and chemical resistance for pool environments.",
+        "benefits": [
+          "High slip resistance P4/P5",
+          "Chemical and chlorine resistant",
+          "Bullnose edge for safety",
+          "UV stable colour",
+          "Suitable for saltwater pools"
+        ],
+        "specs": [
+          "Material: Porcelain",
+          "Size: 300x600mm (coping)",
+          "Thickness: 20mm",
+          "Slip Rating: P4",
+          "Finish: Brushed/Textured"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-POOL-COP-300", "options": { "Size": "300x600mm" }, "price": 95.00, "compare_at_price": 115.00, "stock_qty": 100, "is_active": true }
+      ]
+    },
+    {
+      "name": "NTD Natural Stone Pavers",
+      "handle": "ntd-natural-stone-pavers",
+      "brand": "NTD",
+      "category_path": ["Stone"],
+      "tags": ["stone", "outdoor", "builders"],
+      "seo": {
+        "meta_title": "NTD Natural Stone Pavers | Northern TILE Distributors",
+        "meta_description": "Ethically sourced natural stone pavers for indoor and outdoor use. Wholesale at Northern TILE Distributors Melbourne."
+      },
+      "content": {
+        "intro": "Premium ethically sourced natural stone pavers compliant with international trade standards. Ideal for outdoor entertaining areas and feature walls.",
+        "benefits": [
+          "Ethically sourced stone",
+          "International trade standards compliant",
+          "Unique natural variation in each piece",
+          "Suitable for indoor and outdoor use",
+          "Available in multiple stone types"
+        ],
+        "specs": [
+          "Material: Natural Stone",
+          "Sizes: 400x400mm, 600x600mm",
+          "Thickness: 30mm (pavers), 10mm (tiles)",
+          "Finish: Natural/Honed",
+          "Application: Floor, Wall, Outdoor"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-STONE-400", "options": { "Format": "400x400mm" }, "price": 68.00, "compare_at_price": 85.00, "stock_qty": 150, "is_active": true },
+        { "sku": "NTD-STONE-600", "options": { "Format": "600x600mm" }, "price": 85.00, "compare_at_price": 105.00, "stock_qty": 100, "is_active": true }
+      ]
+    },
+    {
+      "name": "Mapei Grout - Standard",
+      "handle": "mapei-grout-standard",
+      "brand": "Mapei",
+      "category_path": ["Trade Supplies", "Adhesives & Grouts"],
+      "tags": ["mapei", "trade", "builders"],
+      "seo": {
+        "meta_title": "Mapei Grout | Northern TILE Distributors",
+        "meta_description": "Mapei standard grout for tile installations. Trade pricing at Northern TILE Distributors, Thomastown Melbourne."
+      },
+      "content": {
+        "intro": "Mapei professional grout for tile and stone installations. Available in a range of colours to complement your tile selection.",
+        "benefits": [
+          "Professional grade formulation",
+          "Colour consistent results",
+          "Resistant to mould and mildew",
+          "Suitable for joints 1-12mm",
+          "Easy mixing and application"
+        ],
+        "specs": [
+          "Brand: Mapei",
+          "Type: Cementitious grout",
+          "Joint Size: 1-12mm",
+          "Coverage: Approx 5-10m² per kg",
+          "Available: Multiple colours"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "MAPEI-GROUT-2KG", "options": { "Size": "2kg" }, "price": 18.00, "compare_at_price": 24.00, "stock_qty": 500, "is_active": true },
+        { "sku": "MAPEI-GROUT-5KG", "options": { "Size": "5kg" }, "price": 38.00, "compare_at_price": 48.00, "stock_qty": 400, "is_active": true }
+      ]
+    },
+    {
+      "name": "ARDEX Tile Adhesive",
+      "handle": "ardex-tile-adhesive",
+      "brand": "ARDEX",
+      "category_path": ["Trade Supplies", "Adhesives & Grouts"],
+      "tags": ["ardex", "trade", "builders"],
+      "seo": {
+        "meta_title": "ARDEX Tile Adhesive | Northern TILE Distributors",
+        "meta_description": "ARDEX professional tile adhesive for all substrates. Trade pricing at Northern TILE Distributors, Melbourne."
+      },
+      "content": {
+        "intro": "ARDEX professional tile adhesive suitable for fixing tiles to all common substrates. Excellent bond strength for tiles up to 60x120cm.",
+        "benefits": [
+          "High bond strength",
+          "Non-slip formula for large format tiles",
+          "Suitable for wet areas",
+          "Extended open time",
+          "ARDEX warranty when used as system"
+        ],
+        "specs": [
+          "Brand: ARDEX",
+          "Type: Polymer modified cementitious adhesive",
+          "Coverage: 3-5kg/m² (10mm bed)",
+          "Open Time: 30-40 minutes",
+          "Available: 20kg bags"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "ARDEX-ADH-20KG", "options": { "Size": "20kg" }, "price": 52.00, "compare_at_price": 65.00, "stock_qty": 200, "is_active": true }
+      ]
+    },
+    {
+      "name": "Soudal Tile & Stone Silicone",
+      "handle": "soudal-tile-stone-silicone",
+      "brand": "Soudal",
+      "category_path": ["Trade Supplies", "Waterproofing"],
+      "tags": ["soudal", "trade", "waterproof"],
+      "seo": {
+        "meta_title": "Soudal Tile & Stone Silicone | Northern TILE Distributors",
+        "meta_description": "Soudal professional silicone for tile and stone joints. Available at Northern TILE Distributors, Thomastown Melbourne."
+      },
+      "content": {
+        "intro": "Professional grade Soudal silicone sealant designed specifically for tile and stone joints in wet areas, kitchens, and bathrooms.",
+        "benefits": [
+          "Mould resistant formula",
+          "Flexible joint movement",
+          "Adhesion to tiles, stone and most substrates",
+          "UV resistant",
+          "Available in multiple colours"
+        ],
+        "specs": [
+          "Brand: Soudal",
+          "Type: Acetoxy silicone",
+          "Application: Wet area joints",
+          "Cartridge Size: 300ml",
+          "Colours: White, Grey, Black, Beige"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "SOUDAL-SIL-WHITE", "options": { "Colour": "White" }, "price": 12.00, "compare_at_price": 16.00, "stock_qty": 300, "is_active": true },
+        { "sku": "SOUDAL-SIL-GREY", "options": { "Colour": "Grey" }, "price": 12.00, "compare_at_price": 16.00, "stock_qty": 250, "is_active": true }
+      ]
+    },
+    {
+      "name": "Tile Levelling System Kit",
+      "handle": "tile-levelling-system-kit",
+      "brand": "NTD",
+      "category_path": ["Trade Supplies", "Levelling Systems"],
+      "tags": ["trade", "builders", "porcelain"],
+      "seo": {
+        "meta_title": "Tile Levelling System Kit | Northern TILE Distributors",
+        "meta_description": "Professional tile levelling system for large format tiles. Trade pricing at Northern TILE Distributors, Melbourne."
+      },
+      "content": {
+        "intro": "Professional tile levelling system for achieving perfectly flat tile installations with large format tiles. Eliminates lippage and ensures consistent grout joints.",
+        "benefits": [
+          "Eliminates tile lippage",
+          "Consistent grout joint spacing",
+          "Suitable for large format tiles",
+          "Reusable clips",
+          "Speeds up installation time"
+        ],
+        "specs": [
+          "Clip Size: 2mm or 3mm spacer",
+          "Suitable for tiles: Up to 600x1200mm",
+          "Kit Contents: 100 clips + 50 wedges",
+          "Reusable wedges",
+          "Breaking force: Minimum 1000N"
+        ]
+      },
+      "published_at": "2024-01-01T00:00:00Z",
+      "variants": [
+        { "sku": "NTD-LEV-100KIT-2MM", "options": { "Spacer": "2mm" }, "price": 35.00, "compare_at_price": 45.00, "stock_qty": 200, "is_active": true },
+        { "sku": "NTD-LEV-100KIT-3MM", "options": { "Spacer": "3mm" }, "price": 35.00, "compare_at_price": 45.00, "stock_qty": 180, "is_active": true }
+      ]
+    }
+  ]
+}

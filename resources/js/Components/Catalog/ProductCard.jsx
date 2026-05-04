@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import FavoriteButton from './FavoriteButton';
 import { StarRating } from './StarRating';
 
@@ -8,77 +8,83 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, sho
         ? Math.round(((product.compare_at_price - product.price) / product.compare_at_price) * 100)
         : 0;
 
-    return (
-        <div className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-            {/* Image Container */}
-            <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
-                <img
-                    src={product.image_url || '/images/placeholder-product.svg'}
-                    alt={product.name}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                    onError={(e) => { e.target.src = '/images/placeholder-product.svg'; }}
-                />
+    const addToCart = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        router.post(route('cart.store'), { product_id: product.id, quantity: 1 }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                window.dispatchEvent(new CustomEvent('cart-updated'));
+                window.dispatchEvent(new CustomEvent('open-cart-sidebar'));
+            },
+        });
+    };
 
-                {/* Badges */}
-                <div className="absolute left-2 top-2 flex flex-col gap-1">
+    return (
+        <div className="group relative overflow-hidden rounded-none border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+            {/* Image */}
+            <Link href={route('products.show', product.slug)} className="block">
+                <div className="relative aspect-square w-full overflow-hidden bg-gray-50">
+                    <img
+                        src={product.image_url || '/images/placeholder-product.svg'}
+                        alt={product.name}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                        onError={(e) => { e.target.src = '/images/placeholder-product.svg'; }}
+                    />
+
+                    {/* Discount badge — top left pill */}
                     {hasDiscount && (
-                        <span className="rounded bg-red-500 px-2 py-0.5 text-xs font-semibold text-white">
-                            -{discountPercent}%
-                        </span>
+                        <div className="absolute left-0 top-3">
+                            <span className="rounded-r-full bg-brand px-3 py-1 text-[11px] font-bold text-white shadow-sm">
+                                {discountPercent}% off
+                            </span>
+                        </div>
                     )}
-                    {product.is_new && (
-                        <span className="rounded bg-green-500 px-2 py-0.5 text-xs font-semibold text-white">
-                            New
-                        </span>
+
+                    {product.is_new && !hasDiscount && (
+                        <div className="absolute left-0 top-3">
+                            <span className="rounded-r-full bg-green-500 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
+                                New
+                            </span>
+                        </div>
                     )}
+
                     {product.stock_quantity === 0 && (
-                        <span className="rounded bg-gray-500 px-2 py-0.5 text-xs font-semibold text-white">
-                            Out of Stock
-                        </span>
+                        <div className="absolute left-0 top-3">
+                            <span className="rounded-r-full bg-gray-500 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
+                                Out of Stock
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Favorite */}
+                    {showFavorite && (
+                        <div className="absolute right-2 top-2">
+                            <FavoriteButton
+                                productId={product.id}
+                                isFavorite={isFavorite}
+                                onToggle={onToggleFavorite}
+                                size="sm"
+                            />
+                        </div>
                     )}
                 </div>
-
-                {/* Favorite Button */}
-                {showFavorite && (
-                    <div className="absolute right-2 top-2">
-                        <FavoriteButton
-                            productId={product.id}
-                            isFavorite={isFavorite}
-                            onToggle={onToggleFavorite}
-                            size="sm"
-                        />
-                    </div>
-                )}
-            </div>
+            </Link>
 
             {/* Content */}
-            <div className="p-4">
-                {/* Category */}
-                {product.category?.name && (
-                    <div className="mb-1 text-xs font-medium text-gray-500">
-                        {product.category.name}
-                    </div>
-                )}
-
+            <div className="p-3">
                 {/* Title */}
                 <Link
                     href={route('products.show', product.slug)}
-                    className="block text-sm font-semibold text-gray-900 hover:text-brand line-clamp-2"
+                    className="block text-[13px] font-semibold text-gray-900 hover:text-brand line-clamp-2 min-h-[36px]"
                 >
                     {product.name}
                 </Link>
 
-                {/* Short Description */}
-                {product.short_description && (
-                    <p className="mt-1 text-xs text-gray-600 line-clamp-2">
-                        {product.short_description}
-                    </p>
-                )}
-
                 {/* Rating */}
                 {(product.average_rating > 0 || product.rating_avg > 0) && (product.review_count > 0 || product.rating_count > 0) && (
-                    <div className="mt-2">
+                    <div className="mt-1.5">
                         <StarRating
                             rating={product.average_rating || product.rating_avg || 0}
                             size="xs"
@@ -90,26 +96,33 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, sho
                 )}
 
                 {/* Price */}
-                <div className="mt-3 flex items-center justify-between">
+                <div className="mt-2">
                     <div className="flex items-baseline gap-2">
-                        <span className="text-base font-bold text-gray-900">
-                            ₹{product.price?.toLocaleString()}
+                        <span className="text-[16px] font-bold text-gray-900">
+                            ${parseFloat(product.price || 0).toFixed(2)}
                         </span>
+                        <span className="text-[11px] text-gray-400">/ sqm</span>
                         {hasDiscount && (
-                            <span className="text-sm text-gray-400 line-through">
-                                ₹{product.compare_at_price?.toLocaleString()}
+                            <span className="text-[13px] text-gray-400 line-through">
+                                ${parseFloat(product.compare_at_price || 0).toFixed(2)}
                             </span>
                         )}
                     </div>
+                    {hasDiscount && (
+                        <p className="mt-0.5 text-[12px] font-medium text-green-600">
+                            Save {discountPercent}%
+                        </p>
+                    )}
                 </div>
 
-                {/* Action Button */}
-                <Link
-                    href={route('products.show', product.slug)}
-                    className="mt-3 block w-full rounded-md bg-gray-900 px-3 py-2 text-center text-xs font-semibold text-white transition-colors hover:bg-gray-800"
+                {/* Add to Cart */}
+                <button
+                    type="button"
+                    onClick={addToCart}
+                    className="mt-3 block w-full rounded-none bg-brand px-3 py-2.5 text-center text-[13px] font-semibold text-white transition-colors hover:bg-brand-dark"
                 >
-                    View Details
-                </Link>
+                    Add to Cart
+                </button>
             </div>
         </div>
     );

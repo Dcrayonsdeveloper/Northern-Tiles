@@ -150,7 +150,7 @@ export default function Create({ types }) {
                                     </label>
                                     <div className="relative mt-1">
                                         {data.type === 'fixed_amount' && (
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                                         )}
                                         <input
                                             type="number"
@@ -215,7 +215,7 @@ export default function Create({ types }) {
                                     Minimum Purchase
                                 </label>
                                 <div className="relative mt-1">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -237,7 +237,7 @@ export default function Create({ types }) {
                                         Maximum Discount
                                     </label>
                                     <div className="relative mt-1">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                                         <input
                                             type="number"
                                             step="0.01"

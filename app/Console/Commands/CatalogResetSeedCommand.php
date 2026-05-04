@@ -40,7 +40,7 @@ class CatalogResetSeedCommand extends Command
             return 1;
         }
 
-        $jsonPath = database_path('seeders/data/jikra_catalog_seed.json');
+        $jsonPath = database_path('seeders/data/ntd_catalog_seed.json');
         if (!file_exists($jsonPath)) {
             $this->error("Seed file not found: {$jsonPath}");
             return 1;

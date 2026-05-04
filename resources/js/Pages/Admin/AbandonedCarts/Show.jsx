@@ -8,7 +8,7 @@ export default function Show({ cart, messages }) {
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-IN', {
             style: 'currency',
-            currency: cart.currency || 'INR'
+            currency: cart.currency || 'AUD'
         }).format(amount || 0);
     };
 

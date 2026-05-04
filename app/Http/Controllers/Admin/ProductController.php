@@ -279,6 +279,18 @@ class ProductController extends Controller
     }
 
     /**
+     * Update a single variant field inline.
+     */
+    public function updateVariant(Request $request, Product $product, int $variant): JsonResponse
+    {
+        $variantModel = $product->variants()->findOrFail($variant);
+        $allowed = ['sku', 'price', 'inventory_quantity', 'barcode', 'compare_at_price', 'cost', 'weight_grams'];
+        $variantModel->update($request->only($allowed));
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Search tags for autocomplete.
      */
     public function searchTags(Request $request): JsonResponse
@@ -427,6 +439,7 @@ class ProductController extends Controller
             'length_mm' => $product->length_mm,
             'width_mm' => $product->width_mm,
             'height_mm' => $product->height_mm,
+            'sqm_per_box' => $product->sqm_per_box,
 
             // Status
             'status' => $product->status,

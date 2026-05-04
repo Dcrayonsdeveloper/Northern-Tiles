@@ -354,7 +354,7 @@ export default function Index({
                                                         {method.price === 0 ? (
                                                             <span className="text-green-600">{d('checkout.free', 'Free')}</span>
                                                         ) : (
-                                                            `₹${method.price}`
+                                                            `$${method.price}`
                                                         )}
                                                     </span>
                                                 </label>
@@ -440,15 +440,28 @@ export default function Index({
                                                             </span>
                                                         </div>
                                                         <div className="flex-1">
-                                                            <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                                                                {item.name}
-                                                            </p>
-                                                            <p className="text-xs text-gray-500">
-                                                                ₹{item.price?.toLocaleString()} x {item.quantity}
-                                                            </p>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                                                                    {item.name}
+                                                                </p>
+                                                                {item.is_sample && (
+                                                                    <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-green-700">
+                                                                        Free Sample
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {!item.is_sample && (
+                                                                <p className="text-xs text-gray-500">
+                                                                    ${parseFloat(item.price || 0).toFixed(2)} / sqm × {parseFloat(item.quantity).toFixed(2)} m²
+                                                                </p>
+                                                            )}
                                                         </div>
                                                         <p className="text-sm font-semibold text-gray-900">
-                                                            ₹{item.line_total?.toLocaleString()}
+                                                            {item.is_sample ? (
+                                                                <span className="text-green-600">FREE</span>
+                                                            ) : (
+                                                                <>${parseFloat(item.line_total || 0).toFixed(2)}</>
+                                                            )}
                                                         </p>
                                                     </div>
                                                 ))}
@@ -460,32 +473,48 @@ export default function Index({
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-600">{d('checkout.summary.subtotal', 'Subtotal')}</span>
                                                 <span className="font-medium text-gray-900">
-                                                    ₹{totals.subtotal?.toLocaleString()}
+                                                    ${totals.subtotal?.toLocaleString()}
                                                 </span>
                                             </div>
                                             {totals.discount > 0 && (
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-600">{d('checkout.summary.discount', 'Discount')}</span>
                                                     <span className="font-medium text-green-600">
-                                                        -₹{totals.discount?.toLocaleString()}
+                                                        -${totals.discount?.toLocaleString()}
                                                     </span>
                                                 </div>
                                             )}
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-600">{d('checkout.summary.shipping', 'Shipping')}</span>
                                                 <span className="font-medium text-gray-900">
-                                                    {shippingCost === 0 ? (
-                                                        <span className="text-green-600">{d('checkout.free', 'Free')}</span>
-                                                    ) : (
-                                                        `₹${shippingCost?.toLocaleString()}`
-                                                    )}
+                                                    {(() => {
+                                                        const nonSampleShipping = Math.max(0, parseFloat(totals.shipping || 0) - parseFloat(totals.sample_shipping || 0));
+                                                        if (nonSampleShipping > 0) {
+                                                            return `$${nonSampleShipping.toFixed(2)}`;
+                                                        }
+                                                        if (parseFloat(totals.subtotal || 0) > 0) {
+                                                            return <span className="text-green-600">{d('checkout.free', 'Free')}</span>;
+                                                        }
+                                                        return '—';
+                                                    })()}
                                                 </span>
                                             </div>
+                                            {totals.sample_count > 0 && (
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">
+                                                        Sample shipping
+                                                        <span className="ml-1 text-gray-400">({totals.sample_count} sample{totals.sample_count !== 1 ? 's' : ''})</span>
+                                                    </span>
+                                                    <span className="font-medium text-gray-900">
+                                                        ${parseFloat(totals.sample_shipping || 0).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            )}
                                             {totals.tax > 0 && (
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-600">{d('checkout.summary.tax', 'Tax')}</span>
                                                     <span className="font-medium text-gray-900">
-                                                        ₹{totals.tax?.toLocaleString()}
+                                                        ${totals.tax?.toLocaleString()}
                                                     </span>
                                                 </div>
                                             )}
@@ -497,7 +526,7 @@ export default function Index({
                                                     {d('checkout.summary.total', 'Total')}
                                                 </span>
                                                 <span className="text-lg font-bold text-gray-900">
-                                                    ₹{grandTotal?.toLocaleString()}
+                                                    ${grandTotal?.toLocaleString()}
                                                 </span>
                                             </div>
                                         </div>

@@ -49,11 +49,17 @@ class CartController extends Controller
                     'subtotal' => 0,
                     'discount' => 0,
                     'shipping' => 0,
+                    'sample_shipping' => 0,
                     'tax' => 0,
                     'grand_total' => 0,
                     'item_count' => 0,
-                    'currency' => Setting::getValue('marketplace.currency', 'INR'),
-                    'currency_symbol' => Setting::getValue('marketplace.currency_symbol', '₹'),
+                    'sample_count' => 0,
+                    'sample_max' => 5,
+                    'samples_remaining' => 5,
+                    'is_at_sample_max' => false,
+                    'sample_minimum_met' => true,
+                    'currency' => Setting::getValue('marketplace.currency', 'AUD'),
+                    'currency_symbol' => Setting::getValue('marketplace.currency_symbol', '$'),
                 ],
                 'shipping_estimate' => [
                     'estimated' => 0,
@@ -83,12 +89,14 @@ class CartController extends Controller
                     'quantity' => $item->quantity,
                     'price' => $item->price,
                     'line_total' => $item->price * $item->quantity,
+                    'is_sample' => (bool) $item->is_sample,
                     'product' => [
                         'id' => $product->id,
                         'name' => $product->name,
                         'slug' => $product->slug,
                         'image_url' => $product->image_url ?? '/images/placeholder-product.svg',
                         'compare_at_price' => $product->compare_at_price,
+                        'sqm_per_box' => $product->sqm_per_box,
                     ],
                     'variant' => $variant ? [
                         'id' => $variant->id,
@@ -128,13 +136,22 @@ class CartController extends Controller
 
         $cart = $this->cartService->getOrCreate($userId, $sessionId);
 
-        $item = $this->cartService->addItem(
-            $cart,
-            $request->input('product_id'),
-            $request->input('variant_id'),
-            $request->input('quantity', 1),
-            $request->input('options', [])
-        );
+        try {
+            $item = $this->cartService->addItem(
+                $cart,
+                $request->input('product_id'),
+                $request->input('variant_id'),
+                $request->input('quantity', 1),
+                $request->input('options', []),
+                (bool) $request->input('is_sample', false)
+            );
+        } catch (\App\Domain\Cart\Exceptions\SampleLimitExceededException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'error_code' => 'sample_limit_exceeded',
+            ], 422);
+        }
 
         // Clear upsell cache since cart changed
         $this->upsellService->clearCache($cart);
@@ -152,11 +169,13 @@ class CartController extends Controller
                 'quantity' => $item->quantity,
                 'price' => $item->price,
                 'line_total' => $item->price * $item->quantity,
+                'is_sample' => (bool) $item->is_sample,
                 'product' => [
                     'id' => $item->product->id,
                     'name' => $item->product->name,
                     'slug' => $item->product->slug,
                     'image_url' => $item->product->image_url ?? '/images/placeholder-product.svg',
+                    'sqm_per_box' => $item->product->sqm_per_box,
                 ],
             ],
             'totals' => $totals,
@@ -166,7 +185,7 @@ class CartController extends Controller
     public function update(Request $request, int $itemId): JsonResponse
     {
         $validated = $request->validate([
-            'quantity' => 'required|integer|min:0|max:100',
+            'quantity' => 'required|numeric|min:0|max:100',
         ]);
 
         $userId = $request->user()?->id;
@@ -182,6 +201,23 @@ class CartController extends Controller
 
         if (!$item) {
             return response()->json(['error' => 'Item not found'], 404);
+        }
+
+        // Enforce sample maximum when increasing a sample line's quantity
+        if ($item->is_sample && $validated['quantity'] > $item->quantity) {
+            $max = \App\Domain\Cart\Services\PricingService::SAMPLE_MAX_QUANTITY;
+            $otherSamples = (int) $cart->items()
+                ->where('is_sample', true)
+                ->where('id', '!=', $item->id)
+                ->sum('quantity');
+            $allowed = $max - $otherSamples;
+            if ($validated['quantity'] > $allowed) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Maximum {$max} samples per order. You can have up to {$allowed} on this line.",
+                    'error_code' => 'sample_limit_exceeded',
+                ], 422);
+            }
         }
 
         $success = $this->cartService->updateItemQuantity($item, $validated['quantity']);
@@ -253,11 +289,17 @@ class CartController extends Controller
                 'subtotal' => 0,
                 'discount' => 0,
                 'shipping' => 0,
+                'sample_shipping' => 0,
                 'tax' => 0,
                 'grand_total' => 0,
                 'item_count' => 0,
-                'currency' => Setting::getValue('marketplace.currency', 'INR'),
-                'currency_symbol' => Setting::getValue('marketplace.currency_symbol', '₹'),
+                'sample_count' => 0,
+                'sample_max' => 5,
+                'samples_remaining' => 5,
+                'is_at_sample_max' => false,
+                'sample_minimum_met' => true,
+                'currency' => Setting::getValue('marketplace.currency', 'AUD'),
+                'currency_symbol' => Setting::getValue('marketplace.currency_symbol', '$'),
             ],
         ]);
     }
@@ -277,7 +319,8 @@ class CartController extends Controller
             $request->input('product_id'),
             $request->input('variant_id'),
             $request->input('quantity', 1),
-            $request->input('options', [])
+            $request->input('options', []),
+            (bool) $request->input('is_sample', false)
         );
 
         // Clear upsell cache since cart changed

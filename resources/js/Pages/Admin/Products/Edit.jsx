@@ -2,6 +2,7 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import debounce from 'lodash/debounce';
+import RichTextEditor from '@/Components/Admin/RichTextEditor';
 
 // Media Upload Component
 function MediaUploader({ product, media = [], onUpdate }) {
@@ -364,7 +365,7 @@ function TagInput({ tags = [], onChange, popularTags = [] }) {
 }
 
 // Variants Editor Component
-function VariantsEditor({ options = [], variants = [], onChange, onGenerateVariants }) {
+function VariantsEditor({ options = [], variants = [], onChange, onGenerateVariants, onVariantUpdate }) {
     const [localOptions, setLocalOptions] = useState(options);
 
     const addOption = () => {
@@ -461,7 +462,7 @@ function VariantsEditor({ options = [], variants = [], onChange, onGenerateVaria
                 </button>
             )}
 
-            {/* Variants Table */}
+            {/* Variants Table — Editable */}
             {variants?.length > 0 && (
                 <div className="mt-4 overflow-x-auto">
                     <table className="min-w-full text-left">
@@ -471,35 +472,45 @@ function VariantsEditor({ options = [], variants = [], onChange, onGenerateVaria
                                 <th className="px-2 py-1 text-[10px] font-semibold text-gray-600">SKU</th>
                                 <th className="px-2 py-1 text-[10px] font-semibold text-gray-600">Price</th>
                                 <th className="px-2 py-1 text-[10px] font-semibold text-gray-600">Stock</th>
+                                <th className="px-2 py-1 text-[10px] font-semibold text-gray-600">Barcode</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y">
                             {variants.map((variant, idx) => (
                                 <tr key={variant.id || idx}>
-                                    <td className="px-2 py-1 text-xs">{variant.name}</td>
+                                    <td className="px-2 py-1 text-xs font-medium">{variant.name}</td>
                                     <td className="px-2 py-1">
                                         <input
                                             type="text"
-                                            value={variant.sku || ''}
+                                            defaultValue={variant.sku || ''}
                                             className="admin-input text-xs w-24"
-                                            readOnly
+                                            onBlur={(e) => onVariantUpdate?.(variant.id, 'sku', e.target.value)}
                                         />
                                     </td>
                                     <td className="px-2 py-1">
                                         <input
                                             type="number"
-                                            value={variant.price || ''}
+                                            defaultValue={variant.price || ''}
                                             className="admin-input text-xs w-20"
                                             step="0.01"
-                                            readOnly
+                                            onBlur={(e) => onVariantUpdate?.(variant.id, 'price', e.target.value)}
                                         />
                                     </td>
                                     <td className="px-2 py-1">
                                         <input
                                             type="number"
-                                            value={variant.inventory_quantity || 0}
+                                            defaultValue={variant.inventory_quantity || 0}
                                             className="admin-input text-xs w-16"
-                                            readOnly
+                                            onBlur={(e) => onVariantUpdate?.(variant.id, 'inventory_quantity', e.target.value)}
+                                        />
+                                    </td>
+                                    <td className="px-2 py-1">
+                                        <input
+                                            type="text"
+                                            defaultValue={variant.barcode || ''}
+                                            className="admin-input text-xs w-28"
+                                            placeholder="Barcode"
+                                            onBlur={(e) => onVariantUpdate?.(variant.id, 'barcode', e.target.value)}
                                         />
                                     </td>
                                 </tr>
@@ -508,6 +519,27 @@ function VariantsEditor({ options = [], variants = [], onChange, onGenerateVaria
                     </table>
                 </div>
             )}
+        </div>
+    );
+}
+
+// Helper: slugify
+function slugify(text) {
+    return (text || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+// SEO Preview Component
+function SeoPreview({ title, description, slug }) {
+    const displayTitle = title || 'Product Title';
+    const displayUrl = `ntiled.com.au/products/${slug || 'product-url'}`;
+    const displayDesc = description || 'Add a meta description to see how this product will appear in search engine results.';
+
+    return (
+        <div className="mt-3 p-3 bg-white border border-gray-200 rounded-lg">
+            <p className="text-[10px] text-gray-400 mb-1">Search engine listing preview</p>
+            <p className="text-[14px] text-[#1a0dab] font-medium leading-tight truncate">{displayTitle}</p>
+            <p className="text-[12px] text-green-700 truncate">{displayUrl}</p>
+            <p className="text-[12px] text-gray-600 line-clamp-2 leading-relaxed">{displayDesc}</p>
         </div>
     );
 }
@@ -533,6 +565,7 @@ export default function Edit({ product, categories, vendors, popularTags, status
         length_mm: product?.length_mm ?? '',
         width_mm: product?.width_mm ?? '',
         height_mm: product?.height_mm ?? '',
+        sqm_per_box: product?.sqm_per_box ?? '',
         is_digital: Boolean(product?.is_digital),
         requires_shipping: product?.requires_shipping ?? true,
         status: product?.status ?? 'draft',
@@ -609,6 +642,22 @@ export default function Edit({ product, categories, vendors, popularTags, status
         }
     };
 
+    const handleVariantUpdate = async (variantId, field, value) => {
+        if (!variantId) return;
+        try {
+            await fetch(route('admin.products.variants.update', [product.id, variantId]), {
+                method: 'PUT',
+                body: JSON.stringify({ [field]: value }),
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                    'Content-Type': 'application/json',
+                },
+            });
+        } catch (error) {
+            console.error('Variant update failed:', error);
+        }
+    };
+
     return (
         <DashboardLayout title="Edit Product">
             <Head title={`Edit: ${product?.name || 'Product'}`} />
@@ -654,20 +703,36 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     <label className="block text-xs font-medium text-gray-700">Title</label>
                                     <input
                                         value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
+                                        onChange={(e) => {
+                                            const newName = e.target.value;
+                                            const shouldAutoSlug = !data.slug || data.slug === slugify(data.name);
+                                            setData(d => ({
+                                                ...d,
+                                                name: newName,
+                                                ...(shouldAutoSlug ? { slug: slugify(newName) } : {}),
+                                            }));
+                                        }}
                                         className="mt-1 admin-input w-full"
                                         placeholder="Product title"
                                     />
                                     {errors.name && <div className="mt-1 text-[11px] text-red-600">{errors.name}</div>}
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700">Description</label>
+                                    <label className="block text-xs font-medium text-gray-700">Short description</label>
                                     <textarea
-                                        value={data.description}
-                                        onChange={(e) => setData('description', e.target.value)}
-                                        rows={6}
+                                        value={data.short_description}
+                                        onChange={(e) => setData('short_description', e.target.value)}
+                                        rows={2}
                                         className="mt-1 admin-textarea w-full"
-                                        placeholder="Product description..."
+                                        placeholder="Brief summary for search results and product cards..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                                    <RichTextEditor
+                                        content={data.description}
+                                        onChange={(html) => setData('description', html)}
+                                        placeholder="Write your product description..."
                                     />
                                     {errors.description && <div className="mt-1 text-[11px] text-red-600">{errors.description}</div>}
                                 </div>
@@ -757,7 +822,7 @@ export default function Edit({ product, categories, vendors, popularTags, status
                         {/* Shipping */}
                         <div className="admin-card">
                             <h3 className="text-xs font-semibold text-gray-900 mb-3">Shipping</h3>
-                            <div className="flex items-center gap-4 mb-3">
+                            <div className="flex items-center gap-6 mb-3">
                                 <label className="flex items-center gap-2 text-xs">
                                     <input
                                         type="checkbox"
@@ -767,6 +832,17 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     />
                                     This is a physical product
                                 </label>
+                                {!data.is_digital && (
+                                    <label className="flex items-center gap-2 text-xs">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.requires_shipping}
+                                            onChange={(e) => setData('requires_shipping', e.target.checked)}
+                                            className="h-4 w-4 rounded border-gray-300 text-brand"
+                                        />
+                                        Requires shipping
+                                    </label>
+                                )}
                             </div>
                             {!data.is_digital && (
                                 <div className="grid grid-cols-4 gap-3">
@@ -807,6 +883,19 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                             className="mt-1 admin-input w-full"
                                         />
                                     </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700">m² per box</label>
+                                        <input
+                                            type="number"
+                                            step="0.0001"
+                                            min="0"
+                                            value={data.sqm_per_box}
+                                            onChange={(e) => setData('sqm_per_box', e.target.value)}
+                                            className="mt-1 admin-input w-full"
+                                            placeholder="e.g. 1.44"
+                                        />
+                                        <p className="mt-1 text-[10px] text-gray-400">Coverage per box (used for cart box count)</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -816,12 +905,20 @@ export default function Edit({ product, categories, vendors, popularTags, status
                             options={product?.options}
                             variants={product?.variants}
                             onGenerateVariants={handleGenerateVariants}
+                            onVariantUpdate={handleVariantUpdate}
                         />
 
                         {/* SEO */}
                         <div className="admin-card">
                             <h3 className="text-xs font-semibold text-gray-900 mb-3">Search engine listing</h3>
-                            <div className="grid grid-cols-1 gap-3">
+
+                            <SeoPreview
+                                title={data.meta_title || data.name}
+                                description={data.meta_description}
+                                slug={data.slug}
+                            />
+
+                            <div className="grid grid-cols-1 gap-3 mt-4">
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700">Page title</label>
                                     <input
@@ -830,6 +927,7 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                         className="mt-1 admin-input w-full"
                                         placeholder={data.name}
                                     />
+                                    <div className="mt-1 text-[10px] text-gray-500">{(data.meta_title || data.name || '').length}/70</div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700">Meta description</label>
@@ -844,11 +942,27 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                 </div>
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700">URL handle</label>
-                                    <input
-                                        value={data.slug}
-                                        onChange={(e) => setData('slug', e.target.value)}
-                                        className="mt-1 admin-input w-full"
-                                    />
+                                    <div className="mt-1 flex items-center">
+                                        <span className="text-xs text-gray-400 mr-1">ntiled.com.au/products/</span>
+                                        <input
+                                            value={data.slug}
+                                            onChange={(e) => setData('slug', e.target.value)}
+                                            className="admin-input flex-1"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-700">Hide from search engines</label>
+                                        <p className="text-[10px] text-gray-500">Adds noindex tag to prevent indexing</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('noindex', !data.noindex)}
+                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${data.noindex ? 'bg-brand' : 'bg-gray-300'}`}
+                                    >
+                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.noindex ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                                    </button>
                                 </div>
                             </div>
                         </div>

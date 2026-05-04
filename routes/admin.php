@@ -97,6 +97,7 @@ Route::prefix('products')->name('products.')->group(function () {
 
     // Variants
     Route::post('{product}/variants/generate', [ProductController::class, 'generateVariants'])->name('variants.generate');
+    Route::put('{product}/variants/{variant}', [ProductController::class, 'updateVariant'])->name('variants.update');
 
     // Tags
     Route::get('tags/search', [ProductController::class, 'searchTags'])->name('tags.search');
@@ -170,17 +171,3 @@ Route::prefix('coupons')->name('coupons.')->group(function () {
     Route::post('{coupon}/duplicate', [\App\Domain\Marketing\Http\Controllers\Admin\CouponController::class, 'duplicate'])->name('duplicate');
 });
 
-// Reviews
-Route::prefix('reviews')->name('reviews.')->group(function () {
-    Route::get('/', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'index'])->name('index');
-    Route::get('{review}', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'show'])->name('show');
-    Route::post('{review}/approve', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'approve'])->name('approve');
-    Route::post('{review}/reject', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'reject'])->name('reject');
-    Route::post('{review}/reply', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'reply'])->name('reply');
-    Route::post('{review}/remove-reply', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'removeReply'])->name('remove-reply');
-    Route::post('{review}/toggle-featured', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'toggleFeatured'])->name('toggle-featured');
-    Route::delete('{review}', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('destroy');
-    Route::post('bulk-approve', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'bulkApprove'])->name('bulk-approve');
-    Route::post('bulk-reject', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'bulkReject'])->name('bulk-reject');
-    Route::post('bulk-delete', [\App\Domain\Catalog\Http\Controllers\Admin\ReviewController::class, 'bulkDelete'])->name('bulk-delete');
-});

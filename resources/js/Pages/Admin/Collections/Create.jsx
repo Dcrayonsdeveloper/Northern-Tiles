@@ -173,7 +173,7 @@ function ProductSelector({ selectedIds, onChange, onSearch }) {
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-gray-50"
                             >
                                 <span className="font-medium">{product.name}</span>
-                                <span className="text-gray-500">₹{product.price}</span>
+                                <span className="text-gray-500">${product.price}</span>
                             </button>
                         ))}
                     </div>
@@ -190,7 +190,7 @@ function ProductSelector({ selectedIds, onChange, onSearch }) {
 export default function Create({ collection, sortModes, ruleFields, ruleOperators, rulePresets, categories, vendors }) {
     const isEdit = !!collection;
 
-    const { data, setData, post, put, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         title: collection?.title || '',
         handle: collection?.handle || '',
         description: collection?.description || '',
@@ -202,17 +202,30 @@ export default function Create({ collection, sortModes, ruleFields, ruleOperator
         meta_title: collection?.meta_title || '',
         meta_description: collection?.meta_description || '',
         product_ids: collection?.product_ids || [],
+        image: null,
+        remove_image: false,
+        brochure: null,
+        remove_brochure: false,
+        ...(isEdit ? { _method: 'put' } : {}),
     });
+
+    const [imagePreview, setImagePreview] = useState(null);
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0] || null;
+        setData('image', file);
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
+        setImagePreview(file ? URL.createObjectURL(file) : null);
+    };
 
     const [preview, setPreview] = useState({ count: 0, products: [] });
 
     const submit = (e) => {
         e.preventDefault();
-        if (isEdit) {
-            put(route('admin.collections.update', collection.id));
-        } else {
-            post(route('admin.collections.store'));
-        }
+        const url = isEdit
+            ? route('admin.collections.update', collection.id)
+            : route('admin.collections.store');
+        post(url, { forceFormData: true });
     };
 
     const fetchPreview = async () => {
@@ -299,6 +312,93 @@ export default function Create({ collection, sortModes, ruleFields, ruleOperator
                                         rows={3}
                                         className="admin-input w-full"
                                     />
+                                </div>
+
+                                {/* Banner Image */}
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Banner Image
+                                    </label>
+                                    <p className="mb-2 text-[11px] text-gray-500">
+                                        Used as the background of the collection page banner. Recommended 1600×600px. Max 2 MB.
+                                    </p>
+
+                                    {(imagePreview || (collection?.image_url && !data.remove_image)) && (
+                                        <div className="mb-2 flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                                            <img
+                                                src={imagePreview || collection.image_url}
+                                                alt=""
+                                                className="h-16 w-24 rounded object-cover"
+                                            />
+                                            <div className="flex-1 text-[11px] text-gray-600">
+                                                {imagePreview ? 'New image selected' : 'Current image'}
+                                            </div>
+                                            {collection?.image_url && !imagePreview && (
+                                                <label className="flex items-center gap-1 text-[11px] text-red-600">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={data.remove_image}
+                                                        onChange={(e) => setData('remove_image', e.target.checked)}
+                                                        className="h-3 w-3"
+                                                    />
+                                                    Remove
+                                                </label>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        className="block w-full text-xs text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-gray-700 hover:file:bg-gray-200"
+                                    />
+                                    {errors.image && <p className="mt-1 text-xs text-red-600">{errors.image}</p>}
+                                </div>
+
+                                {/* Brochure (PDF) */}
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Brochure (PDF)
+                                    </label>
+                                    <p className="mb-2 text-[11px] text-gray-500">
+                                        Uploaded PDF will be linked from the "Download Brochure" button on the collection page. Max 10 MB.
+                                    </p>
+
+                                    {collection?.brochure_url && !data.remove_brochure && (
+                                        <div className="mb-2 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                                            <a
+                                                href={collection.brochure_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-xs text-brand hover:underline"
+                                            >
+                                                Current brochure (open in new tab)
+                                            </a>
+                                            <label className="flex items-center gap-1 text-[11px] text-red-600">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={data.remove_brochure}
+                                                    onChange={(e) => setData('remove_brochure', e.target.checked)}
+                                                    className="h-3 w-3"
+                                                />
+                                                Remove
+                                            </label>
+                                        </div>
+                                    )}
+
+                                    <input
+                                        type="file"
+                                        accept="application/pdf"
+                                        onChange={(e) => setData('brochure', e.target.files[0] || null)}
+                                        className="block w-full text-xs text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-gray-700 hover:file:bg-gray-200"
+                                    />
+                                    {data.brochure && (
+                                        <p className="mt-1 text-[11px] text-gray-600">
+                                            Selected: {data.brochure.name}
+                                        </p>
+                                    )}
+                                    {errors.brochure && <p className="mt-1 text-xs text-red-600">{errors.brochure}</p>}
                                 </div>
                             </div>
                         </div>

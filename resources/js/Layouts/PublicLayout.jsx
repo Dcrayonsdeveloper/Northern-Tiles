@@ -152,7 +152,7 @@ export default function PublicLayout({ children }) {
                 </Container>
             )}
 
-            <main className="py-10">
+            <main>
                 {children}
             </main>
 

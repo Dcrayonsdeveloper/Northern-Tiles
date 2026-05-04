@@ -4,6 +4,8 @@ namespace App\Domain\Catalog\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Attribute extends Model
 {
@@ -11,18 +13,21 @@ class Attribute extends Model
         'name',
         'slug',
         'type',
-        'values_json',
         'is_filterable',
         'is_visible',
         'sort_order',
     ];
 
     protected $casts = [
-        'values_json' => 'array',
         'is_filterable' => 'boolean',
         'is_visible' => 'boolean',
         'sort_order' => 'integer',
     ];
+
+    public function values(): HasMany
+    {
+        return $this->hasMany(AttributeValue::class)->orderBy('sort_order')->orderBy('value');
+    }
 
     public function attributeSets(): BelongsToMany
     {
@@ -43,15 +48,14 @@ class Attribute extends Model
 
     public function getValues(): array
     {
-        return $this->values_json ?? [];
+        return $this->values()->pluck('value')->all();
     }
 
-    public function addValue(string $value): void
+    public function addValue(string $value, ?string $slug = null, array $meta = []): AttributeValue
     {
-        $values = $this->getValues();
-        if (!in_array($value, $values)) {
-            $values[] = $value;
-            $this->update(['values_json' => $values]);
-        }
+        return $this->values()->firstOrCreate(
+            ['slug' => $slug ?? Str::slug($value)],
+            ['value' => $value, 'meta_json' => $meta ?: null],
+        );
     }
 }

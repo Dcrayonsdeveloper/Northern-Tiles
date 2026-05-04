@@ -15,6 +15,7 @@ use Database\Seeders\MenuSeeder;
 use Database\Seeders\CMSSeeder;
 use Database\Seeders\SectionRegistrySeeder;
 use Database\Seeders\CouponSeeder;
+use Database\Seeders\AttributeSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -22,30 +23,8 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        // Create/update main admin user
+        // Create/update admin user
         // Note: Don't use Hash::make() - User model has 'hashed' cast on password
-        User::updateOrCreate(
-            ['email' => 'admin@jikra.dcrayons.app'],
-            [
-                'name' => 'Jikra Admin',
-                'password' => '#defineRahul123.h',
-                'is_admin' => true,
-                'email_verified_at' => now(),
-            ]
-        );
-
-        // Create/update secondary admin user
-        User::updateOrCreate(
-            ['email' => 'rahul@dcrayons.app'],
-            [
-                'name' => 'Rahul Admin',
-                'password' => 'password',
-                'is_admin' => true,
-                'email_verified_at' => now(),
-            ]
-        );
-
-        // Create/update test admin user
         User::updateOrCreate(
             ['email' => 'test@example.com'],
             [
@@ -63,6 +42,7 @@ class DatabaseSeeder extends Seeder
             MenuSeeder::class,
             CMSSeeder::class,
             SectionRegistrySeeder::class,
+            AttributeSeeder::class,
             StorefrontSeeder::class,
             CouponSeeder::class,
             DashboardSeeder::class,

@@ -26,12 +26,24 @@ function TrashIcon({ className }) {
 
 export default function CartLineItem({
     item,
-    currency = '₹',
+    currency = '$',
     updating = false,
     onUpdateQuantity,
     onRemove,
 }) {
-    const { product, variant, quantity, price, line_total } = item;
+    const { product, variant, price, line_total, is_sample } = item;
+    const quantity = parseFloat(item.quantity) || 0;
+    const sqmPerBox = parseFloat(product?.sqm_per_box) || 0;
+    const hasBoxes = sqmPerBox > 0 && !is_sample;
+    const boxes = hasBoxes ? Math.max(1, Math.ceil(quantity / sqmPerBox)) : 0;
+    const stepUp = () => onUpdateQuantity(hasBoxes ? parseFloat(((boxes + 1) * sqmPerBox).toFixed(2)) : Math.max(1, Math.floor(quantity) + 1));
+    const stepDown = () => {
+        if (hasBoxes) {
+            onUpdateQuantity(parseFloat((Math.max(1, boxes - 1) * sqmPerBox).toFixed(2)));
+        } else {
+            onUpdateQuantity(Math.max(1, Math.floor(quantity) - 1));
+        }
+    };
 
     return (
         <div className={`flex gap-4 ${updating ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -51,12 +63,19 @@ export default function CartLineItem({
             <div className="flex flex-1 flex-col">
                 <div className="flex justify-between">
                     <div>
-                        <Link
-                            href={route('products.show', product.slug)}
-                            className="text-sm font-medium text-gray-900 hover:text-gray-700 line-clamp-2"
-                        >
-                            {product.name}
-                        </Link>
+                        <div className="flex items-start gap-2 flex-wrap">
+                            <Link
+                                href={route('products.show', product.slug)}
+                                className="text-sm font-medium text-gray-900 hover:text-gray-700 line-clamp-2"
+                            >
+                                {product.name}
+                            </Link>
+                            {is_sample && (
+                                <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-green-700">
+                                    Free Sample
+                                </span>
+                            )}
+                        </div>
                         {variant && (
                             <p className="mt-0.5 text-xs text-gray-500">{variant.name}</p>
                         )}
@@ -76,19 +95,23 @@ export default function CartLineItem({
                     <div className="flex items-center rounded-md border border-gray-200">
                         <button
                             type="button"
-                            onClick={() => onUpdateQuantity(Math.max(1, quantity - 1))}
-                            disabled={updating || quantity <= 1}
+                            onClick={stepDown}
+                            disabled={updating || (hasBoxes ? boxes <= 1 : quantity <= 1)}
                             className="p-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                         >
                             <MinusIcon className="h-3.5 w-3.5" />
                         </button>
-                        <span className="min-w-[2rem] px-2 text-center text-sm font-medium">
-                            {quantity}
+                        <span className="min-w-[5rem] px-2 text-center text-sm font-medium whitespace-nowrap">
+                            {is_sample
+                                ? `${quantity}`
+                                : hasBoxes
+                                    ? `${boxes} ${boxes === 1 ? 'Box' : 'Boxes'} = ${quantity.toFixed(2)} m²`
+                                    : `${quantity.toFixed(2)} m²`}
                         </span>
                         <button
                             type="button"
-                            onClick={() => onUpdateQuantity(quantity + 1)}
-                            disabled={updating || quantity >= 99}
+                            onClick={stepUp}
+                            disabled={updating || quantity >= 999}
                             className="p-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                         >
                             <PlusIcon className="h-3.5 w-3.5" />
@@ -97,13 +120,19 @@ export default function CartLineItem({
 
                     {/* Price */}
                     <div className="text-right">
-                        <p className="text-sm font-semibold text-gray-900">
-                            {currency}{line_total?.toLocaleString()}
-                        </p>
-                        {quantity > 1 && (
-                            <p className="text-xs text-gray-500">
-                                {currency}{price?.toLocaleString()} each
-                            </p>
+                        {is_sample ? (
+                            <p className="text-sm font-bold text-green-600">FREE</p>
+                        ) : (
+                            <>
+                                <p className="text-sm font-semibold text-gray-900">
+                                    {currency}{parseFloat(line_total || 0).toFixed(2)}
+                                </p>
+                                {quantity > 1 && (
+                                    <p className="text-xs text-gray-500">
+                                        {currency}{parseFloat(price || 0).toFixed(2)} / sqm
+                                    </p>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>

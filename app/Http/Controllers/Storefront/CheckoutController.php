@@ -36,6 +36,12 @@ class CheckoutController extends Controller
             return Redirect::route('shop.index')->with('info', 'Your cart is empty.');
         }
 
+        // Sample minimum gate: 1-3 samples is invalid
+        $sampleValidation = $this->pricingService->getSampleValidation($cart);
+        if (! $sampleValidation['is_valid']) {
+            return Redirect::route('cart.index')->with('error', $sampleValidation['message']);
+        }
+
         $summary = $this->checkoutService->getCheckoutSummary($cart);
         $user = $request->user();
 
@@ -66,6 +72,12 @@ class CheckoutController extends Controller
 
         if (!$cart || $cart->isEmpty()) {
             return Redirect::route('shop.index')->with('error', 'Your cart is empty.');
+        }
+
+        // Sample minimum gate (authoritative, server-side)
+        $sampleValidation = $this->pricingService->getSampleValidation($cart);
+        if (! $sampleValidation['is_valid']) {
+            return Redirect::route('cart.index')->with('error', $sampleValidation['message']);
         }
 
         $isGuest = !$userId;

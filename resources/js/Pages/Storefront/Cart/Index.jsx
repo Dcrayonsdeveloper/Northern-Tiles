@@ -1,9 +1,40 @@
 import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
 import { Head, Link } from '@inertiajs/react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
-export default function Index({ items: initialItems, subtotal: initialSubtotal }) {
+function CartCrossSell({ products, onAdd }) {
+    const ref = useRef(null);
+    if (!products || products.length === 0) return null;
+
+    return (
+        <div className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">You May Also Like</h2>
+            <div ref={ref} className="flex gap-4 overflow-x-auto scroll-smooth pb-2" style={{ scrollbarWidth: 'none' }}>
+                {products.map(p => (
+                    <div key={p.id} className="flex-shrink-0 w-[180px] rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+                        <Link href={route('products.show', p.slug)}>
+                            <div className="aspect-square overflow-hidden rounded-md bg-gray-50">
+                                <img src={p.image_url || '/images/placeholder-product.svg'} alt={p.name} className="h-full w-full object-cover" loading="lazy" />
+                            </div>
+                        </Link>
+                        <p className="mt-2 text-[12px] font-medium text-gray-900 line-clamp-2">{p.name}</p>
+                        <p className="mt-1 text-[13px] font-semibold text-gray-900">${parseFloat(p.price || 0).toFixed(2)} <span className="text-[10px] text-gray-400 font-normal">/ sqm</span></p>
+                        <button
+                            type="button"
+                            onClick={() => onAdd(p.id)}
+                            className="mt-2 w-full rounded bg-brand px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-brand/90 transition"
+                        >
+                            Add to Cart
+                        </button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+export default function Index({ items: initialItems, subtotal: initialSubtotal, crossSellProducts }) {
     const [items, setItems] = useState(initialItems ?? []);
     const [subtotal, setSubtotal] = useState(initialSubtotal ?? 0);
     const [updating, setUpdating] = useState(null);
@@ -82,6 +113,25 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal }
         }
     };
 
+    const addCrossSell = async (productId) => {
+        try {
+            await fetch('/api/cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ product_id: productId, quantity: 1 }),
+            });
+            await fetchCart();
+            window.dispatchEvent(new CustomEvent('cart-updated'));
+        } catch (e) {
+            console.error('Failed to add item:', e);
+        }
+    };
+
     return (
         <PublicLayout>
             <Head title="Cart" />
@@ -144,7 +194,7 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal }
                                                 {item.product?.name}
                                             </Link>
                                             <div className="mt-1 text-sm text-gray-600">
-                                                ₹{item.price?.toLocaleString()}
+                                                ${parseFloat(item.price || 0).toFixed(2)} / sqm
                                             </div>
                                         </div>
 
@@ -162,7 +212,7 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal }
                                                     </svg>
                                                 </button>
                                                 <span className="min-w-[2.5rem] text-center text-sm font-medium">
-                                                    {item.quantity}
+                                                    {item.is_sample ? item.quantity : `${parseFloat(item.quantity).toFixed(2)} m²`}
                                                 </span>
                                                 <button
                                                     type="button"
@@ -186,7 +236,7 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal }
                                         </div>
 
                                         <div className="w-24 text-right text-sm font-semibold text-gray-900">
-                                            ₹{item.line_total?.toLocaleString()}
+                                            ${item.line_total?.toLocaleString()}
                                         </div>
                                     </div>
                                 ))}
@@ -201,7 +251,7 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal }
                         <div className="mt-4 flex items-center justify-between text-sm">
                             <span className="text-gray-600">Subtotal</span>
                             <span className="font-semibold text-gray-900">
-                                ₹{subtotal?.toLocaleString()}
+                                ${subtotal?.toLocaleString()}
                             </span>
                         </div>
                         <div className="mt-2 flex items-center justify-between text-sm">
@@ -213,7 +263,7 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal }
                                 Total
                             </span>
                             <span className="text-lg font-bold text-gray-900">
-                                ₹{subtotal?.toLocaleString()}
+                                ${subtotal?.toLocaleString()}
                             </span>
                         </div>
                         <Link
@@ -225,6 +275,9 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal }
                     </div>
                 </div>
             )}
+
+                {/* Cross-sell / Upsell */}
+                <CartCrossSell products={crossSellProducts} onAdd={addCrossSell} />
             </Container>
         </PublicLayout>
     );

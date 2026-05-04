@@ -58,10 +58,13 @@ class OrderService
                 'options_json' => $item->options_json,
             ]);
 
+            // Inventory is tracked as integer units; round up so a 2.20 m²
+            // sale doesn't reserve only 2 units and leave 0.20 dangling.
+            $stockUnits = (int) ceil((float) $item->quantity);
             if ($item->variant) {
-                $item->variant->decrementInventory($item->quantity);
+                $item->variant->decrementInventory($stockUnits);
             } else {
-                $item->product->decrement('inventory_quantity', $item->quantity);
+                $item->product->decrement('inventory_quantity', $stockUnits);
             }
         }
 
@@ -155,10 +158,11 @@ class OrderService
         }
 
         foreach ($order->items as $item) {
+            $stockUnits = (int) ceil((float) $item->quantity);
             if ($item->variant) {
-                $item->variant->incrementInventory($item->quantity);
+                $item->variant->incrementInventory($stockUnits);
             } elseif ($item->product) {
-                $item->product->increment('inventory_quantity', $item->quantity);
+                $item->product->increment('inventory_quantity', $stockUnits);
             }
         }
 

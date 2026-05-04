@@ -8,6 +8,12 @@ use App\Models\Setting;
 
 class PricingService
 {
+    /** Maximum samples allowed per order — hard cap, not a target. */
+    public const SAMPLE_MAX_QUANTITY = 5;
+
+    /** Flat shipping charge for a sample order, regardless of how many samples (1–5). */
+    public const SAMPLE_SHIPPING_FLAT = 9.99;
+
     /**
      * Compute all totals for a cart (server-authoritative).
      * Never trust client totals - always recalculate on server.
@@ -16,20 +22,36 @@ class PricingService
     {
         $subtotal = $this->calculateSubtotal($cart);
         $discount = $this->calculateDiscount($cart, $subtotal);
-        $shipping = $this->calculateShipping($cart, $shippingData);
+
+        $sampleShipping = $this->calculateSampleShipping($cart);
+        $nonSampleShipping = $this->calculateNonSampleShipping($cart, $shippingData);
+        $shipping = $sampleShipping + $nonSampleShipping;
+
         $taxableAmount = $subtotal - $discount;
         $tax = $this->calculateTax($taxableAmount, $shippingData);
         $grandTotal = $taxableAmount + $shipping + $tax;
 
-        $currency = $cart->currency ?? Setting::getValue('marketplace.currency', 'INR');
+        $currency = $cart->currency ?? Setting::getValue('marketplace.currency', 'AUD');
+
+        $sampleCount = $this->getSampleCount($cart);
+        $sampleMax = self::SAMPLE_MAX_QUANTITY;
+        $samplesRemaining = max(0, $sampleMax - $sampleCount);
+        $isAtSampleMax = $sampleCount >= $sampleMax;
 
         return [
             'subtotal' => round($subtotal, 2),
             'discount' => round($discount, 2),
             'shipping' => round($shipping, 2),
+            'sample_shipping' => round($sampleShipping, 2),
             'tax' => round($tax, 2),
             'grand_total' => round($grandTotal, 2),
             'item_count' => $cart->getItemCount(),
+            'sample_count' => $sampleCount,
+            'sample_max' => $sampleMax,
+            'samples_remaining' => $samplesRemaining,
+            'is_at_sample_max' => $isAtSampleMax,
+            // Legacy field kept true for back-compat; no minimum applies anymore.
+            'sample_minimum_met' => true,
             'currency' => $currency,
             'currency_symbol' => $this->getCurrencySymbol($currency),
         ];
@@ -37,12 +59,34 @@ class PricingService
 
     /**
      * Calculate subtotal from cart items.
+     * Samples contribute 0 since their stored price is 0.
      */
     protected function calculateSubtotal(Cart $cart): float
     {
         return $cart->items->sum(function ($item) {
             return $item->price * $item->quantity;
         });
+    }
+
+    /**
+     * Non-sample subtotal — used for free-shipping threshold calculation.
+     * A cart loaded with free samples should NOT trigger free non-sample shipping.
+     */
+    protected function calculateNonSampleSubtotal(Cart $cart): float
+    {
+        return $cart->items
+            ->filter(fn ($item) => ! $item->is_sample)
+            ->sum(fn ($item) => $item->price * $item->quantity);
+    }
+
+    /**
+     * Count sample units in the cart.
+     */
+    protected function getSampleCount(Cart $cart): int
+    {
+        return (int) $cart->items
+            ->filter(fn ($item) => (bool) $item->is_sample)
+            ->sum('quantity');
     }
 
     /**
@@ -59,11 +103,19 @@ class PricingService
     }
 
     /**
-     * Calculate shipping cost based on address and cart contents.
+     * Calculate non-sample shipping (regular products) using the existing
+     * flat-rate / free-threshold logic, but operating on the non-sample subtotal only.
      */
-    protected function calculateShipping(Cart $cart, array $shippingData): float
+    protected function calculateNonSampleShipping(Cart $cart, array $shippingData): float
     {
         if ($cart->isEmpty()) {
+            return 0;
+        }
+
+        $nonSampleSubtotal = $this->calculateNonSampleSubtotal($cart);
+
+        // If there are no non-sample items, no non-sample shipping
+        if ($nonSampleSubtotal <= 0) {
             return 0;
         }
 
@@ -75,20 +127,56 @@ class PricingService
             }
         }
 
-        // Get shipping settings
         $freeShippingThreshold = (float) Setting::getValue('shipping.free_threshold', 999);
         $flatRate = (float) Setting::getValue('shipping.flat_rate', 50);
 
-        $subtotal = $this->calculateSubtotal($cart);
-
-        // Free shipping above threshold
-        if ($subtotal >= $freeShippingThreshold) {
+        if ($nonSampleSubtotal >= $freeShippingThreshold) {
             return 0;
         }
 
-        // TODO: Integrate with shipping zones/methods
-        // For now, use flat rate
         return $flatRate;
+    }
+
+    /**
+     * Calculate sample shipping.
+     * Flat $9.99 for any number of samples from 1 to MAX. No samples → no charge.
+     * No tiering — adding the 5th sample doesn't cost more than the 1st.
+     */
+    protected function calculateSampleShipping(Cart $cart): float
+    {
+        $sampleCount = $this->getSampleCount($cart);
+
+        return $sampleCount > 0 ? self::SAMPLE_SHIPPING_FLAT : 0;
+    }
+
+    /**
+     * Kept for back-compat — returns the combined shipping.
+     */
+    protected function calculateShipping(Cart $cart, array $shippingData): float
+    {
+        return $this->calculateSampleShipping($cart) + $this->calculateNonSampleShipping($cart, $shippingData);
+    }
+
+    /**
+     * Validate the cart's sample quantity. There is no minimum — any 1–5 samples
+     * is fine. Only invalid state is exceeding the maximum (which the cart pipeline
+     * enforces, so this is a final safety check).
+     */
+    public function getSampleValidation(Cart $cart): array
+    {
+        $sampleCount = $this->getSampleCount($cart);
+        $max = self::SAMPLE_MAX_QUANTITY;
+
+        $isValid = $sampleCount <= $max;
+        $message = $isValid ? null : "Maximum {$max} samples per order. Please remove " . ($sampleCount - $max) . " sample(s) to continue.";
+
+        return [
+            'sample_count' => $sampleCount,
+            'is_valid' => $isValid,
+            'max' => $max,
+            'remaining' => max(0, $max - $sampleCount),
+            'message' => $message,
+        ];
     }
 
     /**
@@ -96,7 +184,7 @@ class PricingService
      */
     protected function calculateTax(float $taxableAmount, array $shippingData): float
     {
-        // Get tax rate (default 18% GST for India)
+        // Get tax rate (default 0 — AUD store, GST would go here)
         $taxRate = (float) Setting::getValue('tax.default_rate', 0);
 
         // TODO: Integrate with tax zones for location-based tax
@@ -109,14 +197,15 @@ class PricingService
     protected function getCurrencySymbol(string $currency): string
     {
         $symbols = [
-            'INR' => '₹',
+            'AUD' => '$',
             'USD' => '$',
             'EUR' => '€',
             'GBP' => '£',
+            'INR' => '₹',
         ];
 
         // Use setting symbol if currency matches marketplace currency
-        $marketplaceCurrency = Setting::getValue('marketplace.currency', 'INR');
+        $marketplaceCurrency = Setting::getValue('marketplace.currency', 'AUD');
         if ($currency === $marketplaceCurrency) {
             return Setting::getValue('marketplace.currency_symbol', $symbols[$currency] ?? $currency);
         }
@@ -127,7 +216,7 @@ class PricingService
     /**
      * Format price for display.
      */
-    public function formatPrice(float $amount, string $currency = 'INR'): string
+    public function formatPrice(float $amount, string $currency = 'AUD'): string
     {
         $symbol = $this->getCurrencySymbol($currency);
         return $symbol . number_format($amount, 2);
@@ -135,21 +224,30 @@ class PricingService
 
     /**
      * Get shipping estimate (before full address is provided).
+     * Free-shipping progress bar is based on non-sample subtotal only —
+     * samples should not count toward the free-shipping threshold.
      */
     public function getShippingEstimate(Cart $cart): array
     {
-        $subtotal = $this->calculateSubtotal($cart);
+        $nonSampleSubtotal = $this->calculateNonSampleSubtotal($cart);
         $freeShippingThreshold = (float) Setting::getValue('shipping.free_threshold', 999);
         $flatRate = (float) Setting::getValue('shipping.flat_rate', 50);
 
-        $estimatedShipping = $subtotal >= $freeShippingThreshold ? 0 : $flatRate;
-        $amountForFreeShipping = max(0, $freeShippingThreshold - $subtotal);
+        $estimatedNonSampleShipping = $nonSampleSubtotal > 0 && $nonSampleSubtotal < $freeShippingThreshold
+            ? $flatRate
+            : 0;
+
+        $amountForFreeShipping = max(0, $freeShippingThreshold - $nonSampleSubtotal);
+
+        $sampleShipping = $this->calculateSampleShipping($cart);
 
         return [
-            'estimated' => round($estimatedShipping, 2),
+            'estimated' => round($estimatedNonSampleShipping + $sampleShipping, 2),
+            'non_sample_shipping' => round($estimatedNonSampleShipping, 2),
+            'sample_shipping' => round($sampleShipping, 2),
             'free_threshold' => $freeShippingThreshold,
             'amount_for_free' => round($amountForFreeShipping, 2),
-            'is_free' => $estimatedShipping === 0.0,
+            'is_free' => $estimatedNonSampleShipping === 0.0 && $sampleShipping === 0.0,
         ];
     }
 }

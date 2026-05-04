@@ -104,7 +104,7 @@ export default function Edit({ coupon, types, usageStats }) {
                     <div className="rounded-lg border bg-white p-4 shadow-sm">
                         <div className="text-sm font-medium text-gray-500">Total Discount Given</div>
                         <div className="mt-1 text-2xl font-semibold text-gray-900">
-                            ₹{parseFloat(usageStats.total_discount_given || 0).toLocaleString()}
+                            ${parseFloat(usageStats.total_discount_given || 0).toLocaleString()}
                         </div>
                     </div>
                     <div className="rounded-lg border bg-white p-4 shadow-sm">
@@ -190,7 +190,7 @@ export default function Edit({ coupon, types, usageStats }) {
                                     </label>
                                     <div className="relative mt-1">
                                         {data.type === 'fixed_amount' && (
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                                         )}
                                         <input
                                             type="number"
@@ -252,7 +252,7 @@ export default function Edit({ coupon, types, usageStats }) {
                                     Minimum Purchase
                                 </label>
                                 <div className="relative mt-1">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -271,7 +271,7 @@ export default function Edit({ coupon, types, usageStats }) {
                                         Maximum Discount
                                     </label>
                                     <div className="relative mt-1">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                                         <input
                                             type="number"
                                             step="0.01"

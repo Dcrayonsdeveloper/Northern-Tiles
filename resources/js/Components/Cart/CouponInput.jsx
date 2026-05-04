@@ -25,7 +25,7 @@ function CheckIcon({ className }) {
     );
 }
 
-export default function CouponInput({ appliedCoupon, currency = '₹', onApply, onRemove }) {
+export default function CouponInput({ appliedCoupon, currency = '$', onApply, onRemove }) {
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');

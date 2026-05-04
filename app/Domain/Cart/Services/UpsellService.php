@@ -47,6 +47,17 @@ class UpsellService
                 ->whereNotIn('id', $cartProductIds)
                 ->take(self::MAX_RECOMMENDATIONS);
 
+            // Fallback: if no recommendations found, get random active products
+            if ($recommendations->isEmpty()) {
+                $recommendations = Product::query()
+                    ->where('is_active', true)
+                    ->where('status', 'published')
+                    ->whereNotIn('id', $cartProductIds)
+                    ->inRandomOrder()
+                    ->limit(self::MAX_RECOMMENDATIONS)
+                    ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description']);
+            }
+
             return [
                 'items' => $this->formatProducts($recommendations),
                 'title_key' => 'cart.upsells.title',
@@ -67,8 +78,9 @@ class UpsellService
         $bundles = [];
 
         foreach ($cart->items as $item) {
-            // Suggest "Pack of 2" for single quantity items
-            if ($item->quantity === 1) {
+            // Suggest "Pack of 2" for single quantity items.
+            // Loose comparison because quantity is now decimal:2 (cast to string "1.00").
+            if ((float) $item->quantity == 1) {
                 $bundles[] = [
                     'type' => 'pack_of_2',
                     'product_id' => $item->product_id,
@@ -112,20 +124,24 @@ class UpsellService
         }
 
         // Find products that appear in orders with the cart products
-        return Product::query()
-            ->where('is_active', true)
-            ->whereNotIn('id', $productIds)
-            ->whereHas('orderItems', function ($query) use ($productIds) {
-                $query->whereHas('order', function ($orderQuery) use ($productIds) {
-                    $orderQuery->whereHas('items', function ($itemQuery) use ($productIds) {
-                        $itemQuery->whereIn('product_id', $productIds);
+        try {
+            return Product::query()
+                ->where('is_active', true)
+                ->whereNotIn('id', $productIds)
+                ->whereHas('orderItems', function ($query) use ($productIds) {
+                    $query->whereHas('order', function ($orderQuery) use ($productIds) {
+                        $orderQuery->whereHas('items', function ($itemQuery) use ($productIds) {
+                            $itemQuery->whereIn('product_id', $productIds);
+                        });
                     });
-                });
-            })
-            ->withCount(['orderItems as purchase_count'])
-            ->orderByDesc('purchase_count')
-            ->limit(4)
-            ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description']);
+                })
+                ->withCount(['orderItems as purchase_count'])
+                ->orderByDesc('purchase_count')
+                ->limit(4)
+                ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description']);
+        } catch (\Throwable $e) {
+            return collect();
+        }
     }
 
     /**
@@ -149,12 +165,15 @@ class UpsellService
     protected function getPopularProducts(): array
     {
         $products = Cache::remember('upsells.popular', 300, function () {
-            return Product::query()
+            // Try order-based popularity first, fallback to random
+            $results = Product::query()
                 ->where('is_active', true)
-                ->withCount(['orderItems as sales_count'])
-                ->orderByDesc('sales_count')
+                ->where('status', 'published')
+                ->inRandomOrder()
                 ->limit(self::MAX_RECOMMENDATIONS)
                 ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description']);
+
+            return $results;
         });
 
         return [

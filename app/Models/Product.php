@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Domain\Catalog\Jobs\ReindexCollectionsForProductJob;
 use App\Domain\Catalog\Models\AttributeSet;
+use App\Domain\Catalog\Models\AttributeValue;
 use App\Domain\Catalog\Models\Collection;
 use App\Domain\Catalog\Models\Favorite;
 use App\Domain\Catalog\Models\ProductContentBlock;
@@ -64,6 +65,7 @@ class Product extends Model
         'length_mm',
         'width_mm',
         'height_mm',
+        'sqm_per_box',
         'requires_shipping',
         'image_url',
         'stock',
@@ -82,6 +84,7 @@ class Product extends Model
         'length_mm' => 'integer',
         'width_mm' => 'integer',
         'height_mm' => 'integer',
+        'sqm_per_box' => 'decimal:4',
         'is_active' => 'boolean',
         'is_digital' => 'boolean',
         'requires_shipping' => 'boolean',
@@ -139,6 +142,11 @@ class Product extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class)->orderBy('sort_order');
+    }
+
+    public function attributeValues(): BelongsToMany
+    {
+        return $this->belongsToMany(AttributeValue::class, 'product_attribute_value');
     }
 
     public function defaultVariant(): HasMany
@@ -229,7 +237,7 @@ class Product extends Model
     public function collections(): BelongsToMany
     {
         return $this->belongsToMany(Collection::class, 'collection_products')
-            ->withPivot(['sort_order', 'added_at', 'match_reason'])
+            ->withPivot(['sort_order', 'source', 'computed_at'])
             ->withTimestamps();
     }
 

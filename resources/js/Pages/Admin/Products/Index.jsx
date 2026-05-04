@@ -322,11 +322,11 @@ export default function Index({ products, filters, categories, vendors, statuses
                                         </td>
                                         <td className="px-4 py-2">
                                             <div className="text-xs font-medium text-gray-900">
-                                                ₹{parseFloat(p.price || 0).toFixed(2)}
+                                                ${parseFloat(p.price || 0).toFixed(2)}
                                             </div>
                                             {p.compare_at_price && (
                                                 <div className="text-[11px] text-gray-500 line-through">
-                                                    ₹{parseFloat(p.compare_at_price).toFixed(2)}
+                                                    ${parseFloat(p.compare_at_price).toFixed(2)}
                                                 </div>
                                             )}
                                         </td>

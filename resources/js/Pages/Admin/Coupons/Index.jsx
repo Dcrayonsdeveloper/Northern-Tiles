@@ -78,7 +78,7 @@ function formatValue(coupon) {
         case 'percentage':
             return `${coupon.value}%`;
         case 'fixed_amount':
-            return `₹${parseFloat(coupon.value).toLocaleString()}`;
+            return `$${parseFloat(coupon.value).toLocaleString()}`;
         case 'free_shipping':
             return 'Free Shipping';
         case 'buy_x_get_y':

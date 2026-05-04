@@ -91,7 +91,7 @@ class Cart extends Model
         return static::create([
             'user_id' => $userId,
             'session_id' => $sessionId,
-            'currency' => 'INR',
+            'currency' => 'AUD',
             'expires_at' => now()->addDays(30),
         ]);
     }
@@ -103,7 +103,8 @@ class Cart extends Model
 
     public function getItemCount(): int
     {
-        return $this->items->sum('quantity');
+        // quantity is decimal:2 (m²); ceil for the cart-badge integer count.
+        return (int) ceil((float) $this->items->sum('quantity'));
     }
 
     public function isEmpty(): bool

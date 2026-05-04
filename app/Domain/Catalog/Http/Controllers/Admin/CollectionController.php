@@ -93,6 +93,7 @@ class CollectionController extends Controller
             'product_ids' => ['nullable', 'array'],
             'product_ids.*' => ['exists:products,id'],
             'image' => ['nullable', 'image', 'max:2048'],
+            'brochure' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
         // Generate handle if not provided
@@ -105,9 +106,14 @@ class CollectionController extends Controller
             $validated['image_path'] = $request->file('image')->store('collections', 'public');
         }
 
-        // Remove product_ids and image from validated data
+        // Handle brochure upload
+        if ($request->hasFile('brochure')) {
+            $validated['brochure_path'] = $request->file('brochure')->store('collections/brochures', 'public');
+        }
+
+        // Remove product_ids, image and brochure from validated data
         $productIds = $validated['product_ids'] ?? [];
-        unset($validated['product_ids'], $validated['image']);
+        unset($validated['product_ids'], $validated['image'], $validated['brochure']);
 
         $collection = Collection::create($validated);
 
@@ -138,6 +144,8 @@ class CollectionController extends Controller
             'collection' => [
                 ...$collection->toArray(),
                 'product_ids' => $collection->products->pluck('id'),
+                'image_url' => $collection->image_url,
+                'brochure_url' => $collection->brochure_url,
             ],
             'sortModes' => Collection::getSortModes(),
             'ruleFields' => CollectionRuleEngine::getAvailableFields(),
@@ -165,6 +173,8 @@ class CollectionController extends Controller
             'product_ids.*' => ['exists:products,id'],
             'image' => ['nullable', 'image', 'max:2048'],
             'remove_image' => ['boolean'],
+            'brochure' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'remove_brochure' => ['boolean'],
         ]);
 
         // Handle image upload
@@ -182,9 +192,29 @@ class CollectionController extends Controller
             $validated['image_path'] = null;
         }
 
-        // Remove product_ids, image and remove_image from validated data
+        // Handle brochure upload
+        if ($request->hasFile('brochure')) {
+            if ($collection->brochure_path) {
+                Storage::disk('public')->delete($collection->brochure_path);
+            }
+            $validated['brochure_path'] = $request->file('brochure')->store('collections/brochures', 'public');
+        }
+
+        // Handle brochure removal
+        if ($request->boolean('remove_brochure') && $collection->brochure_path) {
+            Storage::disk('public')->delete($collection->brochure_path);
+            $validated['brochure_path'] = null;
+        }
+
+        // Remove non-column fields from validated data
         $productIds = $validated['product_ids'] ?? [];
-        unset($validated['product_ids'], $validated['image'], $validated['remove_image']);
+        unset(
+            $validated['product_ids'],
+            $validated['image'],
+            $validated['remove_image'],
+            $validated['brochure'],
+            $validated['remove_brochure'],
+        );
 
         $collection->update($validated);
 
@@ -206,6 +236,11 @@ class CollectionController extends Controller
         // Delete image
         if ($collection->image_path) {
             Storage::disk('public')->delete($collection->image_path);
+        }
+
+        // Delete brochure
+        if ($collection->brochure_path) {
+            Storage::disk('public')->delete($collection->brochure_path);
         }
 
         $collection->delete();
@@ -318,8 +353,7 @@ class CollectionController extends Controller
 
         $collection->products()->attach($request->product_id, [
             'sort_order' => $maxSort + 1,
-            'added_at' => now(),
-            'match_reason' => 'manual',
+            'source' => 'manual',
         ]);
 
         // Update products count

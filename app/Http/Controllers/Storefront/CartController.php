@@ -47,9 +47,19 @@ class CartController extends Controller
             $subtotal = $totals['subtotal'];
         }
 
+        // Cross-sell: random products not already in cart
+        $cartProductIds = $items->pluck('product.id')->filter()->toArray();
+        $crossSellProducts = Product::where('is_active', true)
+            ->where('status', 'published')
+            ->whereNotIn('id', $cartProductIds)
+            ->inRandomOrder()
+            ->limit(8)
+            ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url']);
+
         return Inertia::render('Storefront/Cart/Index', [
             'items' => $items,
             'subtotal' => $subtotal,
+            'crossSellProducts' => $crossSellProducts,
         ]);
     }
 
@@ -58,7 +68,8 @@ class CartController extends Controller
         $validated = $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
-            'quantity' => ['nullable', 'integer', 'min:1', 'max:99'],
+            'quantity' => ['nullable', 'numeric', 'min:0.01', 'max:99'],
+            'is_sample' => ['nullable', 'boolean'],
         ]);
 
         $userId = $request->user()?->id;
@@ -66,20 +77,30 @@ class CartController extends Controller
 
         $cart = $this->cartService->getOrCreate($userId, $sessionId);
 
-        $this->cartService->addItem(
-            $cart,
-            $validated['product_id'],
-            $validated['variant_id'] ?? null,
-            $validated['quantity'] ?? 1
-        );
+        try {
+            $this->cartService->addItem(
+                $cart,
+                $validated['product_id'],
+                $validated['variant_id'] ?? null,
+                $validated['quantity'] ?? 1,
+                [],
+                (bool) ($validated['is_sample'] ?? false)
+            );
+        } catch (\App\Domain\Cart\Exceptions\SampleLimitExceededException $e) {
+            return Redirect::back()->with('error', $e->getMessage());
+        }
 
-        return Redirect::back()->with('success', 'Added to cart.');
+        $message = ($validated['is_sample'] ?? false)
+            ? 'Free sample added to cart.'
+            : 'Added to cart.';
+
+        return Redirect::back()->with('success', $message);
     }
 
     public function update(Request $request, int $itemId): RedirectResponse
     {
         $validated = $request->validate([
-            'quantity' => ['required', 'integer', 'min:1', 'max:99'],
+            'quantity' => ['required', 'numeric', 'min:0.01', 'max:99'],
         ]);
 
         $userId = $request->user()?->id;

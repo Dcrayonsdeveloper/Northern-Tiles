@@ -37,6 +37,14 @@ class CheckoutService
             ]);
         }
 
+        // Authoritative sample-minimum validation — never trust the frontend
+        $sampleValidation = $this->pricingService->getSampleValidation($cart);
+        if (! $sampleValidation['is_valid']) {
+            throw ValidationException::withMessages([
+                'cart' => [$sampleValidation['message']],
+            ]);
+        }
+
         // Server-authoritative totals calculation
         $totals = $this->pricingService->computeTotals($cart, $data['shipping_address'] ?? []);
 
@@ -76,10 +84,13 @@ class CheckoutService
                     'price' => $item->price,
                     'tax' => 0, // Tax is calculated at order level
                     'options_json' => $item->options_json,
+                    'is_sample' => (bool) $item->is_sample,
                 ]);
 
-                // Decrement inventory
-                $this->decrementInventory($item);
+                // Samples don't reduce real inventory
+                if (! $item->is_sample) {
+                    $this->decrementInventory($item);
+                }
             }
 
             // Update cart email if guest checkout
@@ -210,14 +221,18 @@ class CheckoutService
      */
     protected function decrementInventory($item): void
     {
+        // Inventory is tracked as integer units; round up so a 2.20 m² sale
+        // doesn't reserve only 2 units and leave 0.20 dangling.
+        $stockUnits = (int) ceil((float) $item->quantity);
+
         if ($item->variant) {
             // Variant inventory
             if (method_exists($item->variant, 'decrementInventory')) {
-                $item->variant->decrementInventory($item->quantity);
+                $item->variant->decrementInventory($stockUnits);
             }
         } elseif ($item->product && isset($item->product->inventory_quantity)) {
             // Product inventory
-            $item->product->decrement('inventory_quantity', $item->quantity);
+            $item->product->decrement('inventory_quantity', $stockUnits);
         }
     }
 
@@ -235,6 +250,7 @@ class CheckoutService
                 'quantity' => $item->quantity,
                 'price' => $item->price,
                 'line_total' => $item->price * $item->quantity,
+                'is_sample' => (bool) $item->is_sample,
                 'image_url' => $item->product->image_url ?? '/images/placeholder-product.svg',
             ];
         });

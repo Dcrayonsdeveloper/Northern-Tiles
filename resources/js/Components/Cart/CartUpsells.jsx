@@ -30,11 +30,12 @@ function UpsellCard({ product, currency, onAdd }) {
                 </p>
                 <div className="mt-1 flex items-center gap-1">
                     <span className="text-xs font-semibold text-gray-900">
-                        {currency}{product.price?.toLocaleString()}
+                        {currency}{parseFloat(product.price || 0).toFixed(2)}
                     </span>
+                    <span className="text-[9px] text-gray-400">/ sqm</span>
                     {product.compare_at_price && product.compare_at_price > product.price && (
                         <span className="text-[10px] text-gray-500 line-through">
-                            {currency}{product.compare_at_price?.toLocaleString()}
+                            {currency}{parseFloat(product.compare_at_price || 0).toFixed(2)}
                         </span>
                     )}
                 </div>
@@ -51,7 +52,7 @@ function UpsellCard({ product, currency, onAdd }) {
     );
 }
 
-export default function CartUpsells({ upsells, currency = '₹', onAdd }) {
+export default function CartUpsells({ upsells, currency = '$', onAdd }) {
     if (!upsells?.items?.length) {
         return null;
     }

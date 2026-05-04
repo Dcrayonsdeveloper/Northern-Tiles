@@ -48,6 +48,7 @@ class CollectionController extends Controller
                 'handle' => $collection->handle,
                 'description' => $collection->display_description,
                 'image_url' => $collection->image_url,
+                'brochure_url' => $collection->brochure_url,
                 'meta_title' => $collection->meta_title,
                 'meta_description' => $collection->meta_description,
             ],

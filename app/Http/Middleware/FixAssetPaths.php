@@ -26,8 +26,8 @@ class FixAssetPaths
                 [
                     'href="/build/',
                     'src="/build/',
-                    'href="https://jikra.dcrayons.app/build/',
-                    'src="https://jikra.dcrayons.app/build/',
+                    'href="https://ntiled.com.au/build/',
+                    'src="https://ntiled.com.au/build/',
                     'src="/images/',
                     'href="/images/',
                     'href="/favicon.',
@@ -35,8 +35,8 @@ class FixAssetPaths
                 [
                     'href="/public/build/',
                     'src="/public/build/',
-                    'href="https://jikra.dcrayons.app/public/build/',
-                    'src="https://jikra.dcrayons.app/public/build/',
+                    'href="https://ntiled.com.au/public/build/',
+                    'src="https://ntiled.com.au/public/build/',
                     'src="/public/images/',
                     'href="/public/images/',
                     'href="/public/favicon.',

@@ -13,8 +13,8 @@ class StaticPagesSeeder extends Seeder
             [
                 'title' => 'Privacy Policy',
                 'slug' => 'privacy-policy',
-                'meta_title' => 'Privacy Policy - Jikra',
-                'meta_description' => 'Learn how Jikra collects, uses, and protects your personal information.',
+                'meta_title' => 'Privacy Policy - Northern TILE Distributors',
+                'meta_description' => 'Learn how Northern TILE Distributors collects, uses, and protects your personal information.',
                 'body_json' => $this->getPrivacyPolicyContent(),
                 'template' => 'default',
                 'status' => Page::STATUS_PUBLISHED,
@@ -23,8 +23,8 @@ class StaticPagesSeeder extends Seeder
             [
                 'title' => 'Terms of Service',
                 'slug' => 'terms-of-service',
-                'meta_title' => 'Terms of Service - Jikra',
-                'meta_description' => 'Read the terms and conditions for using Jikra services and products.',
+                'meta_title' => 'Terms of Service - Northern TILE Distributors',
+                'meta_description' => 'Read the terms and conditions for using Northern TILE Distributors services and products.',
                 'body_json' => $this->getTermsOfServiceContent(),
                 'template' => 'default',
                 'status' => Page::STATUS_PUBLISHED,
@@ -33,7 +33,7 @@ class StaticPagesSeeder extends Seeder
             [
                 'title' => 'Return Policy',
                 'slug' => 'return-policy',
-                'meta_title' => 'Return Policy - Jikra',
+                'meta_title' => 'Return Policy - Northern TILE Distributors',
                 'meta_description' => 'Learn about our hassle-free return and refund policy.',
                 'body_json' => $this->getReturnPolicyContent(),
                 'template' => 'default',
@@ -43,7 +43,7 @@ class StaticPagesSeeder extends Seeder
             [
                 'title' => 'Shipping Information',
                 'slug' => 'shipping',
-                'meta_title' => 'Shipping Information - Jikra',
+                'meta_title' => 'Shipping Information - Northern TILE Distributors',
                 'meta_description' => 'Everything you need to know about shipping, delivery times, and tracking.',
                 'body_json' => $this->getShippingContent(),
                 'template' => 'default',
@@ -53,8 +53,8 @@ class StaticPagesSeeder extends Seeder
             [
                 'title' => 'Frequently Asked Questions',
                 'slug' => 'faq',
-                'meta_title' => 'FAQ - Jikra',
-                'meta_description' => 'Find answers to common questions about Jikra products and services.',
+                'meta_title' => 'FAQ - Northern TILE Distributors',
+                'meta_description' => 'Find answers to common questions about Northern TILE Distributors products and services.',
                 'body_json' => $this->getFaqContent(),
                 'template' => 'default',
                 'status' => Page::STATUS_PUBLISHED,

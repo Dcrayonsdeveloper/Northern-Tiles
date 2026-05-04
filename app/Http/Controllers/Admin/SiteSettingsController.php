@@ -20,7 +20,7 @@ class SiteSettingsController extends Controller
                 'description' => '',
             ],
             'home' => [
-                'hero_title' => 'Jikra',
+                'hero_title' => 'Northern TILE Distributors',
                 'hero_subtitle' => '',
             ],
         ]);

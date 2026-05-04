@@ -164,12 +164,12 @@ export default function ProductDetail({
                     {/* Price */}
                     <div className="mt-4 flex items-baseline gap-3">
                         <span className="text-3xl font-bold text-gray-900">
-                            ₹{currentPrice?.toLocaleString()}
+                            ${currentPrice?.toLocaleString()}
                         </span>
                         {comparePrice && comparePrice > currentPrice && (
                             <>
                                 <span className="text-xl text-gray-400 line-through">
-                                    ₹{comparePrice.toLocaleString()}
+                                    ${comparePrice.toLocaleString()}
                                 </span>
                                 <span className="rounded bg-red-100 px-2 py-0.5 text-sm font-semibold text-red-600">
                                     {Math.round(((comparePrice - currentPrice) / comparePrice) * 100)}% OFF

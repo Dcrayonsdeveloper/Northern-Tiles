@@ -60,6 +60,7 @@ class PageController extends Controller
             'full_slug' => $page->full_slug,
             'template' => $page->template ?? 'default',
             'body_json' => $page->body_json,
+            'content' => $this->renderBodyJson($page->body_json),
             'featured_image_url' => $page->featured_image_url,
             'og_image_url' => $page->og_image_url,
             'status' => $page->status,
@@ -79,6 +80,49 @@ class PageController extends Controller
             'updated_at' => $page->updated_at?->toISOString(),
             'created_at' => $page->created_at?->toISOString(),
         ];
+    }
+
+    /**
+     * Convert body_json blocks to HTML content.
+     */
+    protected function renderBodyJson(?array $bodyJson): string
+    {
+        if (!$bodyJson || empty($bodyJson['blocks'])) {
+            return '';
+        }
+
+        $html = '';
+
+        foreach ($bodyJson['blocks'] as $block) {
+            $content = e($block['content'] ?? '');
+            $rawContent = $block['content'] ?? '';
+
+            switch ($block['type'] ?? 'paragraph') {
+                case 'heading':
+                    $level = $block['level'] ?? 2;
+                    $html .= "<h{$level}>{$content}</h{$level}>";
+                    break;
+                case 'paragraph':
+                    $html .= "<p>{$content}</p>";
+                    break;
+                case 'html':
+                    $html .= $rawContent;
+                    break;
+                case 'list':
+                    $items = $block['items'] ?? [];
+                    $tag = ($block['style'] ?? 'unordered') === 'ordered' ? 'ol' : 'ul';
+                    $html .= "<{$tag}>";
+                    foreach ($items as $item) {
+                        $html .= '<li>' . e($item) . '</li>';
+                    }
+                    $html .= "</{$tag}>";
+                    break;
+                default:
+                    $html .= "<p>{$content}</p>";
+            }
+        }
+
+        return $html;
     }
 
     /**

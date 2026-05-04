@@ -30,16 +30,33 @@ class CartService
         return null;
     }
 
-    public function addItem(Cart $cart, int $productId, ?int $variantId, int $quantity = 1, array $options = []): CartItem
+    public function addItem(Cart $cart, int $productId, ?int $variantId, float $quantity = 1, array $options = [], bool $isSample = false): CartItem
     {
         $product = Product::findOrFail($productId);
         $variant = $variantId ? ProductVariant::findOrFail($variantId) : null;
 
-        $price = $variant ? $variant->price : $product->price;
+        // Samples are always free — shipping covers the cost
+        $price = $isSample ? 0 : ($variant ? $variant->price : $product->price);
 
+        // Enforce sample maximum (5 per order, hard cap)
+        if ($isSample) {
+            $max = \App\Domain\Cart\Services\PricingService::SAMPLE_MAX_QUANTITY;
+            $existingSampleCount = (int) $cart->items()->where('is_sample', true)->sum('quantity');
+            $available = $max - $existingSampleCount;
+            if ($available <= 0) {
+                throw new \App\Domain\Cart\Exceptions\SampleLimitExceededException(
+                    "Maximum {$max} samples per order. You already have {$existingSampleCount}."
+                );
+            }
+            // Cap quantity to remaining capacity
+            $quantity = min($quantity, $available);
+        }
+
+        // Sample and non-sample lines of the same product stay separate
         $existingItem = $cart->items()
             ->where('product_id', $productId)
             ->where('variant_id', $variantId)
+            ->where('is_sample', $isSample)
             ->first();
 
         if ($existingItem) {
@@ -53,10 +70,11 @@ class CartService
             'quantity' => $quantity,
             'price' => $price,
             'options_json' => $options ?: null,
+            'is_sample' => $isSample,
         ]);
     }
 
-    public function updateItemQuantity(CartItem $item, int $quantity): bool
+    public function updateItemQuantity(CartItem $item, float $quantity): bool
     {
         return $item->updateQuantity($quantity);
     }

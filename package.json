@@ -5,11 +5,11 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "deploy": "powershell -ExecutionPolicy Bypass -File deploy/Deploy-Jikra.ps1",
-        "deploy:build": "powershell -ExecutionPolicy Bypass -File deploy/Deploy-Jikra.ps1 -Build",
-        "deploy:all": "powershell -ExecutionPolicy Bypass -File deploy/Deploy-Jikra.ps1 -All",
-        "deploy:dry": "powershell -ExecutionPolicy Bypass -File deploy/Deploy-Jikra.ps1 -DryRun",
-        "deploy:seed": "powershell -ExecutionPolicy Bypass -File deploy/Deploy-Jikra.ps1 -Seed"
+        "deploy": "powershell -ExecutionPolicy Bypass -File deploy/Deploy-NTD.ps1",
+        "deploy:build": "powershell -ExecutionPolicy Bypass -File deploy/Deploy-NTD.ps1 -Build",
+        "deploy:all": "powershell -ExecutionPolicy Bypass -File deploy/Deploy-NTD.ps1 -All",
+        "deploy:dry": "powershell -ExecutionPolicy Bypass -File deploy/Deploy-NTD.ps1 -DryRun",
+        "deploy:seed": "powershell -ExecutionPolicy Bypass -File deploy/Deploy-NTD.ps1 -Seed"
     },
     "devDependencies": {
         "@headlessui/react": "^2.0.0",
@@ -29,6 +29,15 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "@tiptap/extension-color": "^3.22.3",
+        "@tiptap/extension-image": "^3.22.3",
+        "@tiptap/extension-link": "^3.22.3",
+        "@tiptap/extension-placeholder": "^3.22.3",
+        "@tiptap/extension-text-align": "^3.22.3",
+        "@tiptap/extension-text-style": "^3.22.3",
+        "@tiptap/extension-underline": "^3.22.3",
+        "@tiptap/react": "^3.22.3",
+        "@tiptap/starter-kit": "^3.22.3",
         "lodash": "^4.17.21"
     }
 }

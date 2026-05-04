@@ -29,8 +29,8 @@ class CouponSeeder extends Seeder
             ],
             [
                 'code' => 'FLAT100',
-                'title' => 'Flat Rs.100 Off',
-                'description' => 'Get flat Rs.100 off on orders above Rs.999',
+                'title' => 'Flat $100 Off',
+                'description' => 'Get flat $100 off on orders above $999',
                 'type' => 'fixed_amount',
                 'value' => 100,
                 'minimum_purchase' => 999,
@@ -39,7 +39,7 @@ class CouponSeeder extends Seeder
             [
                 'code' => 'FREESHIP',
                 'title' => 'Free Shipping',
-                'description' => 'Free shipping on orders above Rs.499',
+                'description' => 'Free shipping on orders above $499',
                 'type' => 'free_shipping',
                 'value' => 0,
                 'minimum_purchase' => 499,
@@ -48,7 +48,7 @@ class CouponSeeder extends Seeder
             [
                 'code' => 'SAVE20',
                 'title' => '20% Discount',
-                'description' => 'Get 20% off on orders above Rs.1500',
+                'description' => 'Get 20% off on orders above $1500',
                 'type' => 'percentage',
                 'value' => 20,
                 'minimum_purchase' => 1500,

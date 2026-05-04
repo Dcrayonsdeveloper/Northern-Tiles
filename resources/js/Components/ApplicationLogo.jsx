@@ -22,8 +22,8 @@ export default function ApplicationLogo(props) {
             <img
                 {...rest}
                 className={className}
-                src="/images/jikra-logo.png"
-                alt="Jikra"
+                src="/images/ntiled_logo.png"
+                alt="Northern TILE Distributors"
                 onError={() => setUseImage(false)}
             />
         );

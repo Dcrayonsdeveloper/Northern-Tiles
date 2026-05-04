@@ -71,11 +71,11 @@ class SettingsSeeder extends Seeder
                     'value_json' => [
                         'items' => [
                             ['label' => 'Home', 'url' => '/', 'target' => '_self', 'is_active' => true, 'sort' => 10],
-                            ['label' => 'New Arrivals', 'url' => '/shop?category=new-arrivals', 'target' => '_self', 'is_active' => true, 'sort' => 20],
-                            ['label' => 'Best Sellers', 'url' => '/shop?category=best-sellers', 'target' => '_self', 'is_active' => true, 'sort' => 30],
-                            ['label' => 'Kitchen Accessories', 'url' => '/shop?category=kitchen-accessories', 'target' => '_self', 'is_active' => true, 'sort' => 40],
-                            ['label' => 'Mobile Accessories', 'url' => '/shop?category=mobile-accessories', 'target' => '_self', 'is_active' => true, 'sort' => 50],
-                            ['label' => 'Corporate Gifting', 'url' => '/shop?category=corporate-gifting', 'target' => '_self', 'is_active' => true, 'sort' => 60],
+                            ['label' => 'Hybrid Flooring', 'url' => '/shop?category=hybrid-flooring', 'target' => '_self', 'is_active' => true, 'sort' => 20],
+                            ['label' => 'Timber Products', 'url' => '/shop?category=timber-products', 'target' => '_self', 'is_active' => true, 'sort' => 30],
+                            ['label' => 'NTD Tiles', 'url' => '/shop?category=ntd-tiles', 'target' => '_self', 'is_active' => true, 'sort' => 40],
+                            ['label' => 'Stone', 'url' => '/shop?category=stone', 'target' => '_self', 'is_active' => true, 'sort' => 50],
+                            ['label' => 'Trade Supplies', 'url' => '/shop?category=trade-supplies', 'target' => '_self', 'is_active' => true, 'sort' => 60],
                             ['label' => 'Contact', 'url' => '/contact', 'target' => '_self', 'is_active' => true, 'sort' => 70],
                         ],
                     ],
@@ -120,7 +120,7 @@ class SettingsSeeder extends Seeder
         if (Setting::getValue('marketplace.currency') === null) {
             Setting::query()->updateOrCreate(
                 ['key' => 'marketplace.currency'],
-                ['group' => 'marketplace', 'value_text' => 'INR'],
+                ['group' => 'marketplace', 'value_text' => 'AUD'],
             );
             Setting::forgetCache('marketplace.currency');
         }
@@ -128,7 +128,7 @@ class SettingsSeeder extends Seeder
         if (Setting::getValue('marketplace.currency_symbol') === null) {
             Setting::query()->updateOrCreate(
                 ['key' => 'marketplace.currency_symbol'],
-                ['group' => 'marketplace', 'value_text' => '₹'],
+                ['group' => 'marketplace', 'value_text' => 'A$'],
             );
             Setting::forgetCache('marketplace.currency_symbol');
         }
@@ -137,7 +137,7 @@ class SettingsSeeder extends Seeder
         if (Setting::getValue('shipping.free_threshold') === null) {
             Setting::query()->updateOrCreate(
                 ['key' => 'shipping.free_threshold'],
-                ['group' => 'shipping', 'value_text' => '999'],
+                ['group' => 'shipping', 'value_text' => '500'],
             );
             Setting::forgetCache('shipping.free_threshold');
         }
@@ -171,9 +171,10 @@ class SettingsSeeder extends Seeder
                     'value_json' => [
                         'items' => [
                             ['label' => 'All Products', 'url' => '/shop', 'target' => '_self', 'is_active' => true, 'sort' => 10],
-                            ['label' => 'Categories', 'url' => '/categories', 'target' => '_self', 'is_active' => true, 'sort' => 20],
-                            ['label' => 'New Arrivals', 'url' => '/shop?sort=newest', 'target' => '_self', 'is_active' => true, 'sort' => 30],
-                            ['label' => 'Best Sellers', 'url' => '/shop?sort=popular', 'target' => '_self', 'is_active' => true, 'sort' => 40],
+                            ['label' => 'Hybrid Flooring', 'url' => '/shop?category=hybrid-flooring', 'target' => '_self', 'is_active' => true, 'sort' => 20],
+                            ['label' => 'Timber Products', 'url' => '/shop?category=timber-products', 'target' => '_self', 'is_active' => true, 'sort' => 30],
+                            ['label' => 'NTD Tiles', 'url' => '/shop?category=ntd-tiles', 'target' => '_self', 'is_active' => true, 'sort' => 40],
+                            ['label' => 'Trade Supplies', 'url' => '/shop?category=trade-supplies', 'target' => '_self', 'is_active' => true, 'sort' => 50],
                         ],
                     ],
                 ],
@@ -244,7 +245,7 @@ class SettingsSeeder extends Seeder
         if (Setting::getValue('company.email') === null) {
             Setting::query()->updateOrCreate(
                 ['key' => 'company.email'],
-                ['group' => 'company', 'value_text' => 'support@jikra.com'],
+                ['group' => 'company', 'value_text' => 'info@ntiled.com.au'],
             );
             Setting::forgetCache('company.email');
         }
@@ -252,7 +253,7 @@ class SettingsSeeder extends Seeder
         if (Setting::getValue('company.phone') === null) {
             Setting::query()->updateOrCreate(
                 ['key' => 'company.phone'],
-                ['group' => 'company', 'value_text' => '+1 234 567 890'],
+                ['group' => 'company', 'value_text' => '03 9464 6623'],
             );
             Setting::forgetCache('company.phone');
         }
@@ -260,7 +261,7 @@ class SettingsSeeder extends Seeder
         if (Setting::getValue('company.address') === null) {
             Setting::query()->updateOrCreate(
                 ['key' => 'company.address'],
-                ['group' => 'company', 'value_text' => '123 Business Street, City, Country'],
+                ['group' => 'company', 'value_text' => '19/324 Settlement Road, Thomastown VIC 3074, Australia'],
             );
             Setting::forgetCache('company.address');
         }
@@ -268,7 +269,7 @@ class SettingsSeeder extends Seeder
         if (Setting::getValue('footer.tagline') === null) {
             Setting::query()->updateOrCreate(
                 ['key' => 'footer.tagline'],
-                ['group' => 'footer', 'value_text' => 'Your trusted shopping destination'],
+                ['group' => 'footer', 'value_text' => "Melbourne's wholesale tile & flooring specialists"],
             );
             Setting::forgetCache('footer.tagline');
         }

@@ -57,34 +57,9 @@ function ReviewCard({ review, onHelpful }) {
                 <p className="mt-3 text-sm text-gray-700 leading-relaxed">{review.body}</p>
             )}
 
-            {/* Pros and Cons */}
-            {(review.pros?.length > 0 || review.cons?.length > 0) && (
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                    {review.pros?.length > 0 && (
-                        <div>
-                            <h5 className="text-xs font-semibold text-green-700 uppercase">Pros</h5>
-                            <ul className="mt-1 space-y-1">
-                                {review.pros.map((pro, i) => (
-                                    <li key={i} className="text-sm text-gray-600 flex items-start gap-1">
-                                        <span className="text-green-500">+</span> {pro}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                    {review.cons?.length > 0 && (
-                        <div>
-                            <h5 className="text-xs font-semibold text-red-700 uppercase">Cons</h5>
-                            <ul className="mt-1 space-y-1">
-                                {review.cons.map((con, i) => (
-                                    <li key={i} className="text-sm text-gray-600 flex items-start gap-1">
-                                        <span className="text-red-500">-</span> {con}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                </div>
+            {/* Pros and Cons removed */}
+            {false && (
+                <div></div>
             )}
 
             {/* Admin reply */}
@@ -270,39 +245,7 @@ function ReviewForm({ productId, onSubmit, onCancel }) {
                 />
             </div>
 
-            {/* Pros and Cons */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                    <label className="block text-sm font-medium text-green-700 mb-2">
-                        Pros (optional)
-                    </label>
-                    {form.pros.map((pro, i) => (
-                        <input
-                            key={i}
-                            type="text"
-                            value={pro}
-                            onChange={(e) => updatePros(i, e.target.value)}
-                            placeholder={`Pro ${i + 1}`}
-                            className="w-full rounded-lg border-gray-300 text-sm mb-2"
-                        />
-                    ))}
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-red-700 mb-2">
-                        Cons (optional)
-                    </label>
-                    {form.cons.map((con, i) => (
-                        <input
-                            key={i}
-                            type="text"
-                            value={con}
-                            onChange={(e) => updateCons(i, e.target.value)}
-                            placeholder={`Con ${i + 1}`}
-                            className="w-full rounded-lg border-gray-300 text-sm mb-2"
-                        />
-                    ))}
-                </div>
-            </div>
+            {/* Pros/Cons removed */}
 
             {/* Actions */}
             <div className="flex gap-3">

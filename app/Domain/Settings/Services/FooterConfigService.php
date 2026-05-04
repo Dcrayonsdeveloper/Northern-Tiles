@@ -27,12 +27,12 @@ class FooterConfigService
         $siteLogoUrl = $this->settings->getFileUrl('site.logo');
 
         return [
-            'name' => $this->settings->getText('site.title', config('app.name', 'Jikra')),
+            'name' => $this->settings->getText('site.title', config('app.name', 'Northern TILE Distributors')),
             'logoUrl' => $footerLogoUrl ?? $siteLogoUrl,
-            'tagline' => $this->resolveText('footer.tagline', 'Your trusted shopping destination'),
-            'address' => $this->resolveText('company.address', '123 Business Street, City, Country'),
-            'email' => $this->settings->getText('company.email', 'support@example.com'),
-            'phone' => $this->settings->getText('company.phone', '+1 234 567 890'),
+            'tagline' => $this->resolveText('footer.tagline', "Melbourne's wholesale tile & flooring specialists"),
+            'address' => $this->resolveText('company.address', '19/324 Settlement Road, Thomastown VIC 3074, Australia'),
+            'email' => $this->settings->getText('company.email', 'info@ntiled.com.au'),
+            'phone' => $this->settings->getText('company.phone', '03 9464 6623'),
         ];
     }
 

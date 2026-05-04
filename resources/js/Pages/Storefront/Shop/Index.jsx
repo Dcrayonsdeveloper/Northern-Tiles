@@ -38,11 +38,12 @@ function ProductCard({ product }) {
                 ) : null}
                 <div className="mt-3 flex items-center gap-2">
                     <span className="text-sm font-bold text-gray-900">
-                        ₹{product.price?.toLocaleString()}
+                        ${parseFloat(product.price || 0).toFixed(2)}
                     </span>
+                    <span className="text-[11px] text-gray-400">/ sqm</span>
                     {hasDiscount && (
                         <span className="text-xs text-gray-500 line-through">
-                            ₹{product.compare_at_price?.toLocaleString()}
+                            ${parseFloat(product.compare_at_price || 0).toFixed(2)}
                         </span>
                     )}
                 </div>

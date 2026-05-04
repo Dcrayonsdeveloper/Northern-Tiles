@@ -118,17 +118,53 @@ export default function Contact() {
 
                         <div className="rounded-xl border bg-white p-8 shadow-sm">
                             <div className="text-sm font-semibold text-gray-900">
-                                Business info
+                                Contact Details
                             </div>
-                            <div className="mt-3 text-sm text-gray-700">
-                                Add your company address, phone, social links, and a map
-                                embed here.
+                            <div className="mt-6 space-y-4 text-sm text-gray-700">
+                                <div className="flex items-start gap-3">
+                                    <svg className="h-5 w-5 text-brand flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                    <div>19/324 Settlement Road, Thomastown VIC 3074</div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <svg className="h-5 w-5 text-brand flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                                    <div>
+                                        <a href="tel:0394646623" className="hover:text-brand transition-colors">03 9464 6623</a>
+                                        <span className="mx-2 text-gray-300">|</span>
+                                        <a href="tel:0416924324" className="hover:text-brand transition-colors">0416 924 324</a>
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <svg className="h-5 w-5 text-brand flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                    <a href="mailto:info@ntiled.com.au" className="hover:text-brand transition-colors">info@ntiled.com.au</a>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <svg className="h-5 w-5 text-brand flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    <div>
+                                        <div>Mon–Fri 9:00 AM – 5:00 PM</div>
+                                        <div>Sat 9:00 AM – 1:00 PM</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="mt-6 rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
-                                Example:
-                                <div className="mt-2">Email: support@example.com</div>
-                                <div>Phone: +91 99999 99999</div>
-                                <div>Hours: Mon–Sat 10:00–18:00</div>
+
+                            <div className="mt-6 overflow-hidden rounded-lg border border-gray-200">
+                                <iframe
+                                    title="Northern Tile Distributors location"
+                                    src="https://maps.google.com/maps?q=19%2F324%20Settlement%20Road%2C%20Thomastown%20VIC%203074&output=embed"
+                                    width="100%"
+                                    height="320"
+                                    style={{ border: 0 }}
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                    allowFullScreen
+                                />
+                                <a
+                                    href="https://www.google.com/maps/dir/?api=1&destination=19%2F324%20Settlement%20Road%2C%20Thomastown%20VIC%203074"
+                                    target="_blank"
+                                    rel="noreferrer noopener"
+                                    className="block bg-gray-50 px-4 py-2 text-center text-sm font-medium text-brand hover:bg-gray-100 transition-colors"
+                                >
+                                    Get Directions →
+                                </a>
                             </div>
                         </div>
                     </div>

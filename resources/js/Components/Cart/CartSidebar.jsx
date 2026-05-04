@@ -24,6 +24,54 @@ function ShoppingBagIcon({ className }) {
     );
 }
 
+// Sample status banner — shown above line items when samples are in cart
+function SampleBanner({ totals }) {
+    const count = totals.sample_count || 0;
+    if (count === 0) return null;
+
+    const max = totals.sample_max || 5;
+    const remaining = totals.samples_remaining ?? Math.max(0, max - count);
+    const isAtMax = totals.is_at_sample_max || count >= max;
+    const sampleShipping = parseFloat(totals.sample_shipping || 0).toFixed(2);
+    const currency = totals.currency_symbol || '$';
+    const pct = Math.min(100, (count / max) * 100);
+
+    // State 1: At maximum
+    if (isAtMax) {
+        return (
+            <div className="mb-4 rounded-lg border-2 border-green-200 bg-green-50 p-3">
+                <p className="text-sm font-bold text-green-800">
+                    ✅ Maximum samples reached — {count} of {max}
+                </p>
+                <p className="mt-1 text-[11px] text-green-700">
+                    Flat {currency}{sampleShipping} shipping covers all your samples.
+                </p>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-green-200">
+                    <div className="h-full rounded-full bg-green-500" style={{ width: '100%' }} />
+                </div>
+            </div>
+        );
+    }
+
+    // State 2: Have samples, room for more
+    return (
+        <div className="mb-4 rounded-lg border-2 border-amber-200 bg-amber-50 p-3">
+            <p className="text-sm font-bold text-amber-900">
+                🎁 {count} of {max} samples · flat {currency}{sampleShipping} shipping
+            </p>
+            <p className="mt-1 text-[11px] text-amber-800">
+                Add up to {remaining} more sample{remaining !== 1 ? 's' : ''} — shipping stays at {currency}{sampleShipping}.
+            </p>
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-amber-200">
+                <div
+                    className="h-full rounded-full bg-amber-500 transition-all"
+                    style={{ width: `${pct}%` }}
+                />
+            </div>
+        </div>
+    );
+}
+
 export default function CartSidebar({ open, onClose }) {
     const [cart, setCart] = useState({
         items: [],
@@ -34,8 +82,8 @@ export default function CartSidebar({ open, onClose }) {
             tax: 0,
             grand_total: 0,
             item_count: 0,
-            currency: 'INR',
-            currency_symbol: '₹',
+            currency: 'AUD',
+            currency_symbol: '$',
         },
         shipping_estimate: {
             estimated: 0,
@@ -233,8 +281,11 @@ export default function CartSidebar({ open, onClose }) {
                                                 </div>
                                             ) : (
                                                 <div className="px-4 py-4">
-                                                    {/* Free shipping progress */}
-                                                    {!cart.shipping_estimate.is_free && cart.shipping_estimate.amount_for_free > 0 && (
+                                                    {/* Sample pack status banner */}
+                                                    <SampleBanner totals={cart.totals} />
+
+                                                    {/* Free shipping progress (non-sample only) */}
+                                                    {!cart.shipping_estimate.is_free && cart.shipping_estimate.amount_for_free > 0 && cart.totals.subtotal > 0 && (
                                                         <div className="mb-4 rounded-lg bg-amber-50 p-3">
                                                             <p className="text-sm text-amber-800">
                                                                 {d('cart.free_shipping_notice', 'Add')} {cart.totals.currency_symbol}

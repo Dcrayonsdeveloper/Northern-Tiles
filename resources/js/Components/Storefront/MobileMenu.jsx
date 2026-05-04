@@ -132,6 +132,7 @@ function MobileFeaturedContent({ item, onClose }) {
 // Mobile menu item
 function MobileMenuItem({ item, onClose, onNavigate }) {
     const hasChildren = item.children?.length > 0;
+    const thumbUrl = MOBILE_NAV_IMAGES[item.label] || null;
 
     if (hasChildren) {
         return (
@@ -141,7 +142,8 @@ function MobileMenuItem({ item, onClose, onNavigate }) {
                     onClick={() => onNavigate(item)}
                     className="mobile-menu__link mobile-menu__link--parent"
                 >
-                    {item.icon && <span className={`mobile-menu__icon ${item.icon}`} />}
+                    {thumbUrl && <img src={thumbUrl} alt="" className="h-10 w-10 rounded-lg object-cover flex-shrink-0" loading="lazy" />}
+                    {item.icon && !thumbUrl && <span className={`mobile-menu__icon ${item.icon}`} />}
                     <span className="mobile-menu__label">{item.label}</span>
                     <Badge text={item.badge_text} color={item.badge_color} />
                     <ChevronRightIcon className="mobile-menu__arrow" />
@@ -158,7 +160,8 @@ function MobileMenuItem({ item, onClose, onNavigate }) {
                 className="mobile-menu__link"
                 onClick={onClose}
             >
-                {item.icon && <span className={`mobile-menu__icon ${item.icon}`} />}
+                {thumbUrl && <img src={thumbUrl} alt="" className="h-10 w-10 rounded-lg object-cover flex-shrink-0" loading="lazy" />}
+                {item.icon && !thumbUrl && <span className={`mobile-menu__icon ${item.icon}`} />}
                 <span className="mobile-menu__label">{item.label}</span>
                 <Badge text={item.badge_text} color={item.badge_color} />
             </MenuLink>
@@ -168,6 +171,16 @@ function MobileMenuItem({ item, onClose, onNavigate }) {
         </li>
     );
 }
+
+// Category images for mobile menu
+const MOBILE_NAV_IMAGES = {
+    'Tiles': 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=120&h=120&fit=crop&q=80',
+    'Flooring': 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=120&h=120&fit=crop&q=80',
+    'Timber': 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=120&h=120&fit=crop&q=80',
+    'Stone': 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=120&h=120&fit=crop&q=80',
+    'Trade Supplies': 'https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=120&h=120&fit=crop&q=80',
+    'Find a Store': 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=120&h=120&fit=crop&q=80',
+};
 
 // Main mobile menu component
 export default function MobileMenu({ open, onClose, navItems = [], user }) {
@@ -280,6 +293,21 @@ export default function MobileMenu({ open, onClose, navItems = [], user }) {
                 {/* Featured content for mega menus */}
                 {currentPanel.parentItem && (
                     <MobileFeaturedContent item={currentPanel.parentItem} onClose={onClose} />
+                )}
+
+                {/* Promo banner on main level */}
+                {navigationStack.length === 0 && (
+                    <div className="px-4 pt-2 pb-3">
+                        <MenuLink href="/shop" onClick={onClose} className="block relative overflow-hidden rounded-xl">
+                            <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=240&fit=crop&q=80" alt="Shop our collections" className="w-full h-[120px] object-cover" loading="lazy" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center px-5">
+                                <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-[2px] text-white/80">New Season</p>
+                                    <p className="text-[16px] font-bold text-white mt-0.5">Shop Collections</p>
+                                </div>
+                            </div>
+                        </MenuLink>
+                    </div>
                 )}
 
                 {/* Navigation items */}

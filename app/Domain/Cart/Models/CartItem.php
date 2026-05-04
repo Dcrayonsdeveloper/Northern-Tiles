@@ -16,13 +16,25 @@ class CartItem extends Model
         'quantity',
         'price',
         'options_json',
+        'is_sample',
     ];
 
     protected $casts = [
-        'quantity' => 'integer',
+        'quantity' => 'decimal:2',
         'price' => 'decimal:2',
         'options_json' => 'array',
+        'is_sample' => 'boolean',
     ];
+
+    public function scopeSamples($query)
+    {
+        return $query->where('is_sample', true);
+    }
+
+    public function scopeNonSamples($query)
+    {
+        return $query->where('is_sample', false);
+    }
 
     public function cart(): BelongsTo
     {
@@ -44,9 +56,9 @@ class CartItem extends Model
         return $this->price * $this->quantity;
     }
 
-    public function updateQuantity(int $quantity): bool
+    public function updateQuantity(float $quantity): bool
     {
-        if ($quantity <= 0) {
+        if ($quantity <= 0.001) {
             $this->delete();
             return true;
         }
@@ -61,18 +73,21 @@ class CartItem extends Model
         return true;
     }
 
-    public function incrementQuantity(int $amount = 1): bool
+    public function incrementQuantity(float $amount = 1): bool
     {
-        return $this->updateQuantity($this->quantity + $amount);
+        return $this->updateQuantity((float) $this->quantity + $amount);
     }
 
-    public function decrementQuantity(int $amount = 1): bool
+    public function decrementQuantity(float $amount = 1): bool
     {
-        return $this->updateQuantity($this->quantity - $amount);
+        return $this->updateQuantity((float) $this->quantity - $amount);
     }
 
     public function getCurrentPrice(): float
     {
+        if ($this->is_sample) {
+            return 0;
+        }
         if ($this->variant) {
             return $this->variant->price;
         }
@@ -81,6 +96,10 @@ class CartItem extends Model
 
     public function syncPrice(): void
     {
+        // Samples are always free — never sync from product
+        if ($this->is_sample) {
+            return;
+        }
         $this->update(['price' => $this->getCurrentPrice()]);
     }
 }

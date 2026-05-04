@@ -252,6 +252,8 @@ export default function DashboardLayout({ title, children }) {
 
         if (user?.is_admin) {
             items.push(
+                // ── Store ──
+                { key: 'divider-store', divider: true, label: 'Store' },
                 {
                     key: 'orders',
                     label: 'Orders',
@@ -274,6 +276,16 @@ export default function DashboardLayout({ title, children }) {
                     icon: <IconBox className="h-5 w-5" />,
                 },
                 {
+                    key: 'collections',
+                    label: 'Collections',
+                    href: route('admin.collections.index'),
+                    active: route().current('admin.collections.*'),
+                    icon: <IconTag className="h-5 w-5" />,
+                },
+
+                // ── Marketing ──
+                { key: 'divider-marketing', divider: true, label: 'Marketing' },
+                {
                     key: 'coupons',
                     label: 'Coupons',
                     href: route('admin.coupons.index'),
@@ -281,25 +293,49 @@ export default function DashboardLayout({ title, children }) {
                     icon: <IconCoupon className="h-5 w-5" />,
                 },
                 {
-                    key: 'reviews',
-                    label: 'Reviews',
-                    href: route('admin.reviews.index'),
-                    active: route().current('admin.reviews.*'),
-                    icon: <IconStar className="h-5 w-5" />,
+                    key: 'abandoned-carts',
+                    label: 'Abandoned Carts',
+                    href: route('admin.abandoned-carts.index'),
+                    active: route().current('admin.abandoned-carts.*'),
+                    icon: <IconReceipt className="h-5 w-5" />,
                 },
                 {
-                    key: 'messages',
-                    label: 'Messages',
-                    href: route('admin.messages.index'),
-                    active: route().current('admin.messages.*'),
+                    key: 'email-templates',
+                    label: 'Email Templates',
+                    href: route('admin.email-templates.index'),
+                    active: route().current('admin.email-templates.*'),
                     icon: <IconChat className="h-5 w-5" />,
                 },
                 {
-                    key: 'users',
-                    label: 'Users',
-                    href: route('admin.users.index'),
-                    active: route().current('admin.users.*'),
-                    icon: <IconUsers className="h-5 w-5" />,
+                    key: 'announcements',
+                    label: 'Announcements',
+                    href: route('admin.announcements.index'),
+                    active: route().current('admin.announcements.*'),
+                    icon: <IconChat className="h-5 w-5" />,
+                },
+
+                // ── CMS ──
+                { key: 'divider-cms', divider: true, label: 'CMS' },
+                {
+                    key: 'pages',
+                    label: 'Pages',
+                    href: route('admin.pages.index'),
+                    active: route().current('admin.pages.*'),
+                    icon: <IconDocument className="h-5 w-5" />,
+                },
+                {
+                    key: 'posts',
+                    label: 'Blog Posts',
+                    href: route('admin.posts.index'),
+                    active: route().current('admin.posts.*'),
+                    icon: <IconBook className="h-5 w-5" />,
+                },
+                {
+                    key: 'authors',
+                    label: 'Authors',
+                    href: route('admin.authors.index'),
+                    active: route().current('admin.authors.*'),
+                    icon: <IconUser className="h-5 w-5" />,
                 },
                 {
                     key: 'menus',
@@ -310,24 +346,44 @@ export default function DashboardLayout({ title, children }) {
                 },
                 {
                     key: 'dictionary',
-                    label: 'Dictionary',
+                    label: 'CMS Text',
                     href: route('admin.dictionary.index'),
                     active: route().current('admin.dictionary.*'),
                     icon: <IconBook className="h-5 w-5" />,
                 },
+
+                // ── SEO ──
+                { key: 'divider-seo', divider: true, label: 'SEO' },
                 {
-                    key: 'announcements',
-                    label: 'Announcements',
-                    href: route('admin.announcements.index'),
-                    active: route().current('admin.announcements.*'),
-                    icon: <IconChat className="h-5 w-5" />,
+                    key: 'seo',
+                    label: 'SEO Management',
+                    href: route('admin.seo.index'),
+                    active: route().current('admin.seo.*'),
+                    icon: <IconDocument className="h-5 w-5" />,
+                },
+
+                // ── Admin ──
+                { key: 'divider-admin', divider: true, label: 'Admin' },
+                {
+                    key: 'users',
+                    label: 'Users',
+                    href: route('admin.users.index'),
+                    active: route().current('admin.users.*'),
+                    icon: <IconUsers className="h-5 w-5" />,
                 },
                 {
-                    key: 'pages',
-                    label: 'Pages',
-                    href: route('admin.pages.index'),
-                    active: route().current('admin.pages.*'),
-                    icon: <IconDocument className="h-5 w-5" />,
+                    key: 'roles',
+                    label: 'Roles & Permissions',
+                    href: route('admin.roles.index'),
+                    active: route().current('admin.roles.*'),
+                    icon: <IconSettings className="h-5 w-5" />,
+                },
+                {
+                    key: 'messages',
+                    label: 'Messages',
+                    href: route('admin.messages.index'),
+                    active: route().current('admin.messages.*'),
+                    icon: <IconChat className="h-5 w-5" />,
                 },
                 {
                     key: 'configuration',
@@ -377,12 +433,12 @@ export default function DashboardLayout({ title, children }) {
                     <Link href={route('home')} className="flex items-center gap-3">
                         {sidebarCollapsed ? (
                             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-sm font-semibold text-white">
-                                J
+                                N
                             </div>
                         ) : (
                             <ApplicationLogo className="h-auto w-auto max-w-[110px]" />
                         )}
-                        <span className="sr-only">Jikra</span>
+                        <span className="sr-only">Northern TILE Distributors</span>
                     </Link>
 
                     <button
@@ -429,19 +485,29 @@ export default function DashboardLayout({ title, children }) {
                                 </h2>
 
                                 <ul className="flex flex-col gap-1">
-                                    {navItems.map((item) => (
-                                        <li key={item.key}>
-                                            <SidebarLink
-                                                href={item.href}
-                                                active={item.active}
-                                                icon={item.icon}
-                                                collapsed={sidebarCollapsed}
-                                                label={item.label}
-                                            >
-                                                {item.label}
-                                            </SidebarLink>
-                                        </li>
-                                    ))}
+                                    {navItems.map((item) =>
+                                        item.divider ? (
+                                            <li key={item.key} className={`${sidebarCollapsed ? 'px-2' : 'px-4'} pt-4 pb-1`}>
+                                                {sidebarCollapsed ? (
+                                                    <div className="h-px bg-gray-200" />
+                                                ) : (
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{item.label}</span>
+                                                )}
+                                            </li>
+                                        ) : (
+                                            <li key={item.key}>
+                                                <SidebarLink
+                                                    href={item.href}
+                                                    active={item.active}
+                                                    icon={item.icon}
+                                                    collapsed={sidebarCollapsed}
+                                                    label={item.label}
+                                                >
+                                                    {item.label}
+                                                </SidebarLink>
+                                            </li>
+                                        )
+                                    )}
 
                                     <li className="mt-1">
                                         <SidebarLink

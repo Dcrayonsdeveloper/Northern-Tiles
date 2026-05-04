@@ -260,7 +260,7 @@ export default function Checkout() {
                                 {[
                                     { value: 'standard', label: 'Standard Shipping', desc: '5-7 business days', price: 99 },
                                     { value: 'express', label: 'Express Shipping', desc: '2-3 business days', price: 199 },
-                                    { value: 'free', label: 'Free Shipping', desc: '7-10 business days (Orders above ₹999)', price: 0 },
+                                    { value: 'free', label: 'Free Shipping', desc: '7-10 business days (Orders above $999)', price: 0 },
                                 ].map((method) => (
                                     <label
                                         key={method.value}
@@ -285,7 +285,7 @@ export default function Checkout() {
                                             </div>
                                         </div>
                                         <p className="font-medium text-gray-900">
-                                            {method.price === 0 ? 'Free' : `₹${method.price}`}
+                                            {method.price === 0 ? 'Free' : `$${method.price}`}
                                         </p>
                                     </label>
                                 ))}
@@ -362,7 +362,7 @@ export default function Checkout() {
                                             <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                                         </div>
                                         <p className="text-sm font-medium text-gray-900">
-                                            ₹{(item.price * item.quantity).toLocaleString()}
+                                            ${(item.price * item.quantity).toLocaleString()}
                                         </p>
                                     </div>
                                 ))}
@@ -372,17 +372,17 @@ export default function Checkout() {
                             <dl className="mt-6 space-y-3 border-t border-gray-200 pt-4">
                                 <div className="flex justify-between">
                                     <dt className="text-sm text-gray-600">Subtotal</dt>
-                                    <dd className="text-sm font-medium text-gray-900">₹{subtotal.toLocaleString()}</dd>
+                                    <dd className="text-sm font-medium text-gray-900">${subtotal.toLocaleString()}</dd>
                                 </div>
                                 <div className="flex justify-between">
                                     <dt className="text-sm text-gray-600">Shipping</dt>
                                     <dd className="text-sm font-medium text-gray-900">
-                                        {shipping === 0 ? 'Free' : `₹${shipping}`}
+                                        {shipping === 0 ? 'Free' : `$${shipping}`}
                                     </dd>
                                 </div>
                                 <div className="flex justify-between border-t border-gray-200 pt-3">
                                     <dt className="text-base font-semibold text-gray-900">Total</dt>
-                                    <dd className="text-base font-semibold text-gray-900">₹{total.toLocaleString()}</dd>
+                                    <dd className="text-base font-semibold text-gray-900">${total.toLocaleString()}</dd>
                                 </div>
                             </dl>
 

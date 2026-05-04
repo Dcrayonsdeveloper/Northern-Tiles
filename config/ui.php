@@ -3,7 +3,7 @@
 return [
     'topBar' => [
         'enabled' => env('UI_TOPBAR_ENABLED', true),
-        'backgroundColor' => env('UI_TOPBAR_BG', '#205258'),
+        'backgroundColor' => env('UI_TOPBAR_BG', '#085a9c'),
         'textColor' => env('UI_TOPBAR_TEXT_COLOR', '#ffffff'),
         'message' => env('UI_TOPBAR_MESSAGE', 'Free shipping over ₹999 · 7-day returns'),
         'link' => [

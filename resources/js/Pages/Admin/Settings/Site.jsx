@@ -3,13 +3,13 @@ import { Head, useForm } from '@inertiajs/react';
 
 export default function Site({ settings }) {
     const { data, setData, put, processing, errors } = useForm({
-        name: settings?.name ?? 'Jikra',
+        name: settings?.name ?? 'Northern TILE Distributors',
         seo: {
-            title: settings?.seo?.title ?? 'Jikra',
+            title: settings?.seo?.title ?? 'Northern TILE Distributors',
             description: settings?.seo?.description ?? '',
         },
         home: {
-            hero_title: settings?.home?.hero_title ?? 'Jikra',
+            hero_title: settings?.home?.hero_title ?? 'Northern TILE Distributors',
             hero_subtitle: settings?.home?.hero_subtitle ?? '',
         },
     });

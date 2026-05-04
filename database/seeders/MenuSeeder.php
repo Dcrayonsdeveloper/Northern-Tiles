@@ -54,99 +54,98 @@ class MenuSeeder extends Seeder
             'is_mega' => true,
             'mega_columns' => 3,
             'image_url' => '/images/menu/shop-banner.jpg',
-            'image_alt' => 'Shop Jikra Products',
-            'badge_text' => 'New',
-            'badge_color' => 'green',
+            'image_alt' => 'Shop NTD Products',
             'featured_content' => [
                 [
-                    'title' => 'New Arrivals',
-                    'url' => '/shop?sort=newest',
-                    'image_url' => '/images/menu/new-arrivals.jpg',
+                    'title' => 'Hybrid Flooring',
+                    'url' => '/shop?category=hybrid-flooring',
+                    'image_url' => '/images/menu/hybrid-flooring.jpg',
                     'type' => 'Featured',
-                    'description' => 'Check out our latest products',
+                    'description' => 'Waterproof rigid core hybrid flooring',
                 ],
                 [
-                    'title' => 'Best Sellers',
-                    'url' => '/collections/best-sellers',
-                    'image_url' => '/images/menu/best-sellers.jpg',
+                    'title' => 'NTD Tiles',
+                    'url' => '/shop?category=ntd-tiles',
+                    'image_url' => '/images/menu/ntd-tiles.jpg',
                     'type' => 'Collection',
-                    'description' => 'Our most popular items',
+                    'description' => 'Premium porcelain and specialty tiles',
                 ],
             ],
         ]);
 
-        // Drinkware Category
-        $drinkwareCategory = MenuItem::create([
+        // Hybrid Flooring Category
+        $hybridCategory = MenuItem::create([
             'menu_id' => $menu->id,
             'parent_id' => $shop->id,
-            'label' => 'Drinkware',
-            'url' => '/shop/drinkware',
+            'label' => 'Hybrid Flooring',
+            'url' => '/shop/hybrid-flooring',
             'sort_order' => 0,
             'is_active' => true,
-            'description' => 'Premium drinkware for every occasion',
+            'description' => 'Waterproof rigid core hybrid flooring',
         ]);
 
         foreach ([
-            ['label' => 'Tumblers', 'slug' => 'tumblers'],
-            ['label' => 'Coffee Mugs', 'slug' => 'coffee-mugs'],
-            ['label' => 'Bottles', 'slug' => 'bottles'],
+            ['label' => 'Timber Oak', 'slug' => 'timber-oak'],
+            ['label' => 'Herringbone', 'slug' => 'herringbone'],
+            ['label' => 'Tile-Look', 'slug' => 'tile-look'],
         ] as $i => $item) {
             MenuItem::create([
                 'menu_id' => $menu->id,
-                'parent_id' => $drinkwareCategory->id,
+                'parent_id' => $hybridCategory->id,
                 'label' => $item['label'],
-                'url' => '/shop/drinkware/' . $item['slug'],
+                'url' => '/shop/hybrid-flooring/' . $item['slug'],
                 'sort_order' => $i,
                 'is_active' => true,
             ]);
         }
 
-        // Kitchen & Home Category
-        $kitchenCategory = MenuItem::create([
+        // Timber Products Category
+        $timberCategory = MenuItem::create([
             'menu_id' => $menu->id,
             'parent_id' => $shop->id,
-            'label' => 'Kitchen & Home',
-            'url' => '/shop/kitchen-home',
+            'label' => 'Timber Products',
+            'url' => '/shop/timber-products',
             'sort_order' => 1,
             'is_active' => true,
-            'description' => 'Essential items for your home',
+            'description' => 'Solid and engineered oak timber flooring',
         ]);
 
         foreach ([
-            ['label' => 'Coffee Accessories', 'slug' => 'coffee-accessories'],
-            ['label' => 'Lighters', 'slug' => 'lighters'],
-            ['label' => 'Puja Essentials', 'slug' => 'puja-essentials'],
+            ['label' => 'Solid Oak Flooring', 'slug' => 'solid-oak'],
+            ['label' => 'Engineered Oak Flooring', 'slug' => 'engineered-oak'],
         ] as $i => $item) {
             MenuItem::create([
                 'menu_id' => $menu->id,
-                'parent_id' => $kitchenCategory->id,
+                'parent_id' => $timberCategory->id,
                 'label' => $item['label'],
-                'url' => '/shop/kitchen-home/' . $item['slug'],
+                'url' => '/shop/timber-products/' . $item['slug'],
                 'sort_order' => $i,
                 'is_active' => true,
             ]);
         }
 
-        // Safety & Utility Category
-        $safetyCategory = MenuItem::create([
+        // NTD Tiles Category
+        $tilesCategory = MenuItem::create([
             'menu_id' => $menu->id,
             'parent_id' => $shop->id,
-            'label' => 'Safety & Utility',
-            'url' => '/shop/safety-utility',
+            'label' => 'NTD Tiles',
+            'url' => '/shop/ntd-tiles',
             'sort_order' => 2,
             'is_active' => true,
-            'description' => 'Safety and utility products',
+            'description' => 'Premium porcelain and specialty tiles',
         ]);
 
         foreach ([
-            ['label' => 'Anti-Slip Tapes', 'slug' => 'anti-slip-tapes'],
-            ['label' => 'Counters & Tools', 'slug' => 'counters-tools'],
+            ['label' => 'Porcelain Tiles', 'slug' => 'porcelain'],
+            ['label' => 'Subway Tiles', 'slug' => 'subway'],
+            ['label' => 'External Porcelain', 'slug' => 'external-porcelain'],
+            ['label' => 'Pool Coping', 'slug' => 'pool-coping'],
         ] as $i => $item) {
             MenuItem::create([
                 'menu_id' => $menu->id,
-                'parent_id' => $safetyCategory->id,
+                'parent_id' => $tilesCategory->id,
                 'label' => $item['label'],
-                'url' => '/shop/safety-utility/' . $item['slug'],
+                'url' => '/shop/ntd-tiles/' . $item['slug'],
                 'sort_order' => $i,
                 'is_active' => true,
             ]);
@@ -162,14 +161,14 @@ class MenuSeeder extends Seeder
             'is_mega' => true,
             'mega_columns' => 2,
             'image_url' => '/images/menu/collections-banner.jpg',
-            'image_alt' => 'Browse collections',
+            'image_alt' => 'Browse NTD collections',
             'featured_content' => [
                 [
-                    'title' => 'Best Sellers',
-                    'url' => '/collections/best-sellers',
-                    'image_url' => '/images/menu/best-sellers.jpg',
+                    'title' => 'Builders Range',
+                    'url' => '/collections/builders-range',
+                    'image_url' => '/images/menu/builders-range.jpg',
                     'type' => 'Collection',
-                    'description' => 'Our most popular products',
+                    'description' => 'Products for builders and contractors',
                 ],
             ],
         ]);
@@ -184,9 +183,9 @@ class MenuSeeder extends Seeder
         ]);
 
         foreach ([
-            ['label' => 'Best Sellers', 'slug' => 'best-sellers'],
-            ['label' => 'New Arrivals', 'slug' => 'new-arrivals'],
-            ['label' => 'On Sale', 'slug' => 'on-sale', 'badge' => 'Sale', 'badge_color' => 'red'],
+            ['label' => 'Builders Range', 'slug' => 'builders-range'],
+            ['label' => 'Specialty Tiles', 'slug' => 'specialty-tiles'],
+            ['label' => 'Stone Collection', 'slug' => 'stone'],
         ] as $i => $item) {
             MenuItem::create([
                 'menu_id' => $menu->id,
@@ -195,64 +194,35 @@ class MenuSeeder extends Seeder
                 'url' => '/collections/' . $item['slug'],
                 'sort_order' => $i,
                 'is_active' => true,
-                'badge_text' => $item['badge'] ?? null,
-                'badge_color' => $item['badge_color'] ?? null,
             ]);
         }
 
-        $smartCollections = MenuItem::create([
+        // Trade Supplies
+        $tradeCategory = MenuItem::create([
             'menu_id' => $menu->id,
             'parent_id' => $collections->id,
-            'label' => 'Smart Collections',
-            'url' => '/collections',
+            'label' => 'Trade Supplies',
+            'url' => '/shop/trade-supplies',
             'sort_order' => 1,
             'is_active' => true,
         ]);
 
         foreach ([
-            ['label' => 'Stainless Steel', 'slug' => 'stainless-steel'],
-            ['label' => 'Eco-Friendly', 'slug' => 'eco-friendly'],
+            ['label' => 'Levelling Systems', 'slug' => 'levelling-systems'],
+            ['label' => 'Waterproofing', 'slug' => 'waterproofing'],
+            ['label' => 'Adhesives & Grouts', 'slug' => 'adhesives-grouts'],
         ] as $i => $item) {
             MenuItem::create([
                 'menu_id' => $menu->id,
-                'parent_id' => $smartCollections->id,
+                'parent_id' => $tradeCategory->id,
                 'label' => $item['label'],
-                'url' => '/collections/' . $item['slug'],
+                'url' => '/shop/trade-supplies/' . $item['slug'],
                 'sort_order' => $i,
                 'is_active' => true,
             ]);
         }
 
-        // 3. Sale - Regular dropdown
-        $sale = MenuItem::create([
-            'menu_id' => $menu->id,
-            'label' => 'Sale',
-            'url' => '/collections/on-sale',
-            'sort_order' => $sortOrder++,
-            'is_active' => true,
-            'is_mega' => false,
-            'badge_text' => 'Up to 50%',
-            'badge_color' => 'red',
-        ]);
-
-        foreach ([
-            ['label' => 'All Sale Items', 'slug' => 'on-sale'],
-            ['label' => 'Drinkware Sale', 'slug' => 'drinkware-sale'],
-            ['label' => 'Clearance', 'slug' => 'clearance', 'badge' => '70% Off', 'badge_color' => 'red'],
-        ] as $i => $item) {
-            MenuItem::create([
-                'menu_id' => $menu->id,
-                'parent_id' => $sale->id,
-                'label' => $item['label'],
-                'url' => '/collections/' . $item['slug'],
-                'sort_order' => $i,
-                'is_active' => true,
-                'badge_text' => $item['badge'] ?? null,
-                'badge_color' => $item['badge_color'] ?? null,
-            ]);
-        }
-
-        // 4. About - Simple link
+        // 3. About - Simple link
         MenuItem::create([
             'menu_id' => $menu->id,
             'label' => 'About',
@@ -262,7 +232,7 @@ class MenuSeeder extends Seeder
             'is_mega' => false,
         ]);
 
-        // 5. Contact - Simple link
+        // 4. Contact - Simple link
         MenuItem::create([
             'menu_id' => $menu->id,
             'label' => 'Contact',
@@ -305,24 +275,19 @@ class MenuSeeder extends Seeder
         ]);
 
         foreach ([
-            ['label' => 'Drinkware', 'slug' => 'drinkware'],
-            ['label' => 'Kitchen & Home', 'slug' => 'kitchen-home'],
-            ['label' => 'Safety & Utility', 'slug' => 'safety-utility'],
-            ['label' => 'Sale', 'slug' => 'on-sale', 'badge' => 'Up to 50%', 'badge_color' => 'red'],
+            ['label' => 'Hybrid Flooring', 'slug' => 'hybrid-flooring'],
+            ['label' => 'Timber Products', 'slug' => 'timber-products'],
+            ['label' => 'NTD Tiles', 'slug' => 'ntd-tiles'],
+            ['label' => 'Stone', 'slug' => 'stone'],
+            ['label' => 'Trade Supplies', 'slug' => 'trade-supplies'],
         ] as $i => $item) {
-            $url = isset($item['slug']) && $item['label'] === 'Sale'
-                ? '/collections/' . $item['slug']
-                : '/shop/' . $item['slug'];
-
             MenuItem::create([
                 'menu_id' => $menu->id,
                 'parent_id' => $shop->id,
                 'label' => $item['label'],
-                'url' => $url,
+                'url' => '/shop/' . $item['slug'],
                 'sort_order' => $i,
                 'is_active' => true,
-                'badge_text' => $item['badge'] ?? null,
-                'badge_color' => $item['badge_color'] ?? null,
             ]);
         }
 
@@ -333,13 +298,13 @@ class MenuSeeder extends Seeder
             'url' => '/collections',
             'sort_order' => $sortOrder++,
             'is_active' => true,
-            'description' => 'Explore curated collections',
+            'description' => 'Explore NTD collections',
         ]);
 
         foreach ([
-            ['label' => 'New Arrivals', 'slug' => 'new-arrivals'],
-            ['label' => 'Best Sellers', 'slug' => 'best-sellers'],
-            ['label' => 'On Sale', 'slug' => 'on-sale'],
+            ['label' => 'Builders Range', 'slug' => 'builders-range'],
+            ['label' => 'Specialty Tiles', 'slug' => 'specialty-tiles'],
+            ['label' => 'Stone Collection', 'slug' => 'stone'],
         ] as $i => $item) {
             MenuItem::create([
                 'menu_id' => $menu->id,

@@ -169,7 +169,7 @@ function MegaMenuPanel({ item, isOpen, onClose }) {
                                             {product.name}
                                         </div>
                                         <div className="text-sm text-gray-500">
-                                            ₹{product.price?.toLocaleString()}
+                                            ${product.price?.toLocaleString()}
                                         </div>
                                     </div>
                                 </Link>

@@ -6,7 +6,7 @@ import { Head, useForm } from '@inertiajs/react';
 export default function UiSettings({ topBar }) {
     const { data, setData, put, processing, errors } = useForm({
         enabled: Boolean(topBar?.enabled ?? true),
-        backgroundColor: topBar?.backgroundColor ?? '#205258',
+        backgroundColor: topBar?.backgroundColor ?? '#138ee9',
         textColor: topBar?.textColor ?? '#ffffff',
         message: topBar?.message ?? '',
         linkLabel: topBar?.link?.label ?? '',
