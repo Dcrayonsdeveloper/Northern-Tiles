@@ -71,7 +71,10 @@ class ShopController extends Controller
                 });
             })
             ->when($categorySlug, function ($query) use ($categorySlug) {
-                $query->whereHas('category', fn ($q) => $q->where('slug', $categorySlug));
+                $query->where(function ($q) use ($categorySlug) {
+                    $q->whereHas('category', fn ($inner) => $inner->where('slug', $categorySlug))
+                      ->orWhereHas('categories', fn ($inner) => $inner->where('slug', $categorySlug));
+                });
             })
             ->when($filters['on_sale'], function ($query) {
                 $query->whereColumn('compare_at_price', '>', 'price');
@@ -129,16 +132,19 @@ class ShopController extends Controller
 
         $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media']);
 
-        // Get related products from same category
-        $relatedProducts = Product::query()
+        // Get related products from same category (app-level shuffle avoids ORDER BY RAND())
+        $relatedIds = Product::query()
             ->where('is_active', true)
             ->where('id', '!=', $product->id)
-            ->when($product->category_id, function ($query) use ($product) {
-                $query->where('category_id', $product->category_id);
-            })
-            ->inRandomOrder()
-            ->limit(8)
-            ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description']);
+            ->when($product->category_id, fn ($q) => $q->where('category_id', $product->category_id))
+            ->pluck('id')
+            ->shuffle()
+            ->take(8);
+        $relatedProducts = $relatedIds->isNotEmpty()
+            ? Product::whereIn('id', $relatedIds)
+                ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description'])
+                ->shuffle()->values()
+            : collect();
 
         // Get available active coupons to display (gracefully handle missing table)
         $availableCoupons = collect();

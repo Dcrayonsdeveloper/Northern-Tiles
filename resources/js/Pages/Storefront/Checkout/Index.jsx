@@ -61,7 +61,7 @@ export default function Index({
             city: '',
             state: '',
             postal_code: '',
-            country: 'India',
+            country: 'Australia',
             phone: user?.phone || '',
         },
         billing_address: {
@@ -71,7 +71,7 @@ export default function Index({
             city: '',
             state: '',
             postal_code: '',
-            country: 'India',
+            country: 'Australia',
         },
         billing_same_as_shipping: true,
         shipping_method: shippingMethods[0]?.id || 'standard',
@@ -419,7 +419,7 @@ export default function Index({
 
                                 {/* Right Column - Order Summary */}
                                 <div className="lg:col-span-1">
-                                    <div className="sticky top-24 rounded-lg border bg-white p-6 shadow-sm">
+                                    <div className="lg:sticky lg:top-24 rounded-lg border bg-white p-6 shadow-sm">
                                         <h2 className="text-lg font-semibold text-gray-900">
                                             {d('checkout.summary.title', 'Order Summary')}
                                         </h2>

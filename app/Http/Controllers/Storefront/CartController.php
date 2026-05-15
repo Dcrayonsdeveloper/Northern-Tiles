@@ -26,7 +26,7 @@ class CartController extends Controller
 
         $cart = $this->cartService->getCart($userId, $sessionId);
 
-        $items = [];
+        $items = collect();
         $subtotal = 0;
 
         if ($cart) {
@@ -47,14 +47,19 @@ class CartController extends Controller
             $subtotal = $totals['subtotal'];
         }
 
-        // Cross-sell: random products not already in cart
+        // Cross-sell: random products not already in cart (application-level shuffle avoids ORDER BY RAND())
         $cartProductIds = $items->pluck('product.id')->filter()->toArray();
-        $crossSellProducts = Product::where('is_active', true)
+        $crossSellIds = Product::where('is_active', true)
             ->where('status', 'published')
             ->whereNotIn('id', $cartProductIds)
-            ->inRandomOrder()
-            ->limit(8)
-            ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url']);
+            ->pluck('id')
+            ->shuffle()
+            ->take(8);
+        $crossSellProducts = $crossSellIds->isNotEmpty()
+            ? Product::whereIn('id', $crossSellIds)
+                ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url'])
+                ->shuffle()
+            : collect();
 
         return Inertia::render('Storefront/Cart/Index', [
             'items' => $items,

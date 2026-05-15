@@ -46,27 +46,34 @@ class PersonalizationService
             $related = collect();
 
             if ($product->category_id) {
-                $categoryProducts = Product::where('category_id', $product->category_id)
+                $categoryIds = Product::where('category_id', $product->category_id)
                     ->where('id', '!=', $productId)
                     ->active()
-                    ->inRandomOrder()
-                    ->limit($limit)
-                    ->get();
+                    ->pluck('id')
+                    ->shuffle()
+                    ->take($limit);
+                $categoryProducts = $categoryIds->isNotEmpty()
+                    ? Product::whereIn('id', $categoryIds)->get()
+                    : collect();
 
                 $related = $related->merge($categoryProducts);
             }
 
             if ($related->count() < $limit && $product->tags->isNotEmpty()) {
                 $tagIds = $product->tags->pluck('id');
-                $taggedProducts = Product::whereHas('tags', function ($q) use ($tagIds) {
+                $needed = $limit - $related->count();
+                $taggedIds = Product::whereHas('tags', function ($q) use ($tagIds) {
                     $q->whereIn('tags.id', $tagIds);
                 })
                     ->where('id', '!=', $productId)
                     ->whereNotIn('id', $related->pluck('id'))
                     ->active()
-                    ->inRandomOrder()
-                    ->limit($limit - $related->count())
-                    ->get();
+                    ->pluck('id')
+                    ->shuffle()
+                    ->take($needed);
+                $taggedProducts = $taggedIds->isNotEmpty()
+                    ? Product::whereIn('id', $taggedIds)->get()
+                    : collect();
 
                 $related = $related->merge($taggedProducts);
             }
@@ -118,10 +125,8 @@ class PersonalizationService
                 ->pluck('product_id');
 
             if ($recentlyViewed->isEmpty()) {
-                return Product::active()
-                    ->inRandomOrder()
-                    ->limit($limit)
-                    ->get();
+                $ids = Product::active()->pluck('id')->shuffle()->take($limit);
+                return $ids->isNotEmpty() ? Product::whereIn('id', $ids)->get() : collect();
             }
 
             $categoryIds = Product::whereIn('id', $recentlyViewed)
@@ -129,12 +134,13 @@ class PersonalizationService
                 ->filter()
                 ->unique();
 
-            return Product::whereIn('category_id', $categoryIds)
+            $ids = Product::whereIn('category_id', $categoryIds)
                 ->whereNotIn('id', $recentlyViewed)
                 ->active()
-                ->inRandomOrder()
-                ->limit($limit)
-                ->get();
+                ->pluck('id')
+                ->shuffle()
+                ->take($limit);
+            return $ids->isNotEmpty() ? Product::whereIn('id', $ids)->get() : collect();
         });
     }
 

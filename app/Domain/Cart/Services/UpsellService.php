@@ -49,13 +49,16 @@ class UpsellService
 
             // Fallback: if no recommendations found, get random active products
             if ($recommendations->isEmpty()) {
-                $recommendations = Product::query()
+                $fallbackIds = Product::query()
                     ->where('is_active', true)
                     ->where('status', 'published')
                     ->whereNotIn('id', $cartProductIds)
-                    ->inRandomOrder()
-                    ->limit(self::MAX_RECOMMENDATIONS)
-                    ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description']);
+                    ->pluck('id')
+                    ->shuffle()
+                    ->take(self::MAX_RECOMMENDATIONS);
+                $recommendations = $fallbackIds->isNotEmpty()
+                    ? Product::whereIn('id', $fallbackIds)->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description'])
+                    : collect();
             }
 
             return [
@@ -105,13 +108,16 @@ class UpsellService
             return collect();
         }
 
-        return Product::query()
+        $ids = Product::query()
             ->where('is_active', true)
             ->whereIn('category_id', $categoryIds)
             ->whereNotIn('id', $excludeProductIds)
-            ->inRandomOrder()
-            ->limit(4)
-            ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description']);
+            ->pluck('id')
+            ->shuffle()
+            ->take(4);
+        return $ids->isNotEmpty()
+            ? Product::whereIn('id', $ids)->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description'])
+            : collect();
     }
 
     /**
@@ -165,15 +171,15 @@ class UpsellService
     protected function getPopularProducts(): array
     {
         $products = Cache::remember('upsells.popular', 300, function () {
-            // Try order-based popularity first, fallback to random
-            $results = Product::query()
+            $ids = Product::query()
                 ->where('is_active', true)
                 ->where('status', 'published')
-                ->inRandomOrder()
-                ->limit(self::MAX_RECOMMENDATIONS)
-                ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description']);
-
-            return $results;
+                ->pluck('id')
+                ->shuffle()
+                ->take(self::MAX_RECOMMENDATIONS);
+            return $ids->isNotEmpty()
+                ? Product::whereIn('id', $ids)->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description'])
+                : collect();
         });
 
         return [

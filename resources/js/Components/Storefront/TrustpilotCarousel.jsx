@@ -35,7 +35,7 @@ export default function TrustpilotCarousel({
     width = '100%',
     theme = 'light',
     locale = 'en-AU',
-    reviewUrl = 'https://au.trustpilot.com/review/ntiled.com.au',
+    reviewUrl = 'https://www.trustpilot.com/review/ntiled.com.au',
 }) {
     const ref = useRef(null);
 

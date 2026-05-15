@@ -80,7 +80,9 @@ Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.i
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
 
-Route::get('/about', [PageController::class, 'about'])->name('pages.about');
+Route::get('/about', [PublicPageController::class, 'show'])
+    ->defaults('slug', 'about')
+    ->name('pages.about');
 Route::get('/contact', [PageController::class, 'contact'])->name('pages.contact');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
@@ -99,14 +101,24 @@ Route::get('/privacy-policy', [PublicPageController::class, 'show'])
 Route::get('/terms-of-service', [PublicPageController::class, 'show'])
     ->defaults('slug', 'terms-of-service')
     ->name('terms-of-service');
+// /return-policy and /returns both serve the same CMS page (footer links to /returns)
 Route::get('/return-policy', [PublicPageController::class, 'show'])
     ->defaults('slug', 'return-policy')
     ->name('return-policy');
+Route::get('/returns', [PublicPageController::class, 'show'])
+    ->defaults('slug', 'return-policy')
+    ->name('returns');
 
 // CMS Pages - supports hierarchical slugs like /page/about/team
 Route::get('/page/{slug}', [PublicPageController::class, 'show'])
     ->where('slug', '[a-zA-Z0-9-_/]+')
     ->name('page.show');
+
+// /pages/{slug} (plural) — legacy/DB-stored URLs; contact has its own handler
+Route::redirect('/pages/contact', '/contact', 301);
+Route::get('/pages/{slug}', [PublicPageController::class, 'show'])
+    ->where('slug', '[a-zA-Z0-9-_/]+')
+    ->name('pages.show');
 
 // SEO Routes
 Route::get('/sitemap.xml', function (SeoService $seoService) {

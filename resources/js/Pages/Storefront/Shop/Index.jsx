@@ -2,6 +2,7 @@ import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
 import { Head, Link, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
+import ProductImage from '@/Components/Catalog/ProductImage';
 
 function ProductCard({ product }) {
     const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
@@ -14,12 +15,12 @@ function ProductCard({ product }) {
             href={route('products.show', product.slug)}
             className="group overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
         >
-            <div className="relative aspect-square w-full bg-gray-100">
-                <img
-                    src={product.image_url || '/images/placeholder-product.svg'}
+            <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
+                <ProductImage
+                    src={product.image_url}
                     alt={product.name}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    onError={(e) => { e.target.src = '/images/placeholder-product.svg'; }}
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500"
+                    style={{ transform: 'scale(2.8)', transformOrigin: 'center' }}
                 />
                 {discountPercent > 0 && (
                     <div className="absolute left-2 top-2 rounded-md bg-red-500 px-2 py-1 text-xs font-bold text-white">

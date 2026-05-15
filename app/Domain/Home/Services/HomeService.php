@@ -27,7 +27,7 @@ class HomeService
      */
     public function getHomeData(): array
     {
-        return Cache::remember('home.page_data', 120, function () {
+        return Cache::remember('home.page_data', 3600, function () {
             $homePage = $this->getHomePage();
 
             if (!$homePage) {
@@ -172,7 +172,7 @@ class HomeService
 
         $cacheKey = 'home.new_arrivals.' . ($categoryId ?? 'all') . '.' . $limit;
 
-        $products = Cache::remember($cacheKey, 120, function () use ($limit, $categoryId) {
+        $products = Cache::remember($cacheKey, 3600, function () use ($limit, $categoryId) {
             $query = Product::query()
                 ->where('is_active', true)
                 ->orderByDesc('created_at')
@@ -240,7 +240,7 @@ class HomeService
 
         $cacheKey = 'home.discounts.' . $limit . '.' . $minDiscountPercent;
 
-        $products = Cache::remember($cacheKey, 120, function () use ($limit, $minDiscountPercent) {
+        $products = Cache::remember($cacheKey, 3600, function () use ($limit, $minDiscountPercent) {
             return Product::query()
                 ->where('is_active', true)
                 ->whereNotNull('compare_at_price')

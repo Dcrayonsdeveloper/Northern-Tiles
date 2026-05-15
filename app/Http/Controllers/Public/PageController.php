@@ -83,16 +83,42 @@ class PageController extends Controller
     }
 
     /**
-     * Convert body_json blocks to HTML content.
+     * Convert body_json to HTML content.
+     *
+     * Supports two formats:
+     *   - Simple:  { "description": "..." }   — set by the Description textarea in the admin
+     *   - Blocks:  { "blocks": [ {...}, ... ] } — legacy block-based format
      */
     protected function renderBodyJson(?array $bodyJson): string
     {
-        if (!$bodyJson || empty($bodyJson['blocks'])) {
+        if (!$bodyJson) {
+            return '';
+        }
+
+        // Simple description format (used by the admin Description textarea)
+        if (array_key_exists('description', $bodyJson)) {
+            $desc = trim($bodyJson['description'] ?? '');
+            if ($desc === '') {
+                return '';
+            }
+            // If it contains HTML tags, return as-is; otherwise wrap plain text in paragraphs
+            if (strip_tags($desc) !== $desc) {
+                return $desc;
+            }
+            // Plain text: split on blank lines to make paragraphs, auto-linking URLs
+            $paragraphs = array_filter(array_map('trim', preg_split('/\n{2,}/', $desc)));
+            return implode('', array_map(
+                fn($p) => '<p>' . $this->autoLinkUrls(nl2br(e($p))) . '</p>',
+                $paragraphs
+            ));
+        }
+
+        // Legacy block format
+        if (empty($bodyJson['blocks'])) {
             return '';
         }
 
         $html = '';
-
         foreach ($bodyJson['blocks'] as $block) {
             $content = e($block['content'] ?? '');
             $rawContent = $block['content'] ?? '';
@@ -123,6 +149,28 @@ class PageController extends Controller
         }
 
         return $html;
+    }
+
+    /**
+     * Convert bare URLs in already-escaped HTML text to clickable <a> links.
+     * Handles https://, http://, and www. prefixes.
+     */
+    protected function autoLinkUrls(string $html): string
+    {
+        // Runs on already-HTML-escaped text. Only < > " ' should delimit a URL end.
+        return preg_replace_callback(
+            '/\b(https?:\/\/[^\s<>"\']+|www\.[a-zA-Z0-9._\-]+\.[a-zA-Z]{2,}[^\s<>"\']*)/i',
+            function (array $m): string {
+                $raw = $m[1];
+                // Strip trailing punctuation that is unlikely part of the URL
+                $raw = rtrim($raw, '.,;:!?)');
+                $href = preg_match('/^https?:\/\//i', $raw) ? $raw : 'https://' . $raw;
+                return '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8')
+                    . '" target="_blank" rel="noopener noreferrer">'
+                    . $raw . '</a>';
+            },
+            $html
+        );
     }
 
     /**

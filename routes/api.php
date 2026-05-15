@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\InstagramController;
 use App\Http\Controllers\Api\PersonalizationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +12,10 @@ Route::get('/user', function (Request $request) {
 
 // Note: Cart routes moved to web.php for proper session handling
 // The routes are at /api/cart/* but defined in web.php to share the session
+
+// Instagram feed (public, cached)
+Route::get('/instagram/posts', [InstagramController::class, 'posts']);
+Route::get('/instagram/thumbnails', [InstagramController::class, 'thumbnails']);
 
 // Favorites Routes (requires auth)
 Route::middleware('auth:sanctum')->prefix('favorites')->name('api.favorites.')->group(function () {

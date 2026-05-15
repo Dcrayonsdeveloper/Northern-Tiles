@@ -234,7 +234,7 @@ const DEFAULT_NAV = [
             { label: 'Hybrid 9.5mm', url: '/shop?category=hybrid-9-5mm' },
             { label: 'Hybrid Tile Look', url: '/shop?category=hybrid-tile-look' },
             { label: 'Hybrid Herringbone', url: '/shop?category=hybrid-herringbone' },
-            { label: 'Quads / Scotia', url: '/shop?category=quads-scotia' },
+            { label: 'Quads / Scotia', url: '/shop?category=quad' },
         ],
     },
     {
@@ -284,7 +284,7 @@ const DEFAULT_NAV = [
     },
     {
         label: 'Contact Us',
-        url: '/pages/contact',
+        url: '/contact',
     },
 ];
 

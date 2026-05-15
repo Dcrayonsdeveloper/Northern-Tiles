@@ -47,8 +47,9 @@ class CatalogService
         }
 
         if (!empty($filters['category_slug'])) {
-            $query->whereHas('category', function ($q) use ($filters) {
-                $q->where('slug', $filters['category_slug']);
+            $query->where(function ($q) use ($filters) {
+                $q->whereHas('category', fn ($inner) => $inner->where('slug', $filters['category_slug']))
+                  ->orWhereHas('categories', fn ($inner) => $inner->where('slug', $filters['category_slug']));
             });
         }
 
@@ -72,8 +73,7 @@ class CatalogService
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 

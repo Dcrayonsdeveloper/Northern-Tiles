@@ -2,6 +2,7 @@ import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
 import { Head, Link } from '@inertiajs/react';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import ProductImage from '@/Components/Catalog/ProductImage';
 
 function CartCrossSell({ products, onAdd }) {
     const ref = useRef(null);
@@ -15,7 +16,7 @@ function CartCrossSell({ products, onAdd }) {
                     <div key={p.id} className="flex-shrink-0 w-[180px] rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
                         <Link href={route('products.show', p.slug)}>
                             <div className="aspect-square overflow-hidden rounded-md bg-gray-50">
-                                <img src={p.image_url || '/images/placeholder-product.svg'} alt={p.name} className="h-full w-full object-cover" loading="lazy" />
+                                <ProductImage src={p.image_url} alt={p.name} className="h-full w-full object-cover" loading="lazy" />
                             </div>
                         </Link>
                         <p className="mt-2 text-[12px] font-medium text-gray-900 line-clamp-2">{p.name}</p>
@@ -174,13 +175,11 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal, 
                                         className={`flex items-center gap-4 p-4 transition-opacity ${updating === item.id ? 'opacity-50 pointer-events-none' : ''}`}
                                     >
                                         <div className="h-16 w-20 overflow-hidden rounded bg-gray-100">
-                                            {item.product?.image_url ? (
-                                                <img
-                                                    src={item.product.image_url}
-                                                    alt={item.product?.name}
-                                                    className="h-full w-full object-cover"
-                                                />
-                                            ) : null}
+                                            <ProductImage
+                                                src={item.product?.image_url}
+                                                alt={item.product?.name}
+                                                className="h-full w-full object-cover"
+                                            />
                                         </div>
 
                                         <div className="flex-1">

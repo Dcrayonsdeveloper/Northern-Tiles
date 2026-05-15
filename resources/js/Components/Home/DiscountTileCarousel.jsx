@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useRef, useState, useCallback, useEffect } from 'react';
 import Container from '@/Components/Container';
+import ProductImage from '@/Components/Catalog/ProductImage';
 
 // Icons
 function ChevronLeftIcon({ className }) {
@@ -53,12 +54,11 @@ function DiscountCard({ product }) {
             className="discount-card group flex-shrink-0 w-52 sm:w-56"
         >
             <div className="relative aspect-square overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-                <img
-                    src={product.image_url || '/images/placeholder-product.svg'}
+                <ProductImage
+                    src={product.image_url}
                     alt={product.name}
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    onError={(e) => { e.target.src = '/images/placeholder-product.svg'; }}
                 />
                 {discountPercent > 0 && (
                     <div className="absolute left-2 top-2 rounded-md bg-red-500 px-2 py-1 text-xs font-bold text-white">

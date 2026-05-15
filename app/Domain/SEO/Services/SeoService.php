@@ -46,7 +46,7 @@ class SeoService
         $pages = \App\Domain\CMS\Models\Page::published()->get();
         foreach ($pages as $page) {
             $urls[] = $this->sitemapUrl(
-                url("/page/{$page->slug}"),
+                url("/{$page->slug}"),
                 $page->updated_at,
                 'weekly',
                 '0.8'
@@ -76,7 +76,7 @@ class SeoService
         $products = \App\Models\Product::active()->get();
         foreach ($products as $product) {
             $urls[] = $this->sitemapUrl(
-                url("/shop/product/{$product->slug}"),
+                url("/products/{$product->slug}"),
                 $product->updated_at,
                 'daily',
                 '0.9'

@@ -1,7 +1,9 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import Dropdown from '@/Components/Dropdown';
-import { Link, usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+const SIDEBAR_SCROLL_KEY = 'admin_sidebar_scroll';
 
 function IconDashboard(props) {
     return (
@@ -191,6 +193,29 @@ export default function DashboardLayout({ title, children }) {
         return window.innerWidth >= 1280;
     });
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const navScrollRef = useRef(null);
+
+    // Restore saved scroll position; on first visit scroll active item into view
+    useEffect(() => {
+        const el = navScrollRef.current;
+        if (!el) return;
+        const saved = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+        if (saved !== null) {
+            el.scrollTop = parseInt(saved, 10);
+        } else {
+            const activeEl = el.querySelector('a.bg-brand');
+            if (activeEl) activeEl.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+        }
+    }, []);
+
+    // Save scroll position right before Inertia navigates away
+    useEffect(() => {
+        return router.on('before', () => {
+            if (navScrollRef.current) {
+                sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(navScrollRef.current.scrollTop));
+            }
+        });
+    }, []);
 
     useEffect(() => {
         const handleResize = () => {
@@ -453,7 +478,7 @@ export default function DashboardLayout({ title, children }) {
                     </button>
                 </div>
 
-                <div className="flex flex-col overflow-y-auto duration-300 ease-linear">
+                <div ref={navScrollRef} className="flex flex-col overflow-y-auto duration-300 ease-linear">
                     <nav className="mb-4 px-3">
                         <div className="flex flex-col gap-4">
                             <div>

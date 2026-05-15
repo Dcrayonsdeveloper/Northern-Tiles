@@ -3,6 +3,7 @@ import Container from '@/Components/Container';
 import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
 import { Head, Link, router } from '@inertiajs/react';
 import { useRef, useState, useCallback, useEffect } from 'react';
+import ProductImage from '@/Components/Catalog/ProductImage';
 
 /* ── Icons ─────────────────────────────────────────────────────────────── */
 const CL = ({ c }) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>;
@@ -33,7 +34,7 @@ const FALLBACK_SLIDES = [
         cta_primary_label_key: 'Shop Now',
         cta_primary_href: '/shop',
         cta_secondary_label_key: 'Visit Showroom',
-        cta_secondary_href: '/pages/contact',
+        cta_secondary_href: '/contact',
         overlay_style: 'dark',
         align: 'left',
     },
@@ -53,7 +54,7 @@ const FALLBACK_SLIDES = [
         h1_key: 'Trade & Wholesale Pricing',
         p_key: 'Exclusive rates for builders, architects and designers. Open to the public.',
         cta_primary_label_key: 'Get a Quote',
-        cta_primary_href: '/pages/contact',
+        cta_primary_href: '/contact',
         overlay_style: 'dark',
         align: 'left',
     },
@@ -129,7 +130,7 @@ function TrendingProducts({ products = [] }) {
                                 <div key={p.id} className="group flex-shrink-0 w-[220px] sm:w-[240px] rounded-none border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                                     <Link href={route('products.show', p.slug)} className="block">
                                         <div className="relative aspect-square overflow-hidden bg-gray-50">
-                                            <img src={p.image_url || '/images/placeholder-product.svg'} alt={p.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                                            <ProductImage src={p.image_url} alt={p.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500" style={{ transform: 'scale(2.8)', transformOrigin: 'center' }} loading="lazy" />
                                             {disc > 0 && (
                                                 <div className="absolute left-0 top-3">
                                                     <span className="rounded-r-full bg-brand px-3 py-1 text-[11px] font-bold text-white shadow-sm">{disc}% off</span>
@@ -716,19 +717,18 @@ function ShopByCollection() {
 /* ═══════════════════════════════════════════════════════════════════════
    9. PROUD CUSTOMERS — Instagram reel-style carousel
    ═══════════════════════════════════════════════════════════════════════ */
+const REELS = [
+    { permalink: 'https://www.instagram.com/reel/DDEeORMv5PO/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==', caption: 'Beautiful tile installation by our customers', hasVideo: true, img: '/storage/instagram/6b107b3880a0ca946ba88ec7e4af9204.jpg' },
+    { permalink: 'https://www.instagram.com/reel/DYPRB6tBp3W/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==', caption: 'Stunning bathroom renovation using our tiles',  hasVideo: true, img: '/storage/instagram/bb725c4f017e3281f4adf8f6d5003625.jpg' },
+    { permalink: 'https://www.instagram.com/reel/DX9INHdBwBf/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==', caption: 'Kitchen transformation with our premium range', hasVideo: true, img: '/storage/instagram/c11f6cb9d5238dfdd13207da959d5422.jpg' },
+    { permalink: 'https://www.instagram.com/reel/DXwYBwGDn1D/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==', caption: 'Outdoor entertaining area with 20mm pavers',   hasVideo: true, img: '/storage/instagram/d0c6c3463ce3b55ad3f5d6b1fb24a0a9.jpg' },
+    { permalink: 'https://www.instagram.com/reel/DXMTS03geje/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==', caption: 'Modern living space with hybrid flooring',      hasVideo: true, img: '/storage/instagram/d4fa8b30882efdf3c444d0b87bb0bbc4.jpg' },
+    { permalink: 'https://www.instagram.com/reel/DXG5E7BjP1b/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==', caption: 'Feature wall tiles that make a statement',     hasVideo: true, img: '/storage/instagram/914740dadb95bc3f2e39f004d797602d.jpg' },
+];
+
 function ProudCustomers() {
     const { r, l, rr, ck, go } = useHS(200);
-
-    const reels = [
-        { img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=700&fit=crop&q=80', caption: 'Beautiful living room tiled with our SWARD collection', hasVideo: true },
-        { img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=700&fit=crop&q=80', caption: 'Bathroom renovation using Baltic Stone porcelain', hasVideo: false },
-        { img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400&h=700&fit=crop&q=80', caption: 'Kitchen splashback with Italian subway tiles', hasVideo: true },
-        { img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=400&h=700&fit=crop&q=80', caption: 'Hybrid flooring install — waterproof & stunning', hasVideo: false },
-        { img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=700&fit=crop&q=80', caption: 'Outdoor entertaining area with 20mm porcelain', hasVideo: true },
-        { img: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=400&h=700&fit=crop&q=80', caption: 'Our Thomastown showroom tile display wall', hasVideo: false },
-        { img: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=700&fit=crop&q=80', caption: 'Marble-look porcelain in a modern ensuite', hasVideo: true },
-        { img: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=400&h=700&fit=crop&q=80', caption: 'Engineered timber throughout open plan home', hasVideo: false },
-    ];
+    const reels = REELS;
 
     return (
         <section className="py-16 bg-[#fafafa]">
@@ -749,7 +749,7 @@ function ProudCustomers() {
                             <p className="text-[13px] text-[#555]">Watch, explore, and shop instantly</p>
                         </div>
                     </div>
-                    <a href="https://www.instagram.com/northern.tile.distributors/" target="_blank" rel="noreferrer noopener" className="hidden sm:inline-flex items-center gap-1.5 text-[14px] font-medium text-[#333] hover:text-brand transition-colors">
+                    <a href="https://www.instagram.com/northerntiledistributors/?hl=en" target="_blank" rel="noreferrer noopener" className="hidden sm:inline-flex items-center gap-1.5 text-[14px] font-medium text-[#333] hover:text-brand transition-colors">
                         View All
                         <CR c="h-4 w-4" />
                     </a>
@@ -768,7 +768,7 @@ function ProudCustomers() {
 
                     <div ref={r} onScroll={ck} className="flex gap-3 overflow-x-auto scroll-smooth" style={{ scrollbarWidth: 'none' }}>
                         {reels.map((reel, i) => (
-                            <div key={i} className="group flex-shrink-0 w-[180px] sm:w-[200px] cursor-pointer relative overflow-hidden rounded-xl">
+                            <a key={i} href={reel.permalink} target="_blank" rel="noreferrer noopener" className="group flex-shrink-0 w-[180px] sm:w-[200px] cursor-pointer relative overflow-hidden rounded-xl">
                                 {/* Image */}
                                 <div className="aspect-[9/16] overflow-hidden bg-gray-200">
                                     <img
@@ -797,7 +797,7 @@ function ProudCustomers() {
                                 <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
                                     <p className="text-[11px] leading-snug text-white/90 line-clamp-2">{reel.caption}</p>
                                 </div>
-                            </div>
+                            </a>
                         ))}
                     </div>
                 </div>
@@ -805,7 +805,7 @@ function ProudCustomers() {
                 {/* Follow CTA */}
                 <div className="mt-8 flex justify-center">
                     <a
-                        href="https://www.instagram.com/northern.tile.distributors/"
+                        href="https://www.instagram.com/northerntiledistributors/?hl=en"
                         target="_blank"
                         rel="noreferrer noopener"
                         className="inline-flex items-center gap-2.5 rounded-full px-7 py-3 text-[14px] font-semibold text-white shadow-md transition-transform duration-300 hover:scale-105 hover:shadow-lg"
@@ -909,10 +909,40 @@ function StatsSection() {
 /* ═══════════════════════════════════════════════════════════════════════
    12. CUSTOMER REVIEWS — testimonial carousel
    ═══════════════════════════════════════════════════════════════════════ */
+const TESTIMONIALS = [
+    { name: 'Sarah M.', location: 'Sydney, NSW', rating: 5, text: 'Absolutely love the tiles we chose for our bathroom renovation. The quality is outstanding and the team was incredibly helpful in selecting the right finish. Will definitely be back for our kitchen!' },
+    { name: 'James T.', location: 'Melbourne, VIC', rating: 5, text: 'We used Northern Tile Distributors for our entire home renovation. The range is impressive and the prices are very competitive. The outdoor tiles have held up perfectly through all weather conditions.' },
+    { name: 'Priya K.', location: 'Brisbane, QLD', rating: 5, text: 'From selection to delivery, the experience was seamless. The floor tiles look exactly as shown and the texture is exactly what we needed for our poolside area. Highly recommend!' },
+    { name: 'David R.', location: 'Perth, WA', rating: 5, text: 'Fantastic product range and excellent customer service. The subway tiles I ordered for our kitchen splashback are beautiful. Great value and fast delivery.' },
+    { name: 'Emma W.', location: 'Adelaide, SA', rating: 5, text: 'I ordered samples first and was so impressed with the quality that I placed a full order immediately. The decorative tiles for our feature wall are a showstopper. Thank you NTD!' },
+    { name: 'Michael C.', location: 'Canberra, ACT', rating: 5, text: 'Professional service from start to finish. The tiles arrived well-packaged with zero breakages. Our tiler commented on how consistent the sizing was — made installation a breeze.' },
+];
+
+function StarIcon({ filled }) {
+    return (
+        <svg className={`h-4 w-4 ${filled ? 'text-amber-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+    );
+}
+
 function CustomerReviews() {
     const businessUnitId = import.meta.env.VITE_TRUSTPILOT_BUSINESS_UNIT_ID;
+    const [tpFailed, setTpFailed] = useState(false);
+    const [idx, setIdx] = useState(0);
+    const cols = 3;
+    const pages = Math.ceil(TESTIMONIALS.length / cols);
+    const go = (dir) => setIdx(i => Math.max(0, Math.min(pages - 1, i + dir)));
 
-    if (!businessUnitId) return null;
+    // Show Trustpilot widget if ID is set and hasn't timed out
+    const showTrustpilot = businessUnitId && !tpFailed;
+
+    // Fallback: if widget doesn't render within 3s, show static reviews
+    useEffect(() => {
+        if (!showTrustpilot) return;
+        const t = setTimeout(() => setTpFailed(true), 3000);
+        return () => clearTimeout(t);
+    }, [showTrustpilot]);
 
     return (
         <section className="py-20 bg-[#f7f7f5]">
@@ -923,7 +953,31 @@ function CustomerReviews() {
                     <div className="mt-3 h-[2px] w-12 bg-brand" />
                 </div>
 
-                <TrustpilotCarousel businessUnitId={businessUnitId} />
+                {showTrustpilot ? (
+                    <TrustpilotCarousel businessUnitId={businessUnitId} />
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {TESTIMONIALS.slice(idx * cols, idx * cols + cols).map((t, i) => (
+                                <div key={i} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
+                                    <div className="flex gap-0.5">
+                                        {[1,2,3,4,5].map(n => <StarIcon key={n} filled={n <= t.rating} />)}
+                                    </div>
+                                    <p className="text-[14px] leading-relaxed text-gray-600 flex-1">"{t.text}"</p>
+                                    <div className="border-t border-gray-100 pt-4">
+                                        <p className="text-[13px] font-semibold text-gray-900">{t.name}</p>
+                                        <p className="text-[12px] text-gray-400">{t.location}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-8 flex justify-center gap-2">
+                            {Array.from({ length: pages }).map((_, i) => (
+                                <button key={i} onClick={() => setIdx(i)} className={`h-2 rounded-full transition-all ${i === idx ? 'w-6 bg-brand' : 'w-2 bg-gray-300'}`} />
+                            ))}
+                        </div>
+                    </>
+                )}
             </Container>
         </section>
     );

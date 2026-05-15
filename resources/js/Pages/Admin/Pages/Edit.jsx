@@ -1,7 +1,6 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import PageBuilder from '@/Components/PageBuilder/PageBuilder';
 
 // Icons
 function ChevronLeftIcon({ className }) {
@@ -101,7 +100,7 @@ function formatDateTimeLocal(dateString) {
     return date.toISOString().slice(0, 16);
 }
 
-export default function Edit({ page, authors, templates, parentPages, sectionRegistry }) {
+export default function Edit({ page, authors, templates, parentPages }) {
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         title: page.title || '',
@@ -131,6 +130,24 @@ export default function Edit({ page, authors, templates, parentPages, sectionReg
 
     const [featuredImagePreview, setFeaturedImagePreview] = useState(null);
     const [ogImagePreview, setOgImagePreview] = useState(null);
+    const descriptionRef = useRef(null);
+
+    function insertLink() {
+        const el = descriptionRef.current;
+        if (!el) return;
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        const selected = (data.body_json?.description || '').substring(start, end);
+        const url = window.prompt('Link URL:', 'https://');
+        if (!url) return;
+        const text = selected || window.prompt('Link text:', url);
+        if (!text) return;
+        const tag = `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+        const current = data.body_json?.description || '';
+        const updated = current.substring(0, start) + tag + current.substring(end);
+        setData('body_json', { ...data.body_json, description: updated });
+        setTimeout(() => { el.focus(); el.setSelectionRange(start + tag.length, start + tag.length); }, 0);
+    }
 
     // Find parent page for slug prefix display
     const flatParents = buildParentOptions(parentPages || [], page.id);
@@ -153,42 +170,9 @@ export default function Edit({ page, authors, templates, parentPages, sectionReg
         }
     };
 
-    const handleSectionsChange = useCallback((sections) => {
-        setData('sections', sections);
-    }, [setData]);
-
     const handleTemplateChange = useCallback((templateKey) => {
         setData('template', templateKey);
-
-        // Find the selected template
-        const selectedTemplate = templates?.find(t => (t.key || t.value) === templateKey);
-
-        // If template has predefined sections, offer to auto-populate
-        if (selectedTemplate?.sections && selectedTemplate.sections.length > 0) {
-            const shouldPopulate = data.sections.length === 0 ||
-                confirm('This template has predefined sections. Do you want to add them to your page? (Existing sections will be kept)');
-
-            if (shouldPopulate) {
-                const newSections = selectedTemplate.sections.map((sectionKey, index) => {
-                    const registryItem = sectionRegistry?.find(r => r.section_key === sectionKey);
-                    return {
-                        section_key: sectionKey,
-                        data_json: registryItem?.default_data || {},
-                        sort: data.sections.length + index,
-                        is_active: true,
-                    };
-                });
-
-                // Add sections without duplicating existing ones
-                const existingKeys = new Set(data.sections.map(s => s.section_key));
-                const sectionsToAdd = newSections.filter(s => !existingKeys.has(s.section_key));
-
-                if (sectionsToAdd.length > 0) {
-                    setData('sections', [...data.sections, ...sectionsToAdd]);
-                }
-            }
-        }
-    }, [setData, data.sections, templates, sectionRegistry]);
+    }, [setData]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -301,18 +285,35 @@ export default function Edit({ page, authors, templates, parentPages, sectionReg
                             </div>
                         </div>
 
-                        {/* Page Builder */}
+                        {/* Description */}
                         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                            <div className="text-xs font-semibold text-gray-900">Page Content</div>
-                            <p className="mt-0.5 text-[10px] text-gray-500">Build your page using sections from the library.</p>
-                            <div className="mt-3">
-                                <PageBuilder
-                                    sections={data.sections}
-                                    onChange={handleSectionsChange}
-                                    registry={sectionRegistry || []}
-                                />
+                            <div className="flex items-center justify-between">
+                                <div className="text-xs font-semibold text-gray-900">Description</div>
+                                <button
+                                    type="button"
+                                    onClick={insertLink}
+                                    title="Insert link — select text first to use it as the link label"
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-700 transition hover:border-brand/40 hover:bg-brand/5 hover:text-brand"
+                                >
+                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                    </svg>
+                                    Insert Link
+                                </button>
                             </div>
-                            {errors.sections && <p className="mt-2 text-[10px] text-red-500">{errors.sections}</p>}
+                            <p className="mt-0.5 text-[10px] text-gray-500">
+                                Plain text or HTML. Select text then click <strong>Insert Link</strong> to make it a hyperlink.
+                            </p>
+                            <textarea
+                                ref={descriptionRef}
+                                value={data.body_json?.description || ''}
+                                onChange={(e) =>
+                                    setData('body_json', { ...data.body_json, description: e.target.value })
+                                }
+                                rows={12}
+                                className="mt-3 block w-full rounded-lg border-gray-300 font-mono text-sm shadow-sm focus:border-brand focus:ring-brand"
+                                placeholder="Enter page description here. Plain text is fine, or use HTML for formatting."
+                            />
                         </div>
 
                         {/* SEO Settings */}

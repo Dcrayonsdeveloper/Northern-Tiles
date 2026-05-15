@@ -24,17 +24,26 @@ class Setting extends Model
         'value_json' => 'array',
     ];
 
+    /** In-memory per-request cache — eliminates repeated DB/cache hits for the same key. */
+    private static array $requestCache = [];
+
     public static function getValue(string $key, mixed $default = null): mixed
     {
+        // Serve from request-level memory first (zero cost on repeated lookups)
+        if (array_key_exists($key, self::$requestCache)) {
+            $cached = self::$requestCache[$key];
+            return $cached === null ? $default : $cached;
+        }
+
         $cacheKey = 'settings:' . $key;
 
         try {
-            return Cache::rememberForever($cacheKey, function () use ($key, $default) {
+            $value = Cache::rememberForever($cacheKey, function () use ($key) {
                 /** @var self|null $row */
                 $row = static::query()->where('key', $key)->first();
 
                 if (!$row) {
-                    return $default;
+                    return null;
                 }
 
                 if ($row->value_text !== null) {
@@ -49,8 +58,11 @@ class Setting extends Model
                     return $row->value_json;
                 }
 
-                return $row->value ?? $default;
+                return $row->value;
             });
+
+            self::$requestCache[$key] = $value;
+            return $value ?? $default;
         } catch (QueryException) {
             return $default;
         }
@@ -64,10 +76,12 @@ class Setting extends Model
         );
 
         Cache::forget('settings:' . $key);
+        unset(self::$requestCache[$key]);
     }
 
     public static function forgetCache(string $key): void
     {
         Cache::forget('settings:' . $key);
+        unset(self::$requestCache[$key]);
     }
 }

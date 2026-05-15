@@ -41,6 +41,12 @@ export default defineConfig(({ command }) => ({
         outDir: 'public/build',
         rollupOptions: {
             input: 'resources/js/app.jsx',
+            output: {
+                manualChunks: {
+                    'vendor-react': ['react', 'react-dom'],
+                    'vendor-inertia': ['@inertiajs/react'],
+                },
+            },
         },
     },
 }));

@@ -3,6 +3,8 @@ import Container from '@/Components/Container';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useRef, useState, useCallback } from 'react';
 import { StarRating } from '@/Components/Catalog/StarRating';
+import ProductImage from '@/Components/Catalog/ProductImage';
+import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
 
 
 /* ── Utility: strip HTML ──────────────────────────────────────────── */
@@ -31,6 +33,7 @@ function parseDescription(html) {
     }
     return { text: textParts.join('\n'), features };
 }
+
 
 /* ── Icons ─────────────────────────────────────────────────────────── */
 const CL = ({ c }) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>;
@@ -87,9 +90,18 @@ function AvailableCoupons({ coupons = [] }) {
    SECTION: Image Gallery with Thumbnails
    ═══════════════════════════════════════════════════════════════════ */
 function ImageGallery({ product, discountPercent }) {
-    const images = product.media?.length
-        ? product.media.filter(m => m.type === 'image').map(m => m.url || m.path)
-        : [product.image_url || '/images/placeholder-product.svg'];
+    // Build image list: always start with the main image_url (e.g. Shopify CDN),
+    // then append any media entries that are real external URLs (not local storage paths).
+    const rawImages = [];
+    if (product.image_url) rawImages.push(product.image_url);
+    if (product.media?.length) {
+        product.media
+            .filter(m => m.type === 'image')
+            .map(m => m.url || m.path)
+            .filter(u => u && /^https?:\/\//i.test(u) && !u.includes('localhost') && !u.includes('127.0.0.1'))
+            .forEach(u => { if (!rawImages.includes(u)) rawImages.push(u); });
+    }
+    const images = rawImages.filter(Boolean).length ? rawImages.filter(Boolean) : [null];
 
     const [active, setActive] = useState(0);
 
@@ -97,7 +109,7 @@ function ImageGallery({ product, discountPercent }) {
         <div>
             {/* Main image */}
             <div className="relative aspect-square overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                <img src={images[active]} alt={product.name} className="h-full w-full object-contain" />
+                <ProductImage src={images[active]} alt={product.name} className="h-full w-full object-contain" />
                 {discountPercent > 0 && (
                     <div className="absolute left-3 top-3 rounded-md bg-brand px-3 py-1 text-sm font-bold text-white">
                         -{discountPercent}%
@@ -109,7 +121,7 @@ function ImageGallery({ product, discountPercent }) {
                 <div className="mt-3 flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                     {images.map((img, i) => (
                         <button key={i} type="button" onClick={() => setActive(i)} className={`flex-shrink-0 h-16 w-16 overflow-hidden rounded-lg border-2 bg-white transition ${i === active ? 'border-brand' : 'border-gray-200 opacity-60 hover:opacity-100'}`}>
-                            <img src={img} alt="" className="h-full w-full object-contain" />
+                            <ProductImage src={img} alt="" className="h-full w-full object-contain" />
                         </button>
                     ))}
                 </div>
@@ -154,7 +166,7 @@ function FrequentlyBoughtTogether({ products, currentProduct }) {
                             {/* This item */}
                             <div className="text-center w-[130px]">
                                 <div className="aspect-square overflow-hidden rounded-lg border-2 border-brand bg-gray-50">
-                                    <img src={currentProduct.image_url || '/images/placeholder-product.svg'} alt={currentProduct.name} className="h-full w-full object-cover" />
+                                    <ProductImage src={currentProduct.image_url} alt={currentProduct.name} className="h-full w-full object-cover" />
                                 </div>
                                 <p className="mt-2 text-[11px] text-gray-500">This item</p>
                                 <p className="text-[12px] font-medium text-gray-900 line-clamp-2">{currentProduct.name}</p>
@@ -166,7 +178,7 @@ function FrequentlyBoughtTogether({ products, currentProduct }) {
                                     <span className="text-3xl font-extralight text-gray-300">+</span>
                                     <div className="text-center w-[130px]">
                                         <button type="button" onClick={() => toggle(p.id)} className={`aspect-square w-full overflow-hidden rounded-lg border-2 bg-gray-50 transition ${selected.includes(p.id) ? 'border-brand' : 'border-gray-200 opacity-40'}`}>
-                                            <img src={p.image_url || '/images/placeholder-product.svg'} alt={p.name} className="h-full w-full object-cover" />
+                                            <ProductImage src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
                                         </button>
                                         <label className="mt-2 flex items-center justify-center gap-1 cursor-pointer">
                                             <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggle(p.id)} className="h-3.5 w-3.5 rounded border-gray-300 text-brand focus:ring-brand" />
@@ -225,7 +237,7 @@ function CompareWithSimilar({ currentProduct, products }) {
                                     <th key={p.id} className="p-3 align-top">
                                         <div className="flex flex-col items-center">
                                             <Link href={route('products.show', p.slug)} className="block w-full aspect-square overflow-hidden rounded-lg bg-gray-50 border border-gray-200">
-                                                <img src={p.image_url || '/images/placeholder-product.svg'} alt={p.name} className="h-full w-full object-cover" />
+                                                <ProductImage src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
                                             </Link>
                                             <Link href={route('products.show', p.slug)} className="mt-2 text-[13px] font-medium text-brand hover:underline text-center line-clamp-2">
                                                 {p.name}
@@ -340,7 +352,7 @@ function RelatedProducts({ products }) {
                             <div key={p.id} className="flex-shrink-0 w-[200px] rounded-none border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                                 <Link href={route('products.show', p.slug)} className="block">
                                     <div className="relative aspect-square overflow-hidden bg-gray-50">
-                                        <img src={p.image_url || '/images/placeholder-product.svg'} alt={p.name} className="h-full w-full object-cover transition-transform duration-300 hover:scale-105" loading="lazy" />
+                                        <ProductImage src={p.image_url} alt={p.name} className="h-full w-full object-cover transition-transform duration-300 hover:scale-105" loading="lazy" />
                                         {disc > 0 && (
                                             <div className="absolute left-0 top-3">
                                                 <span className="rounded-r-full bg-brand px-3 py-1 text-[11px] font-bold text-white shadow-sm">{disc}% off</span>
@@ -588,24 +600,15 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                             <AvailableCoupons coupons={availableCoupons} />
 
                             {/* Description */}
-                            {product.description && (() => {
-                                const { text, features } = parseDescription(product.description);
-                                return (
-                                    <div className="mt-6 border-t border-gray-200 pt-5">
-                                        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Description</h2>
-                                        {text && <p className="mt-3 text-[14px] leading-relaxed text-gray-600">{text}</p>}
-                                        {features.length > 0 && (
-                                            <ul className="mt-3 space-y-2">
-                                                {features.map((f, i) => (
-                                                    <li key={i} className="flex items-start gap-2 text-[14px] text-gray-600">
-                                                        <Check c="h-5 w-5 flex-shrink-0 text-brand mt-0.5" />{f}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </div>
-                                );
-                            })()}
+                            {product.description && (
+                                <div className="mt-6 border-t border-gray-200 pt-5">
+                                    <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-1">Description</h2>
+                                    <div
+                                        className="product-description"
+                                        dangerouslySetInnerHTML={{ __html: product.description }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </Container>
@@ -619,6 +622,24 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
 
             {/* Products Related to This Item */}
             <RelatedProducts products={relatedProducts} />
+
+            {/* Trustpilot Reviews */}
+            {import.meta.env.VITE_TRUSTPILOT_BUSINESS_UNIT_ID && (
+                <section className="py-10 border-t border-gray-200">
+                    <Container>
+                        <div className="mb-6">
+                            <p className="text-[11px] font-semibold uppercase tracking-[3px] text-brand mb-2">Verified Reviews</p>
+                            <h2 className="text-[22px] font-light text-[#222] tracking-[2px] uppercase font-heading">What Our <span className="font-semibold">Customers Say</span></h2>
+                            <div className="mt-3 h-[2px] w-12 bg-brand" />
+                        </div>
+                        <TrustpilotCarousel
+                            businessUnitId={import.meta.env.VITE_TRUSTPILOT_BUSINESS_UNIT_ID}
+                            templateId="53aa8912dec7e10d38f59f36"
+                            height="140px"
+                        />
+                    </Container>
+                </section>
+            )}
 
             {/* Wastage Warning Modal */}
             {showWastageModal && (

@@ -7,6 +7,7 @@ use App\Domain\CMS\Models\PageSection;
 use App\Domain\CMS\Models\SectionRegistry;
 use App\Jobs\RebuildPageSlugsJob;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class PageService
@@ -40,7 +41,7 @@ class PageService
             $pages = $pages->reject(fn($page) => in_array($page->id, $excludeIds));
         }
 
-        return $pages->map(function ($page) {
+        return $pages->values()->map(function ($page) {
             $depth = substr_count($page->full_slug ?? '', '/');
             return [
                 'id' => $page->id,
@@ -48,7 +49,7 @@ class PageService
                 'full_slug' => $page->full_slug,
                 'depth' => $depth,
             ];
-        });
+        })->values();
     }
 
     /**
@@ -158,6 +159,9 @@ class PageService
         if (!empty($sections)) {
             $this->syncSections($page, $sections);
         }
+
+        // Flush the public page cache so edits appear immediately
+        $this->flushPageCache($page);
 
         // Dispatch job to update descendant slugs if slug or parent changed
         if (($slugChanged || $parentChanged) && $page->hasChildren()) {
@@ -281,6 +285,19 @@ class PageService
         }
 
         return $newPage->fresh(['sections', 'parent']);
+    }
+
+    /**
+     * Flush the CMSService public cache for a page so edits show immediately.
+     */
+    protected function flushPageCache(Page $page): void
+    {
+        foreach ([$page->slug, $page->full_slug] as $key) {
+            if ($key) {
+                Cache::forget("page.{$key}");
+                Cache::forget("page.preview.{$key}");
+            }
+        }
     }
 
     /**

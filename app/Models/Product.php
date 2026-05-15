@@ -68,6 +68,7 @@ class Product extends Model
         'sqm_per_box',
         'requires_shipping',
         'image_url',
+        'lifestyle_image_url',
         'stock',
         'is_active',
         'status',

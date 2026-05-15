@@ -1,6 +1,7 @@
 import { Link, router } from '@inertiajs/react';
 import FavoriteButton from './FavoriteButton';
 import { StarRating } from './StarRating';
+import ProductImage from './ProductImage';
 
 export default function ProductCard({ product, isFavorite, onToggleFavorite, showFavorite = true }) {
     const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
@@ -25,12 +26,12 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, sho
             {/* Image */}
             <Link href={route('products.show', product.slug)} className="block">
                 <div className="relative aspect-square w-full overflow-hidden bg-gray-50">
-                    <img
-                        src={product.image_url || '/images/placeholder-product.svg'}
+                    <ProductImage
+                        src={product.image_url}
                         alt={product.name}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500"
+                        style={{ transform: 'scale(2.8)', transformOrigin: 'center' }}
                         loading="lazy"
-                        onError={(e) => { e.target.src = '/images/placeholder-product.svg'; }}
                     />
 
                     {/* Discount badge — top left pill */}

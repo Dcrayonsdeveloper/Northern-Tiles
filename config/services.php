@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'instagram' => [
+        'access_token' => env('INSTAGRAM_ACCESS_TOKEN'),
+    ],
+
+    'google' => [
+        'api_key' => env('GOOGLE_API_KEY'),
+    ],
+
 ];

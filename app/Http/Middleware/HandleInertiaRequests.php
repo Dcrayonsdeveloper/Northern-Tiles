@@ -38,20 +38,23 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'dictionary' => fn () => [
+            // dictionary: lazy so it's excluded from Inertia partial-reload responses
+            'dictionary' => \Inertia\Inertia::lazy(fn () => [
                 'locale' => app()->getLocale(),
                 'items' => app(DictionaryService::class)->mergedLocale(app()->getLocale()),
-            ],
-            'ui' => [
+            ]),
+            // ui.topBar wrapped in fn() — only resolved when Inertia uses it, not on every boot
+            'ui' => fn () => [
                 'topBar' => Setting::getValue('ui.topBar', config('ui.topBar')),
             ],
             'site' => fn () => app(SiteConfigService::class)->getSiteData(),
-            'menus' => fn () => [
+            // menus: lazy — sent only on full page loads, not on Inertia navigations
+            'menus' => \Inertia\Inertia::lazy(fn () => [
                 'header_top' => app(SettingService::class)->menuItems('menu.header_top', []),
                 'header_main' => app(MenuService::class)->getTree('header'),
                 'footer' => app(MenuService::class)->getTree('footer'),
                 'mobile' => app(MenuService::class)->getTree('mobile'),
-            ],
+            ]),
             'auth' => [
                 'user' => $request->user(),
             ],
@@ -65,10 +68,11 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
-            'footerConfig' => fn () => app(FooterConfigService::class)->getConfig(),
-            'tracking' => fn () => app(SiteConfigService::class)->getTrackingData(),
-            'organizationJsonLd' => fn () => app(SiteConfigService::class)->getOrganizationJsonLd(),
-            'socialLinks' => fn () => app(SiteConfigService::class)->getSocialLinks(),
+            // footerConfig, tracking, org schema, social — lazy on navigations
+            'footerConfig' => \Inertia\Inertia::lazy(fn () => app(FooterConfigService::class)->getConfig()),
+            'tracking' => \Inertia\Inertia::lazy(fn () => app(SiteConfigService::class)->getTrackingData()),
+            'organizationJsonLd' => \Inertia\Inertia::lazy(fn () => app(SiteConfigService::class)->getOrganizationJsonLd()),
+            'socialLinks' => \Inertia\Inertia::lazy(fn () => app(SiteConfigService::class)->getSocialLinks()),
         ];
     }
 }

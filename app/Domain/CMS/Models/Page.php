@@ -251,7 +251,7 @@ class Page extends Model
 
     public function getUrl(): string
     {
-        return url('/pages/' . $this->full_slug);
+        return url('/page/' . $this->full_slug);
     }
 
     public function getPreviewUrl(): string
