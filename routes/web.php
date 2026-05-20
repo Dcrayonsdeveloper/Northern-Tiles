@@ -53,18 +53,25 @@ Route::prefix('api/cart')->name('api.cart.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\CartController::class, 'index'])->name('index');
     Route::post('add', [\App\Http\Controllers\Api\CartController::class, 'add'])->name('add');
     Route::post('buy-now', [\App\Http\Controllers\Api\CartController::class, 'buyNow'])->name('buy-now');
-    Route::put('{item}', [\App\Http\Controllers\Api\CartController::class, 'update'])->name('update');
-    Route::delete('{item}', [\App\Http\Controllers\Api\CartController::class, 'remove'])->name('remove');
-    Route::delete('/', [\App\Http\Controllers\Api\CartController::class, 'clear'])->name('clear');
 
-    // Coupon routes
+    // Coupon routes — MUST be declared before the {item} wildcard routes.
+    // If placed after, DELETE api/cart/coupon would match {item}="coupon" (string)
+    // and crash CartController::remove() which expects an int.
+    Route::get('coupons', [\App\Http\Controllers\Api\CouponController::class, 'available'])->name('coupons');
     Route::post('coupon/apply', [\App\Http\Controllers\Api\CouponController::class, 'apply'])->name('coupon.apply');
     Route::delete('coupon', [\App\Http\Controllers\Api\CouponController::class, 'remove'])->name('coupon.remove');
     Route::post('coupon/validate', [\App\Http\Controllers\Api\CouponController::class, 'validate'])->name('coupon.validate');
+
+    // Wildcard item routes — declared last so specific paths above take priority
+    Route::put('{item}', [\App\Http\Controllers\Api\CartController::class, 'update'])->name('update');
+    Route::delete('{item}', [\App\Http\Controllers\Api\CartController::class, 'remove'])->name('remove');
+    Route::delete('/', [\App\Http\Controllers\Api\CartController::class, 'clear'])->name('clear');
 });
 
-// Live product search (JSON)
-Route::get('api/search', [\App\Http\Controllers\Api\SearchController::class, 'search'])->name('api.search');
+// Live product search (JSON) — rate limited: 20 rpm guests / 60 rpm auth / 5 per 10 s burst
+Route::get('api/search', [\App\Http\Controllers\Api\SearchController::class, 'search'])
+    ->middleware('throttle:search')
+    ->name('api.search');
 
 // Reviews API routes
 Route::prefix('api/reviews')->name('api.reviews.')->group(function () {

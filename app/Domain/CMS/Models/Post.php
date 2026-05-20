@@ -41,6 +41,15 @@ class Post extends Model
         'view_count' => 'integer',
     ];
 
+    protected $appends = ['featured_image_url'];
+
+    public function getFeaturedImageUrlAttribute(): ?string
+    {
+        return $this->featured_image
+            ? \Illuminate\Support\Facades\Storage::url($this->featured_image)
+            : null;
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(PostCategory::class, 'category_id');

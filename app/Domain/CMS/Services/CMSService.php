@@ -156,10 +156,13 @@ class CMSService
 
     public function createPost(array $data): Post
     {
+        $tags = $data['tags'] ?? [];
+        $data = $this->normalizePostData($data);
+
         $post = Post::create($data);
 
-        if (!empty($data['tags'])) {
-            $post->syncTags($data['tags']);
+        if (!empty($tags)) {
+            $post->syncTags($tags);
         }
 
         $this->flushPostCache($post->slug);
@@ -168,11 +171,14 @@ class CMSService
 
     public function updatePost(Post $post, array $data): Post
     {
+        $tags = $data['tags'] ?? null;
+        $data = $this->normalizePostData($data, $post->featured_image);
+
         $oldSlug = $post->slug;
         $post->update($data);
 
-        if (isset($data['tags'])) {
-            $post->syncTags($data['tags']);
+        if ($tags !== null) {
+            $post->syncTags($tags);
         }
 
         $this->flushPostCache($oldSlug);
@@ -181,6 +187,23 @@ class CMSService
         }
 
         return $post;
+    }
+
+    private function normalizePostData(array $data, ?string $existingImage = null): array
+    {
+        if (isset($data['body_json']) && is_string($data['body_json'])) {
+            $data['body_json'] = [['type' => 'html', 'content' => $data['body_json']]];
+        }
+
+        if (isset($data['featured_image']) && $data['featured_image'] instanceof \Illuminate\Http\UploadedFile) {
+            $data['featured_image'] = $data['featured_image']->store('posts', 'public');
+        } elseif (array_key_exists('featured_image', $data) && $data['featured_image'] === null && $existingImage !== null) {
+            unset($data['featured_image']);
+        }
+
+        unset($data['tags']);
+
+        return $data;
     }
 
     public function publishPage(Page $page): Page

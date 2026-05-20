@@ -4,15 +4,15 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 
 function CreateRedirectFromLogModal({ log, statusCodes, onClose }) {
     const { data, setData, post, processing, errors } = useForm({
-        from_url: log.url.replace(/^\//, ''),
-        to_url: '',
+        from_path: log.path.replace(/^\//, ''),
+        to_path: '',
         status_code: '301',
         is_active: true,
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('admin.redirects.store'), {
+        post(route('admin.seo.redirects.store'), {
             onSuccess: () => {
                 onClose();
             },
@@ -35,26 +35,26 @@ function CreateRedirectFromLogModal({ log, statusCodes, onClose }) {
                             </span>
                             <input
                                 type="text"
-                                value={data.from_url}
-                                onChange={(e) => setData('from_url', e.target.value)}
+                                value={data.from_path}
+                                onChange={(e) => setData('from_path', e.target.value)}
                                 className="block w-full rounded-none rounded-r-md border-gray-300 focus:border-brand focus:ring-brand"
                                 required
                             />
                         </div>
-                        {errors.from_url && <p className="mt-1 text-xs text-red-500">{errors.from_url}</p>}
+                        {errors.from_path && <p className="mt-1 text-xs text-red-500">{errors.from_path}</p>}
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700">To URL</label>
                         <input
                             type="text"
-                            value={data.to_url}
-                            onChange={(e) => setData('to_url', e.target.value)}
+                            value={data.to_path}
+                            onChange={(e) => setData('to_path', e.target.value)}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand"
                             placeholder="/correct-page or https://example.com/page"
                             required
                         />
-                        {errors.to_url && <p className="mt-1 text-xs text-red-500">{errors.to_url}</p>}
+                        {errors.to_path && <p className="mt-1 text-xs text-red-500">{errors.to_path}</p>}
                     </div>
 
                     <div>
@@ -100,21 +100,21 @@ export default function Index({ logs, statusCodes, filters, stats }) {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        router.get(route('admin.not-found-logs.index'), { search }, { preserveState: true });
+        router.get(route('admin.seo.404-logs'), { search }, { preserveState: true });
     };
 
     const handleDelete = (log) => {
         if (!confirm('Are you sure you want to delete this log entry?')) return;
-        router.delete(route('admin.not-found-logs.destroy', log.id));
+        router.delete(route('admin.seo.404-logs.destroy', log.id));
     };
 
     const handleClearAll = () => {
         if (!confirm('Are you sure you want to clear all 404 logs? This action cannot be undone.')) return;
-        router.delete(route('admin.not-found-logs.clear'));
+        router.delete(route('admin.seo.404-logs.clear'));
     };
 
     const handleIgnore = (log) => {
-        router.put(route('admin.not-found-logs.ignore', log.id));
+        router.put(route('admin.seo.404-logs.ignore', log.id));
     };
 
     return (

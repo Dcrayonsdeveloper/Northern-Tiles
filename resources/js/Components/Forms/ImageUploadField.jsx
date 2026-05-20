@@ -16,16 +16,16 @@ export default function ImageUploadField({
 }) {
     const inputRef = useRef(null);
     const [preview, setPreview] = useState(null);
+    const [isRemoved, setIsRemoved] = useState(false);
 
     const handleFileChange = (e) => {
         const file = e.target.files?.[0] || null;
 
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreview(reader.result);
-            };
+            reader.onloadend = () => setPreview(reader.result);
             reader.readAsDataURL(file);
+            setIsRemoved(false);
         } else {
             setPreview(null);
         }
@@ -35,13 +35,14 @@ export default function ImageUploadField({
 
     const handleRemove = () => {
         setPreview(null);
+        setIsRemoved(true);
         if (inputRef.current) {
             inputRef.current.value = '';
         }
         onRemove?.();
     };
 
-    const displayUrl = preview || currentUrl;
+    const displayUrl = isRemoved ? null : (preview || currentUrl);
 
     return (
         <div>

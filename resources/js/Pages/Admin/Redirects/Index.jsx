@@ -4,15 +4,15 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 
 function CreateRedirectModal({ statusCodes, onClose }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        from_url: '',
-        to_url: '',
+        from_path: '',
+        to_path: '',
         status_code: '301',
         is_active: true,
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('admin.redirects.store'), {
+        post(route('admin.seo.redirects.store'), {
             onSuccess: () => {
                 reset();
                 onClose();
@@ -33,27 +33,27 @@ function CreateRedirectModal({ statusCodes, onClose }) {
                             </span>
                             <input
                                 type="text"
-                                value={data.from_url}
-                                onChange={(e) => setData('from_url', e.target.value)}
+                                value={data.from_path}
+                                onChange={(e) => setData('from_path', e.target.value)}
                                 className="block w-full rounded-none rounded-r-md border-gray-300 focus:border-brand focus:ring-brand"
                                 placeholder="old-page-url"
                                 required
                             />
                         </div>
-                        {errors.from_url && <p className="mt-1 text-xs text-red-500">{errors.from_url}</p>}
+                        {errors.from_path && <p className="mt-1 text-xs text-red-500">{errors.from_path}</p>}
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700">To URL</label>
                         <input
                             type="text"
-                            value={data.to_url}
-                            onChange={(e) => setData('to_url', e.target.value)}
+                            value={data.to_path}
+                            onChange={(e) => setData('to_path', e.target.value)}
                             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand"
                             placeholder="/new-page-url or https://example.com/page"
                             required
                         />
-                        {errors.to_url && <p className="mt-1 text-xs text-red-500">{errors.to_url}</p>}
+                        {errors.to_path && <p className="mt-1 text-xs text-red-500">{errors.to_path}</p>}
                     </div>
 
                     <div>
@@ -110,16 +110,16 @@ export default function Index({ redirects, statusCodes, filters }) {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        router.get(route('admin.redirects.index'), { search }, { preserveState: true });
+        router.get(route('admin.seo.redirects'), { search }, { preserveState: true });
     };
 
     const handleDelete = (redirect) => {
         if (!confirm(`Are you sure you want to delete this redirect?`)) return;
-        router.delete(route('admin.redirects.destroy', redirect.id));
+        router.delete(route('admin.seo.redirects.destroy', redirect.id));
     };
 
     const handleToggleActive = (redirect) => {
-        router.put(route('admin.redirects.update', redirect.id), {
+        router.put(route('admin.seo.redirects.update', redirect.id), {
             ...redirect,
             is_active: !redirect.is_active,
         }, { preserveState: true });
@@ -205,10 +205,10 @@ export default function Index({ redirects, statusCodes, filters }) {
                         {redirects.data?.map((redirect) => (
                             <tr key={redirect.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4">
-                                    <span className="font-mono text-sm text-gray-900">/{redirect.from_url}</span>
+                                    <span className="font-mono text-sm text-gray-900">/{redirect.from_path}</span>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className="font-mono text-sm text-gray-600">{redirect.to_url}</span>
+                                    <span className="font-mono text-sm text-gray-600">{redirect.to_path}</span>
                                 </td>
                                 <td className="whitespace-nowrap px-6 py-4">
                                     {getStatusBadge(redirect.status_code)}

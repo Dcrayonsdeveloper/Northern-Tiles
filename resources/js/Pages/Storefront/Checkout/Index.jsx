@@ -314,7 +314,7 @@ export default function Index({
                                                     className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                                     required
                                                 >
-                                                    <option value="India">India</option>
+                                                    <option value="Australia">Australia</option>
                                                 </select>
                                             </div>
                                         </div>

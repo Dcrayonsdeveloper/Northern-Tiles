@@ -98,7 +98,9 @@ export default function CartSidebar({ open, onClose }) {
     const [loading, setLoading] = useState(false);
     const [updating, setUpdating] = useState(null);
 
-    // Fetch cart data when sidebar opens
+    // Fetch cart data when sidebar opens.
+    // Smart-merges items to preserve stable object references for unchanged items,
+    // so React.memo on CartLineItem can skip re-renders.
     const fetchCart = useCallback(async () => {
         if (!open) return;
 
@@ -114,7 +116,19 @@ export default function CartSidebar({ open, onClose }) {
 
             if (response.ok) {
                 const data = await response.json();
-                setCart(data);
+                setCart(prev => {
+                    const prevById = {};
+                    (prev.items || []).forEach(i => { prevById[i.id] = i; });
+                    const mergedItems = (data.items || []).map(newItem => {
+                        const old = prevById[newItem.id];
+                        return (old &&
+                            old.quantity === newItem.quantity &&
+                            old.line_total === newItem.line_total)
+                            ? old
+                            : newItem;
+                    });
+                    return { ...data, items: mergedItems };
+                });
             }
         } catch (error) {
             console.error('Failed to fetch cart:', error);
@@ -127,8 +141,9 @@ export default function CartSidebar({ open, onClose }) {
         fetchCart();
     }, [fetchCart]);
 
-    // Update item quantity
-    const updateQuantity = async (itemId, quantity) => {
+    // Update item quantity — patches only the affected item in state, no full fetchCart.
+    // Stable reference ([] deps) so React.memo on CartLineItem skips re-renders for other items.
+    const updateQuantity = useCallback(async (itemId, quantity) => {
         setUpdating(itemId);
         try {
             const response = await fetch(`/api/cart/${itemId}`, {
@@ -144,8 +159,18 @@ export default function CartSidebar({ open, onClose }) {
             });
 
             if (response.ok) {
-                await fetchCart();
-                // Update cart count in header
+                const data = await response.json();
+                setCart(prev => ({
+                    ...prev,
+                    items: prev.items.map(i =>
+                        i.id === itemId
+                            ? { ...i, quantity, line_total: i.price * quantity }
+                            : i
+                    ),
+                    totals: data.totals ?? prev.totals,
+                    coupon: data.coupon,
+                    shipping_estimate: data.shipping_estimate ?? prev.shipping_estimate,
+                }));
                 window.dispatchEvent(new CustomEvent('cart-updated'));
             }
         } catch (error) {
@@ -153,10 +178,10 @@ export default function CartSidebar({ open, onClose }) {
         } finally {
             setUpdating(null);
         }
-    };
+    }, []);
 
-    // Remove item
-    const removeItem = async (itemId) => {
+    // Remove item — filters out the item in state, no full fetchCart.
+    const removeItem = useCallback(async (itemId) => {
         setUpdating(itemId);
         try {
             const response = await fetch(`/api/cart/${itemId}`, {
@@ -170,7 +195,14 @@ export default function CartSidebar({ open, onClose }) {
             });
 
             if (response.ok) {
-                await fetchCart();
+                const data = await response.json();
+                setCart(prev => ({
+                    ...prev,
+                    items: prev.items.filter(i => i.id !== itemId),
+                    totals: data.totals ?? prev.totals,
+                    coupon: data.coupon,
+                    shipping_estimate: data.shipping_estimate ?? prev.shipping_estimate,
+                }));
                 window.dispatchEvent(new CustomEvent('cart-updated'));
             }
         } catch (error) {
@@ -178,7 +210,7 @@ export default function CartSidebar({ open, onClose }) {
         } finally {
             setUpdating(null);
         }
-    };
+    }, []);
 
     // Add upsell to cart
     const addUpsell = async (productId) => {
@@ -285,7 +317,11 @@ export default function CartSidebar({ open, onClose }) {
                                                     <SampleBanner totals={cart.totals} />
 
                                                     {/* Free shipping progress (non-sample only) */}
-                                                    {!cart.shipping_estimate.is_free && cart.shipping_estimate.amount_for_free > 0 && cart.totals.subtotal > 0 && (
+                                                    {cart.shipping_estimate.coupon_free_shipping ? (
+                                                        <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3">
+                                                            <p className="text-sm font-medium text-green-800">✓ Free shipping applied</p>
+                                                        </div>
+                                                    ) : (!cart.shipping_estimate.is_free && cart.shipping_estimate.amount_for_free > 0 && cart.totals.subtotal > 0 && (
                                                         <div className="mb-4 rounded-lg bg-amber-50 p-3">
                                                             <p className="text-sm text-amber-800">
                                                                 {d('cart.free_shipping_notice', 'Add')} {cart.totals.currency_symbol}
@@ -301,7 +337,7 @@ export default function CartSidebar({ open, onClose }) {
                                                                 />
                                                             </div>
                                                         </div>
-                                                    )}
+                                                    ))}
 
                                                     {/* Cart items */}
                                                     <div className="space-y-4">
@@ -337,8 +373,24 @@ export default function CartSidebar({ open, onClose }) {
                                                     <CouponInput
                                                         appliedCoupon={cart.coupon}
                                                         currency={cart.totals.currency_symbol}
-                                                        onApply={fetchCart}
-                                                        onRemove={fetchCart}
+                                                        onApply={(data) => {
+                                                            setCart(prev => ({
+                                                                ...prev,
+                                                                coupon: data.coupon
+                                                                    ? { ...data.coupon, discount_amount: data.discount_amount ?? data.coupon.discount_amount ?? 0 }
+                                                                    : null,
+                                                                totals: data.totals ?? prev.totals,
+                                                                shipping_estimate: data.shipping_estimate ?? prev.shipping_estimate,
+                                                            }));
+                                                        }}
+                                                        onRemove={(data) => {
+                                                            setCart(prev => ({
+                                                                ...prev,
+                                                                coupon: data?.coupon ?? null,
+                                                                totals: data?.totals ?? prev.totals,
+                                                                shipping_estimate: data?.shipping_estimate ?? prev.shipping_estimate,
+                                                            }));
+                                                        }}
                                                     />
                                                 </div>
 

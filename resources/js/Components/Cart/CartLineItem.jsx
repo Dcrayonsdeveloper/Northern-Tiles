@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from '@inertiajs/react';
 import ProductImage from '@/Components/Catalog/ProductImage';
 
@@ -25,7 +26,7 @@ function TrashIcon({ className }) {
     );
 }
 
-export default function CartLineItem({
+function CartLineItem({
     item,
     currency = '$',
     updating = false,
@@ -141,3 +142,9 @@ export default function CartLineItem({
         </div>
     );
 }
+
+export default memo(CartLineItem, (prev, next) =>
+    prev.item === next.item &&
+    prev.currency === next.currency &&
+    prev.updating === next.updating
+);

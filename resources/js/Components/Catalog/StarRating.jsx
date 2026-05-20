@@ -31,7 +31,7 @@ function StarIcon({ className, filled = false, half = false }) {
         </svg>
     );
 }
-
+  
 // Display rating stars (read-only)
 export function StarRating({
     rating = 0,

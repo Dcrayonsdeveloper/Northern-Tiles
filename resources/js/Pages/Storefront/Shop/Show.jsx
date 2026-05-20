@@ -7,6 +7,195 @@ import ProductImage from '@/Components/Catalog/ProductImage';
 import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
 
 
+/* ── Spec icons (Heroicons outline 24 px) ───────────────────────── */
+const SI = {
+    tag:      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L9.568 3z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" /></svg>,
+    style:    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>,
+    swatch:   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" /></svg>,
+    sparkles: <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" /></svg>,
+    cube:     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>,
+    resize:   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>,
+    updown:   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" /></svg>,
+    sliders:  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 13.5V3.75m0 9.75a1.5 1.5 0 010 3m0-3a1.5 1.5 0 000 3m0 3.75V16.5m12-3V3.75m0 9.75a1.5 1.5 0 010 3m0-3a1.5 1.5 0 000 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 1.5 0 010 3m0-3a1.5 1.5 0 000 3m0 9.75V10.5" /></svg>,
+    home:     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>,
+    globe:    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>,
+    box:      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>,
+};
+
+/* ── Utility: parse Product Specifications from description HTML ──── */
+const SPEC_FIELDS = [
+    { key: 'Name',               icon: SI.tag      },
+    { key: 'Style',              icon: SI.style    },
+    { key: 'Colours',            icon: SI.swatch   },
+    { key: 'Finish',             icon: SI.sparkles },
+    { key: 'Material',           icon: SI.cube     },
+    { key: 'Size (Nominal)',      icon: SI.resize   },
+    { key: 'Thickness',          icon: SI.updown   },
+    { key: 'Variation',          icon: SI.sliders  },
+    { key: 'Application Space',  icon: SI.home     },
+    { key: 'Country of Origin',  icon: SI.globe    },
+    { key: 'Quantity Per Box',   icon: SI.box      },
+];
+
+// JSON key → SPEC_FIELDS label mapping (must match admin Edit.jsx spec keys)
+const SPEC_JSON_KEYS = [
+    'name', 'style', 'colours', 'finish', 'material',
+    'size_nominal', 'thickness', 'variation', 'application_space',
+    'country_of_origin', 'quantity_per_box',
+];
+
+function specsFromJson(json) {
+    if (!json || typeof json !== 'object') return [];
+    return SPEC_FIELDS.map((f, i) => {
+        const val = json[SPEC_JSON_KEYS[i]];
+        return val && String(val).trim()
+            ? { label: f.key, value: String(val).trim(), icon: f.icon }
+            : null;
+    }).filter(Boolean);
+}
+
+function parseSpecifications(html) {
+    if (!html) return [];
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    const text = tmp.textContent || tmp.innerText || '';
+    const specStart = text.search(/product\s+specifications/i);
+    if (specStart === -1) return [];
+    const specText = text.slice(specStart);
+    const results = [];
+    for (const { key, icon } of SPEC_FIELDS) {
+        const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const match = specText.match(new RegExp(`${escaped}\\s*:?\\s*(.+)`, 'im'));
+        if (match) {
+            const val = match[1].trim();
+            if (val) results.push({ label: key, value: val, icon });
+        }
+    }
+    return results;
+}
+
+function SpecificationsBlock({ specifications, description }) {
+    // Prefer structured JSON data saved via admin; fall back to description parsing
+    const specs = (specifications && Object.keys(specifications).length)
+        ? specsFromJson(specifications)
+        : parseSpecifications(description);
+    if (!specs.length) return null;
+
+    const mid = Math.ceil(specs.length / 2);
+    const left = specs.slice(0, mid);
+    const right = specs.slice(mid);
+
+    const Row = ({ label, value, icon, shade }) => (
+        <div className={`flex items-start gap-3 px-4 py-3 ${shade ? 'bg-gray-50' : 'bg-white'}`}>
+            <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-brand/8 text-brand">
+                {icon}
+            </div>
+            <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
+                <p className="mt-0.5 text-[13px] font-semibold leading-snug text-gray-800">{value}</p>
+            </div>
+        </div>
+    );
+
+    const [open, setOpen] = useState(true);
+
+    return (
+        <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                className="flex w-full items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2.5 text-left transition-colors hover:bg-gray-100"
+            >
+                <div className="h-3 w-0.5 rounded-full bg-brand" />
+                <p className="flex-1 text-[11px] font-bold uppercase tracking-[3px] text-gray-500">Product Specifications</p>
+                <svg
+                    className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : 'rotate-0'}`}
+                    fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            {open && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 sm:divide-x sm:divide-gray-200">
+                    <div className="divide-y divide-gray-100">
+                        {left.map(({ label, value, icon }, i) => (
+                            <Row key={label} label={label} value={value} icon={icon} shade={i % 2 !== 0} />
+                        ))}
+                    </div>
+                    <div className="divide-y divide-gray-100 border-t border-gray-200 sm:border-t-0">
+                        {right.map(({ label, value, icon }, i) => (
+                            <Row key={label} label={label} value={value} icon={icon} shade={i % 2 !== 0} />
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ── Utility: remove Product Specifications block from description HTML ── */
+function stripSpecsFromHtml(html) {
+    if (!html) return html;
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    // Matches any spec field label at the start of the element's text
+    const fieldRe = [
+        /^name\s*:/i,
+        /^style\s*:/i,
+        /^colou?rs?\s*:/i,
+        /^finish\s*:/i,
+        /^material\s*:/i,
+        /^size(\s*\(nominal\))?\s*:/i,
+        /^thickness\s*:/i,
+        /^variation\s*:/i,
+        /^application\s+space\s*:/i,
+        /^country\s+of\s+origin\s*:/i,
+        /^quantity\s+per\s+box\s*:/i,
+    ];
+    const isSpecLine = (text) => fieldRe.some((re) => re.test(text));
+
+    // Find the first element whose trimmed text is exactly "Product Specifications"
+    let headingEl = null;
+    for (const el of container.querySelectorAll('*')) {
+        if (/^product\s+specifications$/i.test(el.textContent.trim())) {
+            headingEl = el;
+            break;
+        }
+    }
+    if (!headingEl) return html;
+
+    // Walk up to the direct child of container
+    let topLevel = headingEl;
+    while (topLevel.parentElement && topLevel.parentElement !== container) {
+        topLevel = topLevel.parentElement;
+    }
+
+    // If the spec section lives inside a table, remove the whole table
+    if (topLevel.tagName === 'TABLE') {
+        topLevel.remove();
+        return container.innerHTML;
+    }
+
+    // Otherwise collect the heading element + immediately following siblings
+    // that are spec field lines or empty/whitespace-only elements
+    const toRemove = [topLevel];
+    let next = topLevel.nextElementSibling;
+    while (next) {
+        const text = next.textContent.trim();
+        if (isSpecLine(text) || text === '') {
+            toRemove.push(next);
+            next = next.nextElementSibling;
+        } else {
+            break;
+        }
+    }
+
+    toRemove.forEach((el) => el.remove());
+    return container.innerHTML;
+}
+
 /* ── Utility: strip HTML ──────────────────────────────────────────── */
 function stripHtml(html) {
     if (!html) return '';
@@ -59,6 +248,26 @@ function SBtn({ dir, disabled, onClick }) {
 
 /* ── Available Coupons ────────────────────────────────────────────── */
 function AvailableCoupons({ coupons = [] }) {
+    const [copiedCode, setCopiedCode] = useState(null);
+
+    const copyCode = useCallback(async (text) => {
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const el = document.createElement('textarea');
+                el.value = text;
+                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            }
+            setCopiedCode(text);
+            setTimeout(() => setCopiedCode(null), 2000);
+        } catch {}
+    }, []);
+
     if (!coupons?.length) return null;
     return (
         <div className="mt-6 rounded-lg border border-dashed border-green-300 bg-green-50 p-4">
@@ -67,20 +276,58 @@ function AvailableCoupons({ coupons = [] }) {
                 <span className="text-sm font-semibold text-green-800">Available Offers</span>
             </div>
             <div className="space-y-2">
-                {coupons.map((coupon, i) => (
-                    <div key={coupon.code || i} className="flex items-start gap-2">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                                <code className="rounded bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800">{coupon.code}</code>
-                                {coupon.type === 'free_shipping' && <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">Free Shipping</span>}
+                {coupons.map((coupon, i) => {
+                    const isCopied = copiedCode === coupon.code;
+                    return (
+                        <div key={coupon.code || i} className="flex items-start gap-2">
+                            <div className="flex-1">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    <code className="rounded bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800">{coupon.code}</code>
+                                    <button
+                                        type="button"
+                                        onClick={() => copyCode(coupon.code)}
+                                        title={isCopied ? 'Copied!' : 'Copy code'}
+                                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all active:scale-90 touch-manipulation ${
+                                            isCopied
+                                                ? 'border-green-400 bg-green-100'
+                                                : 'border-green-300 bg-white hover:border-green-500 hover:bg-green-50'
+                                        }`}
+                                    >
+                                        {isCopied ? (
+                                            <svg className="h-3 w-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        ) : (
+                                            <svg className="h-3 w-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                    {isCopied && (
+                                        <span className="text-[10px] font-medium text-green-600">Copied!</span>
+                                    )}
+                                    {coupon.type === 'free_shipping' && (
+                                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">Free Shipping</span>
+                                    )}
+                                    {coupon.first_order_only && (
+                                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">First order</span>
+                                    )}
+                                </div>
+                                <p className="mt-1 text-xs text-green-700">
+                                    {coupon.title || coupon.description || (
+                                        coupon.type === 'percentage' ? `Get ${coupon.value}% off` :
+                                        coupon.type === 'fixed_amount' ? `Get $${coupon.value} off` :
+                                        coupon.type === 'free_shipping' ? 'Free shipping' :
+                                        `Save with ${coupon.code}`
+                                    )}
+                                    {coupon.minimum_purchase > 0 && (
+                                        <span className="text-green-600"> (Min. ${parseFloat(coupon.minimum_purchase).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
+                                    )}
+                                </p>
                             </div>
-                            <p className="mt-1 text-xs text-green-700">
-                                {coupon.title || coupon.description || (coupon.type === 'percentage' ? `Get ${coupon.value}% off` : coupon.type === 'fixed_amount' ? `Get $${coupon.value} off` : coupon.type === 'free_shipping' ? 'Free shipping' : `Save with ${coupon.code}`)}
-                                {coupon.minimum_purchase > 0 && <span className="text-green-600"> (Min. ${coupon.minimum_purchase?.toLocaleString()})</span>}
-                            </p>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
@@ -517,7 +764,15 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                                 <Link href={route('shop.category', product.category.slug)} className="text-[13px] font-medium text-brand hover:underline">{product.category.name}</Link>
                             )}
 
-                            <h1 className="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl leading-tight font-heading">{product.name}</h1>
+                            <div className="mt-1 flex flex-wrap items-start gap-2">
+                                <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl leading-tight font-heading">{product.name}</h1>
+                                {product.is_featured && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-amber-700">
+                                        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                        Featured
+                                    </span>
+                                )}
+                            </div>
 
 
                             {/* Price block */}
@@ -532,6 +787,9 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                                 </div>
                                 <p className="mt-1 text-[12px] text-gray-500">Inclusive of all taxes · Total calculated in cart</p>
                             </div>
+
+                            {/* Product Specifications */}
+                            <SpecificationsBlock specifications={product.specifications} description={product.description} />
 
                             {/* Stock status */}
                             <div className="mt-4 flex items-center gap-2">
@@ -605,7 +863,7 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                                     <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-1">Description</h2>
                                     <div
                                         className="product-description"
-                                        dangerouslySetInnerHTML={{ __html: product.description }}
+                                        dangerouslySetInnerHTML={{ __html: stripSpecsFromHtml(product.description) }}
                                     />
                                 </div>
                             )}

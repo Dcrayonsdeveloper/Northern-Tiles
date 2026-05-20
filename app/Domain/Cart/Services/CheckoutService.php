@@ -3,6 +3,7 @@
 namespace App\Domain\Cart\Services;
 
 use App\Domain\Cart\Models\Cart;
+use App\Domain\Marketing\Services\CouponService;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +14,8 @@ class CheckoutService
 {
     public function __construct(
         protected CartService $cartService,
-        protected PricingService $pricingService
+        protected PricingService $pricingService,
+        protected CouponService $couponService
     ) {}
 
     /**
@@ -99,6 +101,11 @@ class CheckoutService
                     $data['contact']['email'],
                     $data['contact']['marketing_opt_in'] ?? false
                 );
+            }
+
+            // Record coupon usage and increment times_used counter
+            if ($cart->coupon_id) {
+                $this->couponService->recordUsage($cart, $order->id);
             }
 
             // Mark cart as recovered if it was abandoned

@@ -16,6 +16,7 @@ class NotFoundLog extends Model
         'first_hit_at',
         'last_hit_at',
         'is_resolved',
+        'is_ignored',
         'redirect_id',
     ];
 
@@ -24,7 +25,10 @@ class NotFoundLog extends Model
         'first_hit_at' => 'datetime',
         'last_hit_at' => 'datetime',
         'is_resolved' => 'boolean',
+        'is_ignored' => 'boolean',
     ];
+
+    protected $appends = ['url', 'referrer', 'last_seen_at', 'redirect_created'];
 
     public function redirect(): BelongsTo
     {
@@ -73,6 +77,26 @@ class NotFoundLog extends Model
             'is_resolved' => true,
             'redirect_id' => $redirect?->id,
         ]);
+    }
+
+    public function getUrlAttribute(): string
+    {
+        return $this->path ?? '';
+    }
+
+    public function getReferrerAttribute(): ?string
+    {
+        return $this->referer;
+    }
+
+    public function getLastSeenAtAttribute(): mixed
+    {
+        return $this->last_hit_at;
+    }
+
+    public function getRedirectCreatedAttribute(): bool
+    {
+        return $this->redirect_id !== null || $this->is_resolved;
     }
 
     public function createRedirect(string $toPath, int $statusCode = 301): Redirect

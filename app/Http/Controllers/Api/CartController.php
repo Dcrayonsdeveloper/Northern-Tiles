@@ -75,6 +75,11 @@ class CartController extends Controller
 
         $cart->load(['items.product', 'items.variant']);
 
+        // Always re-evaluate and apply the best eligible coupon on every cart fetch.
+        // This ensures the UI reflects the correct coupon even when the sidebar opens
+        // without a prior mutation (e.g. WELCOME10 was applied, subtotal now qualifies for SAVE20).
+        $this->couponService->autoApplyBestCoupon($cart);
+
         // Format cart items for frontend (filter out items with deleted products)
         $items = $cart->items
             ->filter(fn ($item) => $item->product !== null)
@@ -158,6 +163,10 @@ class CartController extends Controller
 
         // Reload cart with fresh data
         $cart = $cart->fresh(['items.product', 'items.variant']);
+
+        // Re-evaluate and auto-apply the best eligible coupon
+        $this->couponService->autoApplyBestCoupon($cart);
+
         $totals = $this->pricingService->computeTotals($cart);
 
         return response()->json([
@@ -231,11 +240,17 @@ class CartController extends Controller
 
         // Reload cart with fresh data
         $cart = $cart->fresh(['items.product', 'items.variant']);
+
+        // Re-evaluate and auto-apply the best eligible coupon
+        $this->couponService->autoApplyBestCoupon($cart);
+
         $totals = $this->pricingService->computeTotals($cart);
 
         return response()->json([
             'success' => true,
             'totals' => $totals,
+            'coupon' => $this->couponService->getAppliedCoupon($cart),
+            'shipping_estimate' => $this->pricingService->getShippingEstimate($cart),
         ]);
     }
 
@@ -263,11 +278,17 @@ class CartController extends Controller
 
         // Reload cart with fresh data
         $cart = $cart->fresh(['items.product', 'items.variant']);
+
+        // Re-evaluate and auto-apply the best eligible coupon
+        $this->couponService->autoApplyBestCoupon($cart);
+
         $totals = $this->pricingService->computeTotals($cart);
 
         return response()->json([
             'success' => true,
             'totals' => $totals,
+            'coupon' => $this->couponService->getAppliedCoupon($cart),
+            'shipping_estimate' => $this->pricingService->getShippingEstimate($cart),
         ]);
     }
 
@@ -325,6 +346,10 @@ class CartController extends Controller
 
         // Clear upsell cache since cart changed
         $this->upsellService->clearCache($cart);
+
+        // Evaluate and apply the best eligible coupon so it's active at checkout.
+        $cart = $cart->fresh(['items.product', 'items.variant']);
+        $this->couponService->autoApplyBestCoupon($cart);
 
         return response()->json([
             'success' => true,

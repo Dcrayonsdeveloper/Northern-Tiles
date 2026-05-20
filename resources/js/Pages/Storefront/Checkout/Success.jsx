@@ -176,6 +176,21 @@ export default function Success({ order }) {
                         </p>
                     </div>
 
+                    {/* Trustpilot Review CTA */}
+                    {import.meta.env.VITE_TRUSTPILOT_REVIEW_URL && (
+                        <div className="mt-6 rounded-lg border border-gray-200 bg-white p-5 text-center">
+                            <p className="text-sm text-gray-600 mb-3">Happy with your order? Share your experience!</p>
+                            <a
+                                href={import.meta.env.VITE_TRUSTPILOT_REVIEW_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 rounded-md bg-[#00b67a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#00a169]"
+                            >
+                                ★ Review us on Trustpilot
+                            </a>
+                        </div>
+                    )}
+
                     {/* Action Buttons */}
                     <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                         <Link

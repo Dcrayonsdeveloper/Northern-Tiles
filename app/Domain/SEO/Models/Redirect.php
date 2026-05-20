@@ -73,10 +73,10 @@ class Redirect extends Model
     public static function getStatusCodes(): array
     {
         return [
-            301 => '301 - Permanent Redirect',
-            302 => '302 - Temporary Redirect',
-            307 => '307 - Temporary Redirect (Strict)',
-            308 => '308 - Permanent Redirect (Strict)',
+            301 => 'Permanent Redirect',
+            302 => 'Temporary Redirect',
+            307 => 'Temporary Redirect (Strict)',
+            308 => 'Permanent Redirect (Strict)',
         ];
     }
 }

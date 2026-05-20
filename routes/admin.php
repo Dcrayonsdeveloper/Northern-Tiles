@@ -63,12 +63,25 @@ Route::post('posts/{post}/unpublish', [PostController::class, 'unpublish'])->nam
 // SEO
 Route::prefix('seo')->name('seo.')->group(function () {
     Route::get('/', [SeoController::class, 'index'])->name('index');
+
+    // SEO Meta Overrides CRUD
+    Route::post('meta-overrides', [SeoController::class, 'storeMeta'])->name('meta-overrides.store');
+    Route::put('meta-overrides/{seoMeta}', [SeoController::class, 'updateMetaById'])->name('meta-overrides.update');
+    Route::delete('meta-overrides/{seoMeta}', [SeoController::class, 'destroyMeta'])->name('meta-overrides.destroy');
+
+    // Redirects
     Route::get('redirects', [SeoController::class, 'redirects'])->name('redirects');
     Route::post('redirects', [SeoController::class, 'storeRedirect'])->name('redirects.store');
     Route::put('redirects/{redirect}', [SeoController::class, 'updateRedirect'])->name('redirects.update');
     Route::delete('redirects/{redirect}', [SeoController::class, 'destroyRedirect'])->name('redirects.destroy');
+
+    // 404 Logs
     Route::get('404-logs', [SeoController::class, 'notFoundLogs'])->name('404-logs');
     Route::post('404-logs/{log}/resolve', [SeoController::class, 'resolve404'])->name('404-logs.resolve');
+    Route::delete('404-logs', [SeoController::class, 'clearNotFoundLogs'])->name('404-logs.clear');
+    Route::put('404-logs/{log}/ignore', [SeoController::class, 'ignoreNotFoundLog'])->name('404-logs.ignore');
+    Route::delete('404-logs/{log}', [SeoController::class, 'destroyNotFoundLog'])->name('404-logs.destroy');
+
     Route::post('sitemap/generate', [SeoController::class, 'generateSitemap'])->name('sitemap.generate');
     Route::get('robots', [SeoController::class, 'robots'])->name('robots');
     Route::put('robots', [SeoController::class, 'updateRobots'])->name('robots.update');
@@ -162,6 +175,7 @@ Route::prefix('email-templates')->name('email-templates.')->group(function () {
 // Coupons
 Route::prefix('coupons')->name('coupons.')->group(function () {
     Route::get('/', [\App\Domain\Marketing\Http\Controllers\Admin\CouponController::class, 'index'])->name('index');
+    Route::get('suggestions', [\App\Domain\Marketing\Http\Controllers\Admin\CouponController::class, 'suggestions'])->name('suggestions');
     Route::get('create', [\App\Domain\Marketing\Http\Controllers\Admin\CouponController::class, 'create'])->name('create');
     Route::post('/', [\App\Domain\Marketing\Http\Controllers\Admin\CouponController::class, 'store'])->name('store');
     Route::get('{coupon}/edit', [\App\Domain\Marketing\Http\Controllers\Admin\CouponController::class, 'edit'])->name('edit');

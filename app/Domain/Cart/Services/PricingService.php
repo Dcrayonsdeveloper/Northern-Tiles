@@ -233,11 +233,20 @@ class PricingService
         $freeShippingThreshold = (float) Setting::getValue('shipping.free_threshold', 999);
         $flatRate = (float) Setting::getValue('shipping.flat_rate', 50);
 
-        $estimatedNonSampleShipping = $nonSampleSubtotal > 0 && $nonSampleSubtotal < $freeShippingThreshold
+        // Free-shipping coupon makes non-sample shipping $0 regardless of subtotal
+        $hasFreeShippingCoupon = false;
+        if ($cart->coupon_id) {
+            $coupon = Coupon::find($cart->coupon_id);
+            if ($coupon && $coupon->givesFreeShipping()) {
+                $hasFreeShippingCoupon = true;
+            }
+        }
+
+        $estimatedNonSampleShipping = (!$hasFreeShippingCoupon && $nonSampleSubtotal > 0 && $nonSampleSubtotal < $freeShippingThreshold)
             ? $flatRate
             : 0;
 
-        $amountForFreeShipping = max(0, $freeShippingThreshold - $nonSampleSubtotal);
+        $amountForFreeShipping = $hasFreeShippingCoupon ? 0 : max(0, $freeShippingThreshold - $nonSampleSubtotal);
 
         $sampleShipping = $this->calculateSampleShipping($cart);
 
@@ -248,6 +257,7 @@ class PricingService
             'free_threshold' => $freeShippingThreshold,
             'amount_for_free' => round($amountForFreeShipping, 2),
             'is_free' => $estimatedNonSampleShipping === 0.0 && $sampleShipping === 0.0,
+            'coupon_free_shipping' => $hasFreeShippingCoupon,
         ];
     }
 }

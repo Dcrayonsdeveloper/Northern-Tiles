@@ -1,6 +1,6 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 function PlusIcon({ className }) {
     return (
@@ -88,19 +88,180 @@ function formatValue(coupon) {
     }
 }
 
+// ─── Autocomplete Search Input ────────────────────────────────────────────────
+
+function CouponSearchInput({ value, onChange, onCommit }) {
+    const [suggestions, setSuggestions] = useState([]);
+    const [open, setOpen] = useState(false);
+    const [activeIdx, setActiveIdx] = useState(-1);
+    const debounceTimer = useRef(null);
+    const containerRef = useRef(null);
+    const inputRef = useRef(null);
+
+    // Fetch suggestions with 200 ms debounce
+    useEffect(() => {
+        clearTimeout(debounceTimer.current);
+        if (!value.trim()) {
+            setSuggestions([]);
+            setOpen(false);
+            return;
+        }
+        debounceTimer.current = setTimeout(async () => {
+            try {
+                const url = route('admin.coupons.suggestions') + '?q=' + encodeURIComponent(value.trim());
+                const res = await fetch(url, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                setSuggestions(data.suggestions ?? []);
+                setOpen((data.suggestions ?? []).length > 0);
+                setActiveIdx(-1);
+            } catch {}
+        }, 200);
+        return () => clearTimeout(debounceTimer.current);
+    }, [value]);
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handler = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    const selectSuggestion = useCallback((suggestion) => {
+        onChange(suggestion.code);
+        setOpen(false);
+        setSuggestions([]);
+        setActiveIdx(-1);
+        onCommit(suggestion.code);
+    }, [onChange, onCommit]);
+
+    const handleKeyDown = useCallback((e) => {
+        if (!open || suggestions.length === 0) {
+            if (e.key === 'Enter') onCommit(value);
+            return;
+        }
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIdx(i => Math.min(i + 1, suggestions.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIdx(i => Math.max(i - 1, -1));
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (activeIdx >= 0) {
+                selectSuggestion(suggestions[activeIdx]);
+            } else {
+                setOpen(false);
+                onCommit(value);
+            }
+        } else if (e.key === 'Escape') {
+            setOpen(false);
+            setActiveIdx(-1);
+            inputRef.current?.blur();
+        }
+    }, [open, suggestions, activeIdx, value, onCommit, selectSuggestion]);
+
+    const typeColors = {
+        percentage: 'bg-blue-100 text-blue-700',
+        fixed_amount: 'bg-purple-100 text-purple-700',
+        free_shipping: 'bg-cyan-100 text-cyan-700',
+        buy_x_get_y: 'bg-orange-100 text-orange-700',
+    };
+
+    return (
+        <div ref={containerRef} className="relative flex-1 min-w-[200px]">
+            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <input
+                ref={inputRef}
+                type="text"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => suggestions.length > 0 && setOpen(true)}
+                placeholder="Search coupons..."
+                autoComplete="off"
+                className="w-full rounded-lg border-gray-300 pl-10 pr-8 text-sm focus:border-gray-500 focus:ring-gray-500"
+            />
+            {/* Clear button */}
+            {value && (
+                <button
+                    type="button"
+                    onClick={() => { onChange(''); setSuggestions([]); setOpen(false); inputRef.current?.focus(); }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    tabIndex={-1}
+                    aria-label="Clear search"
+                >
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            )}
+
+            {/* Dropdown */}
+            {open && suggestions.length > 0 && (
+                <ul
+                    role="listbox"
+                    className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+                >
+                    {suggestions.map((s, idx) => (
+                        <li
+                            key={s.code}
+                            role="option"
+                            aria-selected={idx === activeIdx}
+                            onMouseDown={(e) => { e.preventDefault(); selectSuggestion(s); }}
+                            onMouseEnter={() => setActiveIdx(idx)}
+                            className={`flex cursor-pointer items-center gap-3 px-3 py-2 text-sm transition-colors ${
+                                idx === activeIdx ? 'bg-gray-100' : 'hover:bg-gray-50'
+                            }`}
+                        >
+                            {/* Code + type badge */}
+                            <span className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className="font-mono font-semibold text-gray-900 shrink-0">{s.code}</span>
+                                {s.title && (
+                                    <span className="truncate text-gray-500">{s.title}</span>
+                                )}
+                            </span>
+                            <span className="flex items-center gap-1.5 shrink-0">
+                                {s.type && (
+                                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${typeColors[s.type] || 'bg-gray-100 text-gray-600'}`}>
+                                        {s.type.replace('_', ' ')}
+                                    </span>
+                                )}
+                                {!s.is_active && (
+                                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">
+                                        inactive
+                                    </span>
+                                )}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+}
+
+// ─── Page Component ───────────────────────────────────────────────────────────
+
 export default function Index({ coupons, stats, filters, types }) {
     const [search, setSearch] = useState(filters.search || '');
     const [selectedStatus, setSelectedStatus] = useState(filters.status || '');
     const [selectedType, setSelectedType] = useState(filters.type || '');
 
-    const handleSearch = (e) => {
-        e.preventDefault();
+    const commitSearch = useCallback((q) => {
         router.get(route('admin.coupons.index'), {
-            search,
+            search: q ?? search,
             status: selectedStatus,
             type: selectedType,
         }, { preserveState: true });
-    };
+    }, [search, selectedStatus, selectedType]);
 
     const handleFilter = (key, value) => {
         router.get(route('admin.coupons.index'), {
@@ -164,17 +325,12 @@ export default function Index({ coupons, stats, filters, types }) {
 
                 {/* Filters */}
                 <div className="rounded-lg border bg-white p-4 shadow-sm">
-                    <form onSubmit={handleSearch} className="flex flex-wrap items-center gap-4">
-                        <div className="relative flex-1 min-w-[200px]">
-                            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search coupons..."
-                                className="w-full rounded-lg border-gray-300 pl-10 text-sm focus:border-gray-500 focus:ring-gray-500"
-                            />
-                        </div>
+                    <div className="flex flex-wrap items-center gap-4">
+                        <CouponSearchInput
+                            value={search}
+                            onChange={setSearch}
+                            onCommit={commitSearch}
+                        />
                         <select
                             value={selectedStatus}
                             onChange={(e) => {
@@ -202,13 +358,7 @@ export default function Index({ coupons, stats, filters, types }) {
                                 <option key={value} value={value}>{label}</option>
                             ))}
                         </select>
-                        <button
-                            type="submit"
-                            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-                        >
-                            Search
-                        </button>
-                    </form>
+                    </div>
                 </div>
 
                 {/* Table */}

@@ -54,6 +54,7 @@ class UpdateProductRequest extends FormRequest
             'length_mm' => ['nullable', 'integer', 'min:0'],
             'width_mm' => ['nullable', 'integer', 'min:0'],
             'height_mm' => ['nullable', 'integer', 'min:0'],
+            'sqm_per_box' => ['nullable', 'numeric', 'min:0'],
 
             // Status & publishing
             'status' => ['nullable', Rule::in([
@@ -72,8 +73,16 @@ class UpdateProductRequest extends FormRequest
             'og_image_path' => ['nullable', 'string', 'max:255'],
             'noindex' => ['nullable', 'boolean'],
 
-            // Legacy image field
+            // Images
             'image_url' => ['nullable', 'string', 'max:500'],
+            'lifestyle_image_url' => ['nullable', 'string', 'max:500'],
+
+            // Structured specifications
+            'specifications' => ['nullable', 'array'],
+            'specifications.*' => ['nullable', 'string', 'max:500'],
+
+            // Featured
+            'is_featured' => ['nullable', 'boolean'],
 
             // Tags
             'tags' => ['nullable', 'array'],

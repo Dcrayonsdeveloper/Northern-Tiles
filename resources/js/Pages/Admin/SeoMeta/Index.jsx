@@ -17,7 +17,7 @@ function EditSeoModal({ seoMeta, onClose }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route('admin.seo-meta.update', seoMeta.id), {
+        put(route('admin.seo.meta-overrides.update', seoMeta.id), {
             onSuccess: () => {
                 onClose();
             },
@@ -189,7 +189,7 @@ function CreateSeoModal({ onClose }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('admin.seo-meta.store'), {
+        post(route('admin.seo.meta-overrides.store'), {
             onSuccess: () => {
                 onClose();
             },
@@ -308,12 +308,12 @@ export default function Index({ seoMeta, stats, filters }) {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        router.get(route('admin.seo-meta.index'), { search }, { preserveState: true });
+        router.get(route('admin.seo.index'), { search }, { preserveState: true });
     };
 
     const handleDelete = (meta) => {
         if (!confirm('Are you sure you want to delete this SEO meta override?')) return;
-        router.delete(route('admin.seo-meta.destroy', meta.id));
+        router.delete(route('admin.seo.meta-overrides.destroy', meta.id));
     };
 
     const getSeoScore = (meta) => {

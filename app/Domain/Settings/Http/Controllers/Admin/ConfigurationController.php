@@ -145,7 +145,8 @@ class ConfigurationController
     ): void {
         $removeKey = 'remove_' . $fieldName;
 
-        if (($request->validated()[$removeKey] ?? false) === true) {
+        // Inertia sends booleans as "1"/"0" via FormData — use boolean() to correctly cast
+        if ($request->boolean($removeKey)) {
             $settings->removeFile($settingKey);
         }
 

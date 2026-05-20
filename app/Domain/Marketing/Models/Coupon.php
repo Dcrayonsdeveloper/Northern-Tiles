@@ -15,6 +15,8 @@ class Coupon extends Model
         'description',
         'type',
         'value',
+        'buy_quantity',
+        'get_quantity',
         'minimum_purchase',
         'maximum_discount',
         'usage_limit',
@@ -139,8 +141,11 @@ class Coupon extends Model
         // Check first order only
         if ($this->first_order_only) {
             if ($userId) {
-                $hasOrders = \App\Models\Order::where('user_id', $userId)->exists();
-                if ($hasOrders) {
+                if (\App\Models\Order::where('user_id', $userId)->exists()) {
+                    return false;
+                }
+            } elseif ($email) {
+                if (\App\Models\Order::where('customer_email', $email)->exists()) {
                     return false;
                 }
             }

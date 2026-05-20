@@ -101,6 +101,7 @@ class CouponService
                 'title' => $coupon->title,
                 'type' => $coupon->type,
                 'value' => $coupon->value,
+                'discount_amount' => $discount,
                 'gives_free_shipping' => $coupon->givesFreeShipping(),
             ],
             'discount_amount' => $discount,
@@ -220,6 +221,81 @@ class CouponService
                 $cart->email,
                 $cart->discount_amount
             );
+        }
+    }
+
+    /**
+     * Evaluate all eligible coupons and apply the one with the highest discount.
+     * Called automatically after every cart mutation (add/update/remove item).
+     */
+    public function autoApplyBestCoupon(Cart $cart): void
+    {
+        $subtotal = $cart->getSubtotal();
+
+        if ($subtotal <= 0) {
+            if ($cart->coupon_id) {
+                $cart->update(['coupon_id' => null, 'discount_amount' => 0]);
+            }
+            return;
+        }
+
+        $userId = $cart->user_id;
+        $email = $cart->email;
+
+        $coupons = Coupon::active()
+            ->where(function ($q) {
+                $q->whereNull('usage_limit')->orWhereColumn('times_used', '<', 'usage_limit');
+            })
+            ->get();
+
+        // Seed the best candidate from the currently-applied coupon (if it is still
+        // valid and eligible). This ensures auto-apply only replaces a user's manually
+        // entered code with something STRICTLY better — not just equal — preventing
+        // WELCOME10 and FLAT100 from swapping when they happen to give the same amount.
+        $bestCoupon = null;
+        $bestDiscount = -1.0;
+
+        if ($cart->coupon_id) {
+            $applied = $coupons->firstWhere('id', $cart->coupon_id);
+            if ($applied
+                && $applied->canBeUsedBy($userId, $email)
+                && (!$applied->minimum_purchase || $subtotal >= (float) $applied->minimum_purchase)
+            ) {
+                $bestDiscount = $applied->calculateDiscount($subtotal, $cart->items->toArray());
+                $bestCoupon = $applied;
+            }
+            // If the applied coupon is no longer active/eligible, bestCoupon stays null
+            // and the loop below will find the best replacement (or leave the cart coupon-free).
+        }
+
+        foreach ($coupons as $coupon) {
+            if (!$coupon->canBeUsedBy($userId, $email)) {
+                continue;
+            }
+
+            if ($coupon->minimum_purchase && $subtotal < (float) $coupon->minimum_purchase) {
+                continue;
+            }
+
+            $discount = $coupon->calculateDiscount($subtotal, $cart->items->toArray());
+
+            if ($discount > $bestDiscount) {
+                $bestDiscount = $discount;
+                $bestCoupon = $coupon;
+            }
+        }
+
+        if ($bestCoupon) {
+            if ($cart->coupon_id !== $bestCoupon->id || (float) $cart->discount_amount !== $bestDiscount) {
+                $cart->update([
+                    'coupon_id' => $bestCoupon->id,
+                    'discount_amount' => $bestDiscount,
+                ]);
+            }
+        } else {
+            if ($cart->coupon_id) {
+                $cart->update(['coupon_id' => null, 'discount_amount' => 0]);
+            }
         }
     }
 

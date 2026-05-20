@@ -7,17 +7,16 @@ export default function Create({ authors, categories }) {
     const { data, setData, post, processing, errors } = useForm({
         title: '',
         slug: '',
-        content: '',
+        body_json: '',
         excerpt: '',
         author_id: '',
-        reviewed_by_id: '',
+        reviewed_by: '',
         category_id: '',
         tags: [],
         featured_image: null,
         meta_title: '',
         meta_description: '',
         sources_json: [],
-        reading_time: '',
         status: 'draft',
         published_at: '',
     });
@@ -122,13 +121,13 @@ export default function Create({ authors, categories }) {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Content</label>
                                     <textarea
-                                        value={data.content}
-                                        onChange={(e) => setData('content', e.target.value)}
+                                        value={data.body_json}
+                                        onChange={(e) => setData('body_json', e.target.value)}
                                         rows={16}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand font-mono text-sm"
                                         placeholder="Post content (HTML supported)..."
                                     />
-                                    {errors.content && <p className="mt-1 text-xs text-red-500">{errors.content}</p>}
+                                    {errors.body_json && <p className="mt-1 text-xs text-red-500">{errors.body_json}</p>}
                                 </div>
 
                                 <div>
@@ -249,21 +248,8 @@ export default function Create({ authors, categories }) {
                                     >
                                         <option value="draft">Draft</option>
                                         <option value="published">Published</option>
-                                        <option value="scheduled">Scheduled</option>
                                     </select>
                                 </div>
-
-                                {data.status === 'scheduled' && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Publish Date</label>
-                                        <input
-                                            type="datetime-local"
-                                            value={data.published_at}
-                                            onChange={(e) => setData('published_at', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand"
-                                        />
-                                    </div>
-                                )}
 
                                 <div className="flex gap-2">
                                     <Link
@@ -310,18 +296,6 @@ export default function Create({ authors, categories }) {
                                         allowCustom
                                     />
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Reading Time (minutes)</label>
-                                    <input
-                                        type="number"
-                                        value={data.reading_time}
-                                        onChange={(e) => setData('reading_time', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand"
-                                        placeholder="Auto-calculated if empty"
-                                        min="1"
-                                    />
-                                </div>
                             </div>
                         </div>
 
@@ -346,8 +320,8 @@ export default function Create({ authors, categories }) {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Reviewed By</label>
                                     <select
-                                        value={data.reviewed_by_id}
-                                        onChange={(e) => setData('reviewed_by_id', e.target.value)}
+                                        value={data.reviewed_by}
+                                        onChange={(e) => setData('reviewed_by', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand"
                                     >
                                         <option value="">Select reviewer...</option>

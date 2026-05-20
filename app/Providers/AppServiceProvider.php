@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -27,6 +30,18 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
 
         $this->registerPolicies();
+        $this->configureRateLimiters();
+    }
+
+    protected function configureRateLimiters(): void
+    {
+        RateLimiter::for('search', function (Request $request) {
+            $key = $request->user()?->id ?? $request->ip();
+
+            return $request->user()
+                ? Limit::perMinute(60)->by('search:' . $key)
+                : Limit::perMinute(20)->by('search:' . $key);
+        });
     }
 
     protected function registerPolicies(): void

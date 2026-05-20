@@ -2,6 +2,7 @@ import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
 import { Head, Link, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
+import DOMPurify from 'dompurify';
 import ProductImage from '@/Components/Catalog/ProductImage';
 
 function ProductCard({ product }) {
@@ -212,7 +213,7 @@ export default function Index({ products, categories, filters, currentCategory, 
                                                     >
                                                         <span
                                                             dangerouslySetInnerHTML={{
-                                                                __html: l.label,
+                                                                __html: DOMPurify.sanitize(l.label),
                                                             }}
                                                         />
                                                     </Link>
@@ -220,7 +221,7 @@ export default function Index({ products, categories, filters, currentCategory, 
                                                     <span
                                                         key={idx}
                                                         className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-400"
-                                                        dangerouslySetInnerHTML={{ __html: l.label }}
+                                                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(l.label) }}
                                                     />
                                                 )
                                             ))}

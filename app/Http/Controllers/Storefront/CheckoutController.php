@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Storefront;
 use App\Domain\Cart\Services\CartService;
 use App\Domain\Cart\Services\CheckoutService;
 use App\Domain\Cart\Services\PricingService;
+use App\Domain\Marketing\Services\CouponService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,8 @@ class CheckoutController extends Controller
     public function __construct(
         protected CartService $cartService,
         protected CheckoutService $checkoutService,
-        protected PricingService $pricingService
+        protected PricingService $pricingService,
+        protected CouponService $couponService
     ) {}
 
     /**
@@ -41,6 +43,10 @@ class CheckoutController extends Controller
         if (! $sampleValidation['is_valid']) {
             return Redirect::route('cart.index')->with('error', $sampleValidation['message']);
         }
+
+        // Ensure the best eligible coupon is applied regardless of navigation path.
+        $cart->load(['items.product', 'items.variant']);
+        $this->couponService->autoApplyBestCoupon($cart);
 
         $summary = $this->checkoutService->getCheckoutSummary($cart);
         $user = $request->user();

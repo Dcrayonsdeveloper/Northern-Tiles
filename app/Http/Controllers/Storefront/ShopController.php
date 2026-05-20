@@ -146,27 +146,20 @@ class ShopController extends Controller
                 ->shuffle()->values()
             : collect();
 
-        // Get available active coupons to display (gracefully handle missing table)
+        // Get all publicly visible active coupons (no hardcoded limit — new coupons appear automatically)
         $availableCoupons = collect();
         try {
             if (\Illuminate\Support\Facades\Schema::hasTable('coupons')) {
-                $availableCoupons = Coupon::query()
-                    ->where('is_active', true)
-                    ->where(function ($q) {
-                        $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
-                    })
-                    ->where(function ($q) {
-                        $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
-                    })
+                $availableCoupons = Coupon::active()
                     ->where(function ($q) {
                         $q->whereNull('usage_limit')->orWhereColumn('times_used', '<', 'usage_limit');
                     })
+                    ->whereNull('eligible_customers')
+                    ->orderBy('minimum_purchase')
                     ->orderByDesc('value')
-                    ->limit(3)
-                    ->get(['code', 'type', 'value', 'title', 'description', 'minimum_purchase', 'maximum_discount']);
+                    ->get(['code', 'type', 'value', 'title', 'description', 'minimum_purchase', 'maximum_discount', 'first_order_only']);
             }
         } catch (\Exception $e) {
-            // Coupons table may not exist yet
             $availableCoupons = collect();
         }
 

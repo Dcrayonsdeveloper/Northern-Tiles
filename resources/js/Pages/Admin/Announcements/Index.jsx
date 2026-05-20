@@ -9,7 +9,11 @@ function formatDateTime(value) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export default function Index({ items }) {
+function stripHtml(html) {
+    return html ? html.replace(/<[^>]*>/g, '') : '';
+}
+
+export default function Index({ items, activeAnnouncement }) {
     const rows = items?.data ?? [];
 
     return (
@@ -21,6 +25,38 @@ export default function Index({ items }) {
                 <Link href={route('admin.announcements.create')} className="btn-primary">
                     Create
                 </Link>
+            </div>
+
+            {/* Active announcement preview */}
+            <div className="admin-card mb-4">
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                    Current Active Announcement
+                </div>
+                {activeAnnouncement ? (
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <div className="text-sm font-semibold text-gray-900">{activeAnnouncement.title}</div>
+                            <p className="mt-0.5 line-clamp-2 text-xs text-gray-500">
+                                {stripHtml(activeAnnouncement.body_html)}
+                            </p>
+                            {(activeAnnouncement.starts_at || activeAnnouncement.ends_at) && (
+                                <p className="mt-1 text-[11px] text-gray-400">
+                                    {activeAnnouncement.starts_at && <>From {formatDateTime(activeAnnouncement.starts_at)}</>}
+                                    {activeAnnouncement.starts_at && activeAnnouncement.ends_at && ' · '}
+                                    {activeAnnouncement.ends_at && <>Until {formatDateTime(activeAnnouncement.ends_at)}</>}
+                                </p>
+                            )}
+                        </div>
+                        <Link
+                            href={route('admin.announcements.edit', activeAnnouncement.id)}
+                            className="btn-secondary shrink-0"
+                        >
+                            Edit
+                        </Link>
+                    </div>
+                ) : (
+                    <p className="text-xs text-gray-400">No active announcement at this time.</p>
+                )}
             </div>
 
             <div className="admin-card">

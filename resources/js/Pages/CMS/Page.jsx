@@ -1,8 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
+import DOMPurify from 'dompurify';
 import PublicLayout from '@/Layouts/PublicLayout';
 import MetaTags from '@/Components/SEO/MetaTags';
 import SchemaOrg from '@/Components/SEO/SchemaOrg';
 import AuthorBio from '@/Components/CMS/AuthorBio';
+
+const sanitize = (html) => DOMPurify.sanitize(html ?? '');
 
 // ─── Section renderers (used by generic pages) ──────────────────────────────
 
@@ -13,7 +16,7 @@ function TextContentSection({ data, width }) {
             {data.heading && <h2 className="mb-4 text-2xl font-bold text-gray-900">{data.heading}</h2>}
             {data.content && (
                 <div className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-brand"
-                    dangerouslySetInnerHTML={{ __html: data.content }} />
+                    dangerouslySetInnerHTML={{ __html: sanitize(data.content) }} />
             )}
         </section>
     );
@@ -213,7 +216,7 @@ function AboutTemplate({ page }) {
                             {hasContent ? (
                                 <div
                                     className="prose prose-lg mt-6 max-w-none text-gray-600 prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-brand prose-strong:text-gray-900"
-                                    dangerouslySetInnerHTML={{ __html: page.content }}
+                                    dangerouslySetInnerHTML={{ __html: sanitize(page.content) }}
                                 />
                             ) : (
                                 <div className="mt-6 space-y-4 text-gray-600">
@@ -544,7 +547,7 @@ function GenericTemplate({ page }) {
             {!hasSections && hasBodyContent && (
                 <div
                     className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-brand prose-img:rounded-lg"
-                    dangerouslySetInnerHTML={{ __html: page.content }}
+                    dangerouslySetInnerHTML={{ __html: sanitize(page.content) }}
                 />
             )}
 

@@ -19,6 +19,8 @@ class Cart extends Model
         'customer_id',
         'vendor_id',
         'currency',
+        'coupon_id',
+        'discount_amount',
         'expires_at',
         'abandoned_at',
         'recovered_order_id',

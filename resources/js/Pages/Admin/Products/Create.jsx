@@ -1,8 +1,30 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import RichTextEditor from '@/Components/Admin/RichTextEditor';
 
-// Tag Input Component (simplified for create)
+// Helper: slugify
+function slugify(text) {
+    return (text || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+// SEO Preview Component
+function SeoPreview({ title, description, slug }) {
+    const displayTitle = title || 'Product Title';
+    const displayUrl = `ntiled.com.au/products/${slug || 'product-url'}`;
+    const displayDesc = description || 'Add a meta description to see how this product will appear in search engine results.';
+
+    return (
+        <div className="mt-3 p-3 bg-white border border-gray-200 rounded-lg">
+            <p className="text-[10px] text-gray-400 mb-1">Search engine listing preview</p>
+            <p className="text-[14px] text-[#1a0dab] font-medium leading-tight truncate">{displayTitle}</p>
+            <p className="text-[12px] text-green-700 truncate">{displayUrl}</p>
+            <p className="text-[12px] text-gray-600 line-clamp-2 leading-relaxed">{displayDesc}</p>
+        </div>
+    );
+}
+
+// Tag Input Component
 function TagInput({ tags = [], onChange, popularTags = [] }) {
     const [input, setInput] = useState('');
 
@@ -16,8 +38,8 @@ function TagInput({ tags = [], onChange, popularTags = [] }) {
     };
 
     const addTag = (name) => {
-        if (!name || tags.some(t => t.name?.toLowerCase() === name.toLowerCase() || t.toLowerCase?.() === name.toLowerCase())) return;
-        onChange([...tags, name]);
+        if (!name || tags.some(t => t.name?.toLowerCase() === name.toLowerCase())) return;
+        onChange([...tags, { name, source: 'manual' }]);
         setInput('');
     };
 
@@ -95,8 +117,12 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
         sqm_per_box: '',
         is_digital: false,
         requires_shipping: true,
+        lifestyle_image_url: '',
+        specifications: {},
         status: 'draft',
         published_at: '',
+        is_active: true,
+        is_featured: false,
         meta_title: '',
         meta_description: '',
         noindex: false,
@@ -143,20 +169,36 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
                                     <label className="block text-xs font-medium text-gray-700">Title</label>
                                     <input
                                         value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
+                                        onChange={(e) => {
+                                            const newName = e.target.value;
+                                            const shouldAutoSlug = !data.slug || data.slug === slugify(data.name);
+                                            setData(d => ({
+                                                ...d,
+                                                name: newName,
+                                                ...(shouldAutoSlug ? { slug: slugify(newName) } : {}),
+                                            }));
+                                        }}
                                         className="mt-1 admin-input w-full"
                                         placeholder="Product title"
                                     />
                                     {errors.name && <div className="mt-1 text-[11px] text-red-600">{errors.name}</div>}
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700">Description</label>
+                                    <label className="block text-xs font-medium text-gray-700">Short description</label>
                                     <textarea
-                                        value={data.description}
-                                        onChange={(e) => setData('description', e.target.value)}
-                                        rows={6}
+                                        value={data.short_description}
+                                        onChange={(e) => setData('short_description', e.target.value)}
+                                        rows={2}
                                         className="mt-1 admin-textarea w-full"
-                                        placeholder="Product description..."
+                                        placeholder="Brief summary for search results and product cards..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                                    <RichTextEditor
+                                        content={data.description}
+                                        onChange={(html) => setData('description', html)}
+                                        placeholder="Write your product description..."
                                     />
                                     {errors.description && <div className="mt-1 text-[11px] text-red-600">{errors.description}</div>}
                                 </div>
@@ -172,6 +214,21 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
                                 </svg>
                                 <p className="mt-2 text-xs text-gray-500">Save the product first to upload media</p>
                             </div>
+                        </div>
+
+                        {/* Lifestyle Image */}
+                        <div className="admin-card">
+                            <h3 className="text-xs font-semibold text-gray-900 mb-1">Lifestyle Image URL</h3>
+                            <p className="text-[10px] text-gray-400 mb-2">Optional external image URL shown in lifestyle/room-set contexts.</p>
+                            <input
+                                value={data.lifestyle_image_url}
+                                onChange={(e) => setData('lifestyle_image_url', e.target.value)}
+                                className="admin-input w-full"
+                                placeholder="https://example.com/lifestyle.jpg"
+                            />
+                            {data.lifestyle_image_url && (
+                                <img src={data.lifestyle_image_url} alt="Lifestyle preview" className="mt-2 h-24 w-auto rounded object-cover border border-gray-200" />
+                            )}
                         </div>
 
                         {/* Pricing */}
@@ -254,7 +311,7 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
                         {/* Shipping */}
                         <div className="admin-card">
                             <h3 className="text-xs font-semibold text-gray-900 mb-3">Shipping</h3>
-                            <div className="flex items-center gap-4 mb-3">
+                            <div className="flex items-center gap-6 mb-3">
                                 <label className="flex items-center gap-2 text-xs">
                                     <input
                                         type="checkbox"
@@ -264,6 +321,17 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
                                     />
                                     This is a physical product
                                 </label>
+                                {!data.is_digital && (
+                                    <label className="flex items-center gap-2 text-xs">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.requires_shipping}
+                                            onChange={(e) => setData('requires_shipping', e.target.checked)}
+                                            className="h-4 w-4 rounded border-gray-300 text-brand"
+                                        />
+                                        Requires shipping
+                                    </label>
+                                )}
                             </div>
                             {!data.is_digital && (
                                 <div className="grid grid-cols-4 gap-3">
@@ -321,10 +389,48 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
                             )}
                         </div>
 
+                        {/* Product Specifications */}
+                        <div className="admin-card">
+                            <h3 className="text-xs font-semibold text-gray-900 mb-1">Product Specifications</h3>
+                            <p className="text-[10px] text-gray-400 mb-3">These values appear in the specifications panel on the product page. Filling these in overrides spec text embedded in the description.</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    { key: 'name',               label: 'Name' },
+                                    { key: 'style',              label: 'Style' },
+                                    { key: 'colours',            label: 'Colours' },
+                                    { key: 'finish',             label: 'Finish' },
+                                    { key: 'material',           label: 'Material' },
+                                    { key: 'size_nominal',       label: 'Size (Nominal)' },
+                                    { key: 'thickness',          label: 'Thickness' },
+                                    { key: 'variation',          label: 'Variation' },
+                                    { key: 'application_space',  label: 'Application Space' },
+                                    { key: 'country_of_origin',  label: 'Country of Origin' },
+                                    { key: 'quantity_per_box',   label: 'Quantity Per Box' },
+                                ].map(({ key, label }) => (
+                                    <div key={key} className={key === 'variation' || key === 'application_space' ? 'col-span-2' : ''}>
+                                        <label className="block text-xs font-medium text-gray-700">{label}</label>
+                                        <input
+                                            value={data.specifications?.[key] ?? ''}
+                                            onChange={(e) => setData('specifications', { ...data.specifications, [key]: e.target.value })}
+                                            className="mt-1 admin-input w-full"
+                                            placeholder={label}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* SEO */}
                         <div className="admin-card">
                             <h3 className="text-xs font-semibold text-gray-900 mb-3">Search engine listing</h3>
-                            <div className="grid grid-cols-1 gap-3">
+
+                            <SeoPreview
+                                title={data.meta_title || data.name}
+                                description={data.meta_description}
+                                slug={data.slug}
+                            />
+
+                            <div className="grid grid-cols-1 gap-3 mt-4">
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700">Page title</label>
                                     <input
@@ -333,6 +439,7 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
                                         className="mt-1 admin-input w-full"
                                         placeholder={data.name || 'Product title'}
                                     />
+                                    <div className="mt-1 text-[10px] text-gray-500">{(data.meta_title || data.name || '').length}/70</div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700">Meta description</label>
@@ -347,12 +454,28 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700">URL handle</label>
-                                    <input
-                                        value={data.slug}
-                                        onChange={(e) => setData('slug', e.target.value)}
-                                        className="mt-1 admin-input w-full"
-                                        placeholder="Auto-generated from title"
-                                    />
+                                    <div className="mt-1 flex items-center">
+                                        <span className="text-xs text-gray-400 mr-1">ntiled.com.au/products/</span>
+                                        <input
+                                            value={data.slug}
+                                            onChange={(e) => setData('slug', e.target.value)}
+                                            className="admin-input flex-1"
+                                            placeholder="auto-generated-from-title"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-700">Hide from search engines</label>
+                                        <p className="text-[10px] text-gray-500">Adds noindex tag to prevent indexing</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('noindex', !data.noindex)}
+                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${data.noindex ? 'bg-brand' : 'bg-gray-300'}`}
+                                    >
+                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.noindex ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -391,6 +514,34 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
                                     />
                                 </div>
                             )}
+                            <div className="mt-4 space-y-3 border-t border-gray-100 pt-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-gray-700">Active (visible on site)</p>
+                                        <p className="text-[10px] text-gray-400">Inactive products return 404</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('is_active', !data.is_active)}
+                                        className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${data.is_active ? 'bg-green-500' : 'bg-gray-300'}`}
+                                    >
+                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.is_active ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                                    </button>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-gray-700">Featured product</p>
+                                        <p className="text-[10px] text-gray-400">Highlights product across the site</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('is_featured', !data.is_featured)}
+                                        className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${data.is_featured ? 'bg-brand' : 'bg-gray-300'}`}
+                                    >
+                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.is_featured ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Organization */}

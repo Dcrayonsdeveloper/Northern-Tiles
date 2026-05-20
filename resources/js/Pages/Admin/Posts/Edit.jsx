@@ -3,22 +3,28 @@ import { useState } from 'react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import TagInput from '@/Components/Forms/TagInput';
 
+function extractBodyHtml(bodyJson) {
+    if (!bodyJson) return '';
+    if (typeof bodyJson === 'string') return bodyJson;
+    if (Array.isArray(bodyJson) && bodyJson[0]?.content) return bodyJson[0].content;
+    return '';
+}
+
 export default function Edit({ post, authors, categories, selectedTags }) {
     const { data, setData, post: submitPost, processing, errors } = useForm({
         _method: 'PUT',
         title: post.title || '',
         slug: post.slug || '',
-        content: post.content || '',
+        body_json: extractBodyHtml(post.body_json),
         excerpt: post.excerpt || '',
         author_id: post.author_id || '',
-        reviewed_by_id: post.reviewed_by_id || '',
+        reviewed_by: post.reviewed_by || '',
         category_id: post.category_id || '',
         tags: selectedTags || [],
         featured_image: null,
         meta_title: post.meta_title || '',
         meta_description: post.meta_description || '',
         sources_json: post.sources_json || [],
-        reading_time: post.reading_time || '',
         status: post.status || 'draft',
         published_at: post.published_at ? post.published_at.slice(0, 16) : '',
     });
@@ -124,13 +130,13 @@ export default function Edit({ post, authors, categories, selectedTags }) {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Content</label>
                                     <textarea
-                                        value={data.content}
-                                        onChange={(e) => setData('content', e.target.value)}
+                                        value={data.body_json}
+                                        onChange={(e) => setData('body_json', e.target.value)}
                                         rows={16}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand font-mono text-sm"
                                         placeholder="Post content (HTML supported)..."
                                     />
-                                    {errors.content && <p className="mt-1 text-xs text-red-500">{errors.content}</p>}
+                                    {errors.body_json && <p className="mt-1 text-xs text-red-500">{errors.body_json}</p>}
                                 </div>
 
                                 <div>
@@ -251,21 +257,8 @@ export default function Edit({ post, authors, categories, selectedTags }) {
                                     >
                                         <option value="draft">Draft</option>
                                         <option value="published">Published</option>
-                                        <option value="scheduled">Scheduled</option>
                                     </select>
                                 </div>
-
-                                {data.status === 'scheduled' && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Publish Date</label>
-                                        <input
-                                            type="datetime-local"
-                                            value={data.published_at}
-                                            onChange={(e) => setData('published_at', e.target.value)}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand"
-                                        />
-                                    </div>
-                                )}
 
                                 <div className="text-xs text-gray-500">
                                     <p>Created: {new Date(post.created_at).toLocaleDateString()}</p>
@@ -317,18 +310,6 @@ export default function Edit({ post, authors, categories, selectedTags }) {
                                         allowCustom
                                     />
                                 </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Reading Time (minutes)</label>
-                                    <input
-                                        type="number"
-                                        value={data.reading_time}
-                                        onChange={(e) => setData('reading_time', e.target.value)}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand"
-                                        placeholder="Auto-calculated if empty"
-                                        min="1"
-                                    />
-                                </div>
                             </div>
                         </div>
 
@@ -353,8 +334,8 @@ export default function Edit({ post, authors, categories, selectedTags }) {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Reviewed By</label>
                                     <select
-                                        value={data.reviewed_by_id}
-                                        onChange={(e) => setData('reviewed_by_id', e.target.value)}
+                                        value={data.reviewed_by}
+                                        onChange={(e) => setData('reviewed_by', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand"
                                     >
                                         <option value="">Select reviewer...</option>

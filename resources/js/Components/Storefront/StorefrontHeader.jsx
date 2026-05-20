@@ -17,10 +17,10 @@ const TYPEWRITER_WORDS = ['tiles', 'marble', 'hybrid flooring', 'subway tiles', 
 
 function LiveSearchBar({ className = '', autoFocus = false, onResultClick }) {
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [open, setOpen] = useState(false);
-    const containerRef = useRef(null);
+    const [focused, setFocused] = useState(false);
     const inputRef = useRef(null);
     const debounceRef = useRef(null);
     const requestRef = useRef(0);
@@ -47,12 +47,13 @@ function LiveSearchBar({ className = '', autoFocus = false, onResultClick }) {
         return () => clearTimeout(timer);
     }, [charIndex, deleting, wordIndex, query]);
 
-    // Debounced live search — discards stale responses via requestRef
+    // Debounced global search — products + categories, stale responses discarded via requestRef
     useEffect(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         const trimmed = query.trim();
         if (trimmed.length < 2) {
-            setResults([]);
+            setProducts([]);
+            setCategories([]);
             setLoading(false);
             return;
         }
@@ -67,32 +68,28 @@ function LiveSearchBar({ className = '', autoFocus = false, onResultClick }) {
                 if (reqId !== requestRef.current) return;
                 if (r.ok) {
                     const d = await r.json();
-                    setResults(d.results || []);
+                    setProducts(Array.isArray(d.products) ? d.products : []);
+                    setCategories(Array.isArray(d.categories) ? d.categories : []);
+                } else {
+                    setProducts([]);
+                    setCategories([]);
                 }
-            } catch (e) {
-                if (reqId === requestRef.current) setResults([]);
+            } catch {
+                if (reqId === requestRef.current) {
+                    setProducts([]);
+                    setCategories([]);
+                }
             } finally {
                 if (reqId === requestRef.current) setLoading(false);
             }
-        }, 200);
+        }, 300);
+        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
     }, [query]);
 
-    // Click outside closes the dropdown
-    useEffect(() => {
-        const onClick = (e) => {
-            if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
-        };
-        document.addEventListener('mousedown', onClick);
-        return () => document.removeEventListener('mousedown', onClick);
-    }, []);
-
-    // ESC closes
+    // ESC closes the dropdown by blurring the input
     useEffect(() => {
         const onKey = (e) => {
-            if (e.key === 'Escape') {
-                setOpen(false);
-                inputRef.current?.blur();
-            }
+            if (e.key === 'Escape') inputRef.current?.blur();
         };
         document.addEventListener('keydown', onKey);
         return () => document.removeEventListener('keydown', onKey);
@@ -105,21 +102,22 @@ function LiveSearchBar({ className = '', autoFocus = false, onResultClick }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!query.trim()) return;
-        setOpen(false);
+        inputRef.current?.blur();
         router.visit(`/shop?q=${encodeURIComponent(query.trim())}`);
     };
 
     const handleResultClick = () => {
-        setOpen(false);
         setQuery('');
+        inputRef.current?.blur();
         onResultClick?.();
     };
 
     const placeholder = `Search for "${displayText}"`;
-    const showDropdown = open && query.trim().length >= 2;
+    const showDropdown = focused && query.trim().length >= 2;
+    const hasResults = products.length > 0 || categories.length > 0;
 
     return (
-        <div ref={containerRef} className={`relative ${className}`}>
+        <div className={`relative ${className}`}>
             <form onSubmit={handleSubmit} className="flex items-center h-[38px] rounded-full border border-gray-200 bg-gray-50 px-4 gap-2 hover:border-brand/40 hover:bg-white focus-within:border-brand focus-within:bg-white transition-all">
                 <SearchIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
                 <input
@@ -127,7 +125,8 @@ function LiveSearchBar({ className = '', autoFocus = false, onResultClick }) {
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    onFocus={() => setOpen(true)}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
                     placeholder={placeholder}
                     className="flex-1 min-w-0 bg-transparent text-[13px] text-gray-900 placeholder-gray-400 focus:outline-none border-0 p-0 focus:ring-0"
                     aria-label="Search products"
@@ -145,39 +144,81 @@ function LiveSearchBar({ className = '', autoFocus = false, onResultClick }) {
             </form>
 
             {showDropdown && (
-                <div className="absolute left-0 right-0 top-full mt-2 z-50 max-h-[420px] overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-2xl">
+                <div
+                    className="absolute left-0 right-0 top-full mt-2 z-50 max-h-[480px] overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-2xl"
+                    onMouseDown={(e) => e.preventDefault()}
+                >
                     {loading ? (
                         <div className="px-4 py-6 text-center text-[13px] text-gray-400">Searching…</div>
-                    ) : results.length === 0 ? (
+                    ) : !hasResults ? (
                         <div className="px-4 py-6 text-center text-[13px] text-gray-500">
-                            No products match "{query}".
+                            No results found for &ldquo;{query}&rdquo;.
                         </div>
                     ) : (
                         <>
-                            <ul>
-                                {results.map((r) => (
-                                    <li key={r.id}>
-                                        <Link
-                                            href={r.url}
-                                            onClick={handleResultClick}
-                                            className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors"
-                                        >
-                                            <img src={r.image_url} alt={r.name} className="h-12 w-12 rounded object-cover flex-shrink-0 border border-gray-100" loading="lazy" />
-                                            <div className="flex-1 min-w-0">
-                                                <div className="truncate text-[13px] font-medium text-gray-900">{r.name}</div>
-                                                {r.category && <div className="truncate text-[11px] text-gray-500">{r.category.name}</div>}
-                                            </div>
-                                            <div className="flex-shrink-0 text-[13px] font-semibold text-brand">${parseFloat(r.price || 0).toFixed(2)}</div>
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
+                            {/* Categories section */}
+                            {categories.length > 0 && (
+                                <>
+                                    <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Categories</div>
+                                    <ul>
+                                        {categories.map((c) => (
+                                            <li key={`cat-${c.id}`}>
+                                                <Link
+                                                    href={c.url}
+                                                    onClick={handleResultClick}
+                                                    className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <div className="h-8 w-8 rounded flex items-center justify-center bg-brand/10 flex-shrink-0">
+                                                        <svg className="h-4 w-4 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                                                        </svg>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="truncate text-[13px] font-medium text-gray-900">{c.name}</div>
+                                                        <div className="text-[11px] text-gray-400">Category</div>
+                                                    </div>
+                                                    <svg className="h-3.5 w-3.5 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+
+                            {/* Products section */}
+                            {products.length > 0 && (
+                                <>
+                                    {categories.length > 0 && <div className="border-t border-gray-100 mx-3" />}
+                                    <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Products</div>
+                                    <ul>
+                                        {products.map((r) => (
+                                            <li key={`prod-${r.id}`}>
+                                                <Link
+                                                    href={r.url}
+                                                    onClick={handleResultClick}
+                                                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <img src={r.image_url} alt={r.name} className="h-12 w-12 rounded object-cover flex-shrink-0 border border-gray-100" loading="lazy" />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="truncate text-[13px] font-medium text-gray-900">{r.name}</div>
+                                                        {r.category && <div className="truncate text-[11px] text-gray-500">{r.category.name}</div>}
+                                                    </div>
+                                                    <div className="flex-shrink-0 text-[13px] font-semibold text-brand">${parseFloat(r.price || 0).toFixed(2)}</div>
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+
                             <button
                                 type="button"
                                 onClick={handleSubmit}
                                 className="block w-full border-t border-gray-100 px-4 py-3 text-left text-[12px] font-semibold text-brand hover:bg-gray-50 transition-colors"
                             >
-                                See all results for "{query}" →
+                                See all results for &ldquo;{query}&rdquo; →
                             </button>
                         </>
                     )}

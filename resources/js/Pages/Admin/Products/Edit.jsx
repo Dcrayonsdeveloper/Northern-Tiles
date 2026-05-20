@@ -570,9 +570,13 @@ export default function Edit({ product, categories, vendors, popularTags, status
         requires_shipping: product?.requires_shipping ?? true,
         status: product?.status ?? 'draft',
         published_at: product?.published_at ?? '',
+        lifestyle_image_url: product?.lifestyle_image_url ?? '',
+        specifications: product?.specifications ?? {},
         meta_title: product?.meta_title ?? '',
         meta_description: product?.meta_description ?? '',
         noindex: Boolean(product?.noindex),
+        is_active: product?.is_active !== false,
+        is_featured: Boolean(product?.is_featured),
         tags: product?.tags ?? [],
     });
 
@@ -603,9 +607,9 @@ export default function Edit({ product, categories, vendors, popularTags, status
 
     useEffect(() => {
         if (isDirty && product?.id && data.status === 'draft') {
-            autosave(product.id, { name: data.name, description: data.description, price: data.price });
+            autosave(product.id, data);
         }
-    }, [data.name, data.description, data.price, isDirty]);
+    }, [data, isDirty]);
 
     const submit = (e) => {
         e.preventDefault();
@@ -741,6 +745,21 @@ export default function Edit({ product, categories, vendors, popularTags, status
 
                         {/* Media */}
                         <MediaUploader product={product} media={product?.media} />
+
+                        {/* Lifestyle Image */}
+                        <div className="admin-card">
+                            <h3 className="text-xs font-semibold text-gray-900 mb-1">Lifestyle Image URL</h3>
+                            <p className="text-[10px] text-gray-400 mb-2">Optional external image URL shown in lifestyle/room-set contexts.</p>
+                            <input
+                                value={data.lifestyle_image_url}
+                                onChange={(e) => setData('lifestyle_image_url', e.target.value)}
+                                className="admin-input w-full"
+                                placeholder="https://example.com/lifestyle.jpg"
+                            />
+                            {data.lifestyle_image_url && (
+                                <img src={data.lifestyle_image_url} alt="Lifestyle preview" className="mt-2 h-24 w-auto rounded object-cover border border-gray-200" />
+                            )}
+                        </div>
 
                         {/* Pricing */}
                         <div className="admin-card">
@@ -900,6 +919,37 @@ export default function Edit({ product, categories, vendors, popularTags, status
                             )}
                         </div>
 
+                        {/* Product Specifications */}
+                        <div className="admin-card">
+                            <h3 className="text-xs font-semibold text-gray-900 mb-1">Product Specifications</h3>
+                            <p className="text-[10px] text-gray-400 mb-3">These values appear in the specifications panel on the product page. Filling these in overrides spec text embedded in the description.</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    { key: 'name',               label: 'Name' },
+                                    { key: 'style',              label: 'Style' },
+                                    { key: 'colours',            label: 'Colours' },
+                                    { key: 'finish',             label: 'Finish' },
+                                    { key: 'material',           label: 'Material' },
+                                    { key: 'size_nominal',       label: 'Size (Nominal)' },
+                                    { key: 'thickness',          label: 'Thickness' },
+                                    { key: 'variation',          label: 'Variation' },
+                                    { key: 'application_space',  label: 'Application Space' },
+                                    { key: 'country_of_origin',  label: 'Country of Origin' },
+                                    { key: 'quantity_per_box',   label: 'Quantity Per Box' },
+                                ].map(({ key, label }) => (
+                                    <div key={key} className={key === 'variation' || key === 'application_space' ? 'col-span-2' : ''}>
+                                        <label className="block text-xs font-medium text-gray-700">{label}</label>
+                                        <input
+                                            value={data.specifications?.[key] ?? ''}
+                                            onChange={(e) => setData('specifications', { ...data.specifications, [key]: e.target.value })}
+                                            className="mt-1 admin-input w-full"
+                                            placeholder={label}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Variants */}
                         <VariantsEditor
                             options={product?.options}
@@ -995,6 +1045,34 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     />
                                 </div>
                             )}
+                            <div className="mt-4 space-y-3 border-t border-gray-100 pt-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-gray-700">Active (visible on site)</p>
+                                        <p className="text-[10px] text-gray-400">Inactive products return 404</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('is_active', !data.is_active)}
+                                        className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${data.is_active ? 'bg-green-500' : 'bg-gray-300'}`}
+                                    >
+                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.is_active ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                                    </button>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-xs font-medium text-gray-700">Featured product</p>
+                                        <p className="text-[10px] text-gray-400">Highlights product across the site</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('is_featured', !data.is_featured)}
+                                        className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${data.is_featured ? 'bg-brand' : 'bg-gray-300'}`}
+                                    >
+                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.is_featured ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Organization */}

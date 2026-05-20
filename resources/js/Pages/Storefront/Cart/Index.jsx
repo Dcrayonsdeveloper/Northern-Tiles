@@ -50,6 +50,10 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal, 
                 },
                 credentials: 'same-origin',
             });
+            if (response.status === 401) {
+                window.location.href = route('login');
+                return;
+            }
             if (response.ok) {
                 const data = await response.json();
                 setItems(data.items || []);

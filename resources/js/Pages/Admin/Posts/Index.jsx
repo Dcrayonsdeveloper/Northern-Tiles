@@ -5,11 +5,11 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 export default function Index({ posts, categories, filters }) {
     const [search, setSearch] = useState(filters?.search || '');
     const [status, setStatus] = useState(filters?.status || '');
-    const [category, setCategory] = useState(filters?.category || '');
+    const [category, setCategory] = useState(filters?.category_id || '');
 
     const handleSearch = (e) => {
         e.preventDefault();
-        router.get(route('admin.posts.index'), { search, status, category }, { preserveState: true });
+        router.get(route('admin.posts.index'), { search, status, category_id: category }, { preserveState: true });
     };
 
     const handleDelete = (post) => {
@@ -67,7 +67,7 @@ export default function Index({ posts, categories, filters }) {
                     value={category}
                     onChange={(e) => {
                         setCategory(e.target.value);
-                        router.get(route('admin.posts.index'), { search, status, category: e.target.value }, { preserveState: true });
+                        router.get(route('admin.posts.index'), { search, status, category_id: e.target.value }, { preserveState: true });
                     }}
                     className="rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand"
                 >
@@ -87,7 +87,6 @@ export default function Index({ posts, categories, filters }) {
                     <option value="">All Statuses</option>
                     <option value="published">Published</option>
                     <option value="draft">Draft</option>
-                    <option value="scheduled">Scheduled</option>
                 </select>
                 <button
                     type="submit"

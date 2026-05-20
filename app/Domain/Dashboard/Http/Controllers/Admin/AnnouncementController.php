@@ -18,8 +18,26 @@ class AnnouncementController
             ->paginate(20)
             ->withQueryString();
 
+        $active = Announcement::query()
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+            })
+            ->orderByDesc('created_at')
+            ->first();
+
         return Inertia::render('Admin/Announcements/Index', [
             'items' => $items,
+            'activeAnnouncement' => $active ? [
+                'id'       => $active->id,
+                'title'    => $active->title,
+                'body_html' => $active->body_html,
+                'starts_at' => $active->starts_at?->format('Y-m-d\TH:i'),
+                'ends_at'   => $active->ends_at?->format('Y-m-d\TH:i'),
+            ] : null,
         ]);
     }
 

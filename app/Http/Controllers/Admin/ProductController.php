@@ -11,6 +11,7 @@ use App\Domain\Catalog\Models\BulkImportJob;
 use App\Domain\Catalog\Models\Collection;
 use App\Domain\Catalog\Models\ProductMedia;
 use App\Domain\Catalog\Models\Tag;
+use App\Console\Commands\StripSpecsFromDescriptionsCommand;
 use App\Domain\Catalog\Services\BulkImportService;
 use App\Domain\Catalog\Services\MediaService;
 use App\Domain\Catalog\Services\ProductService;
@@ -356,8 +357,15 @@ class ProductController extends Controller
     public function autosave(Request $request, Product $product): JsonResponse
     {
         $data = $request->only([
-            'name', 'description', 'description_json', 'short_description',
-            'price', 'compare_at_price', 'cost', 'tags',
+            'name', 'slug', 'sku', 'short_description', 'description', 'description_json',
+            'brand', 'product_type', 'category_ids', 'seller_id',
+            'price', 'compare_at_price', 'cost',
+            'inventory_quantity', 'inventory_policy',
+            'weight', 'length_mm', 'width_mm', 'height_mm', 'sqm_per_box',
+            'is_digital', 'requires_shipping',
+            'lifestyle_image_url', 'specifications',
+            'meta_title', 'meta_description', 'noindex',
+            'is_active', 'is_featured', 'tags',
         ]);
 
         $this->productService->updateProduct($product, $data, $request->user());
@@ -417,7 +425,7 @@ class ProductController extends Controller
             'slug' => $product->slug,
             'sku' => $product->sku,
             'short_description' => $product->short_description,
-            'description' => $product->description,
+            'description' => StripSpecsFromDescriptionsCommand::stripSpecBlock((string) $product->description),
             'description_json' => $product->description_json,
             'brand' => $product->brand,
             'product_type' => $product->product_type,
@@ -441,10 +449,17 @@ class ProductController extends Controller
             'height_mm' => $product->height_mm,
             'sqm_per_box' => $product->sqm_per_box,
 
+            // Images
+            'lifestyle_image_url' => $product->lifestyle_image_url,
+
+            // Structured specifications
+            'specifications' => $product->specifications ?? [],
+
             // Status
             'status' => $product->status,
             'published_at' => $product->published_at?->toIso8601String(),
             'is_active' => $product->is_active,
+            'is_featured' => $product->is_featured,
 
             // SEO
             'meta_title' => $product->meta_title,

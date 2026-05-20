@@ -67,6 +67,34 @@ class CouponController extends Controller
         ]);
     }
 
+    public function suggestions(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $q = trim($request->input('q', ''));
+
+        if ($q === '') {
+            return response()->json(['suggestions' => []]);
+        }
+
+        $suggestions = Coupon::query()
+            ->where(function ($query) use ($q) {
+                $query->where('code', 'like', "{$q}%")
+                    ->orWhere('code', 'like', "%{$q}%")
+                    ->orWhere('title', 'like', "%{$q}%");
+            })
+            ->orderByRaw("CASE WHEN code LIKE ? THEN 0 ELSE 1 END", ["{$q}%"])
+            ->orderBy('code')
+            ->limit(8)
+            ->get(['code', 'title', 'type', 'is_active'])
+            ->map(fn($c) => [
+                'code'      => $c->code,
+                'title'     => $c->title,
+                'type'      => $c->type,
+                'is_active' => (bool) $c->is_active,
+            ]);
+
+        return response()->json(['suggestions' => $suggestions]);
+    }
+
     public function create(): Response
     {
         return Inertia::render('Admin/Coupons/Create', [
@@ -81,7 +109,7 @@ class CouponController extends Controller
             'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'type' => ['required', 'in:percentage,fixed_amount,free_shipping,buy_x_get_y'],
-            'value' => ['required', 'numeric', 'min:0'],
+            'value' => ['nullable', 'numeric', 'min:0'],
             'minimum_purchase' => ['nullable', 'numeric', 'min:0'],
             'maximum_discount' => ['nullable', 'numeric', 'min:0'],
             'usage_limit' => ['nullable', 'integer', 'min:1'],
@@ -91,13 +119,14 @@ class CouponController extends Controller
             'is_active' => ['boolean'],
             'first_order_only' => ['boolean'],
             'eligible_products' => ['nullable', 'array'],
-            'eligible_collections' => ['nullable', 'array'],
+            'eligible_categories' => ['nullable', 'array'],
             'excluded_products' => ['nullable', 'array'],
             'buy_quantity' => ['nullable', 'integer', 'min:1'],
             'get_quantity' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $validated['code'] = strtoupper($validated['code']);
+        $validated['value'] = $validated['value'] ?? 0;
 
         Coupon::create($validated);
 
@@ -128,7 +157,7 @@ class CouponController extends Controller
             'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'type' => ['required', 'in:percentage,fixed_amount,free_shipping,buy_x_get_y'],
-            'value' => ['required', 'numeric', 'min:0'],
+            'value' => ['nullable', 'numeric', 'min:0'],
             'minimum_purchase' => ['nullable', 'numeric', 'min:0'],
             'maximum_discount' => ['nullable', 'numeric', 'min:0'],
             'usage_limit' => ['nullable', 'integer', 'min:1'],
@@ -138,13 +167,14 @@ class CouponController extends Controller
             'is_active' => ['boolean'],
             'first_order_only' => ['boolean'],
             'eligible_products' => ['nullable', 'array'],
-            'eligible_collections' => ['nullable', 'array'],
+            'eligible_categories' => ['nullable', 'array'],
             'excluded_products' => ['nullable', 'array'],
             'buy_quantity' => ['nullable', 'integer', 'min:1'],
             'get_quantity' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $validated['code'] = strtoupper($validated['code']);
+        $validated['value'] = $validated['value'] ?? 0;
 
         $coupon->update($validated);
 

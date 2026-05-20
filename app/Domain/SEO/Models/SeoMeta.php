@@ -13,6 +13,7 @@ class SeoMeta extends Model
     protected $fillable = [
         'model_type',
         'model_id',
+        'url_path',
         'meta_title',
         'meta_description',
         'meta_keywords',
@@ -37,6 +38,8 @@ class SeoMeta extends Model
         'schema_json' => 'array',
         'custom_meta_json' => 'array',
     ];
+
+    protected $appends = ['robots', 'schema_markup'];
 
     protected static function booted(): void
     {
@@ -117,5 +120,19 @@ class SeoMeta extends Model
     public function getSchema(): array
     {
         return $this->schema_json ?? [];
+    }
+
+    public function getRobotsAttribute(): string
+    {
+        $index = $this->noindex ? 'noindex' : 'index';
+        $follow = $this->nofollow ? 'nofollow' : 'follow';
+        return "{$index}, {$follow}";
+    }
+
+    public function getSchemaMarkupAttribute(): string
+    {
+        return $this->schema_json
+            ? json_encode($this->schema_json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
+            : '';
     }
 }

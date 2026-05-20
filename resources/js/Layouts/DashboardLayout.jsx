@@ -1,7 +1,48 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import GlobalSearch from '@/Components/Admin/GlobalSearch';
 import Dropdown from '@/Components/Dropdown';
 import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+
+function FlashMessage() {
+    const { flash } = usePage().props;
+    const [visible, setVisible] = useState(false);
+    const [message, setMessage] = useState('');
+    const [type, setType] = useState('success');
+
+    useEffect(() => {
+        if (flash?.success) {
+            setMessage(flash.success);
+            setType('success');
+            setVisible(true);
+        } else if (flash?.error) {
+            setMessage(flash.error);
+            setType('error');
+            setVisible(true);
+        } else {
+            setVisible(false);
+        }
+    }, [flash?.success, flash?.error]);
+
+    useEffect(() => {
+        if (!visible) return;
+        const t = setTimeout(() => setVisible(false), 4000);
+        return () => clearTimeout(t);
+    }, [visible, message]);
+
+    if (!visible) return null;
+
+    return (
+        <div className={`mb-4 flex items-center justify-between rounded-md px-4 py-3 text-sm font-medium ${type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+            <span>{message}</span>
+            <button type="button" onClick={() => setVisible(false)} className="ml-4 shrink-0 opacity-60 hover:opacity-100">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+    );
+}
 
 const SIDEBAR_SCROLL_KEY = 'admin_sidebar_scroll';
 
@@ -602,24 +643,8 @@ export default function DashboardLayout({ title, children }) {
                                 </svg>
                             </button>
 
-                            <div className="hidden xl:block flex-1 px-4">
-                                <div className="relative max-w-[430px]">
-                                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                        <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none">
-                                            <path
-                                                fillRule="evenodd"
-                                                clipRule="evenodd"
-                                                d="M3.04175 9.37363C3.04175 5.87693 5.87711 3.04199 9.37508 3.04199C12.8731 3.04199 15.7084 5.87693 15.7084 9.37363C15.7084 12.8703 12.8731 15.7053 9.37508 15.7053C5.87711 15.7053 3.04175 12.8703 3.04175 9.37363ZM9.37508 1.54199C5.04902 1.54199 1.54175 5.04817 1.54175 9.37363C1.54175 13.6991 5.04902 17.2053 9.37508 17.2053C11.2674 17.2053 13.003 16.5344 14.357 15.4176L17.177 18.238C17.4699 18.5309 17.9448 18.5309 18.2377 18.238C18.5306 17.9451 18.5306 17.4703 18.2377 17.1774L15.418 14.3573C16.5365 13.0033 17.2084 11.2669 17.2084 9.37363C17.2084 5.04817 13.7011 1.54199 9.37508 1.54199Z"
-                                                fill="currentColor"
-                                            />
-                                        </svg>
-                                    </span>
-                                    <input
-                                        type="text"
-                                        placeholder="Search..."
-                                        className="h-9 w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-[13px] text-gray-800 placeholder:text-gray-400 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
-                                    />
-                                </div>
+                            <div className="hidden xl:flex flex-1 px-4">
+                                <GlobalSearch />
                             </div>
 
                             <div className="ml-auto flex items-center gap-2">
@@ -655,7 +680,10 @@ export default function DashboardLayout({ title, children }) {
                     </div>
                 </header>
 
-                <main className="mx-auto max-w-7xl p-3 md:p-4 overflow-visible">{children}</main>
+                <main className="mx-auto max-w-7xl p-3 md:p-4 overflow-visible">
+                    <FlashMessage />
+                    {children}
+                </main>
             </div>
         </div>
     );
