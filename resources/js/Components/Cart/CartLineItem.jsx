@@ -37,11 +37,14 @@ function CartLineItem({
     const quantity = parseFloat(item.quantity) || 0;
     const sqmPerBox = parseFloat(product?.sqm_per_box) || 0;
     const hasBoxes = sqmPerBox > 0 && !is_sample;
-    const boxes = hasBoxes ? Math.max(1, Math.ceil(quantity / sqmPerBox)) : 0;
-    const stepUp = () => onUpdateQuantity(hasBoxes ? parseFloat(((boxes + 1) * sqmPerBox).toFixed(2)) : Math.max(1, Math.floor(quantity) + 1));
+    // Math.round instead of Math.ceil: quantity is always n * sqmPerBox, but floating point
+    // makes 8.64 / 1.44 = 6.000000000000001 which Math.ceil turns into 7 (wrong).
+    // Math.round corrects the tiny epsilon without affecting genuine non-multiples.
+    const boxes = hasBoxes ? Math.max(1, Math.round(quantity / sqmPerBox)) : 0;
+    const stepUp = () => onUpdateQuantity(hasBoxes ? parseFloat(((boxes + 1) * sqmPerBox).toFixed(4)) : Math.max(1, Math.floor(quantity) + 1));
     const stepDown = () => {
         if (hasBoxes) {
-            onUpdateQuantity(parseFloat((Math.max(1, boxes - 1) * sqmPerBox).toFixed(2)));
+            onUpdateQuantity(parseFloat((Math.max(1, boxes - 1) * sqmPerBox).toFixed(4)));
         } else {
             onUpdateQuantity(Math.max(1, Math.floor(quantity) - 1));
         }
@@ -103,7 +106,7 @@ function CartLineItem({
                         >
                             <MinusIcon className="h-3.5 w-3.5" />
                         </button>
-                        <span className="min-w-[5rem] px-2 text-center text-sm font-medium whitespace-nowrap">
+                        <span className="min-w-[8rem] px-2 text-center text-sm font-medium whitespace-nowrap">
                             {is_sample
                                 ? `${quantity}`
                                 : hasBoxes

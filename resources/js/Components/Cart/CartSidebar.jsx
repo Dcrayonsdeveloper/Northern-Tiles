@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, useCallback } from 'react';
+import { Fragment, useEffect, useState, useCallback, useRef } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { router } from '@inertiajs/react';
 import CartLineItem from './CartLineItem';
@@ -97,6 +97,7 @@ export default function CartSidebar({ open, onClose }) {
     });
     const [loading, setLoading] = useState(false);
     const [updating, setUpdating] = useState(null);
+    const inFlight = useRef(new Set());
 
     // Fetch cart data when sidebar opens.
     // Smart-merges items to preserve stable object references for unchanged items,
@@ -144,6 +145,8 @@ export default function CartSidebar({ open, onClose }) {
     // Update item quantity — patches only the affected item in state, no full fetchCart.
     // Stable reference ([] deps) so React.memo on CartLineItem skips re-renders for other items.
     const updateQuantity = useCallback(async (itemId, quantity) => {
+        if (inFlight.current.has(itemId)) return;
+        inFlight.current.add(itemId);
         setUpdating(itemId);
         try {
             const response = await fetch(`/api/cart/${itemId}`, {
@@ -176,6 +179,7 @@ export default function CartSidebar({ open, onClose }) {
         } catch (error) {
             console.error('Failed to update quantity:', error);
         } finally {
+            inFlight.current.delete(itemId);
             setUpdating(null);
         }
     }, []);
