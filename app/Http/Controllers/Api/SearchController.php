@@ -118,6 +118,13 @@ class SearchController extends Controller
                 ->values()
                 ->all();
 
+            // Fall back to LIKE for products when FULLTEXT returns nothing.
+            // This handles cases where dimension tokens like "1200" are embedded
+            // inside compound strings like "600x1200mm" that FULLTEXT treats as one token.
+            if (empty($products)) {
+                $products = $this->likeSearch($rawTokens, $tokenLikes, $phraseLike, $isAdmin)[0];
+            }
+
             return [$products, $categories];
         } catch (\Throwable) {
             // FULLTEXT index may not be active yet — degrade gracefully.
@@ -158,9 +165,12 @@ class SearchController extends Controller
     {
         return Category::query()
             ->where('is_active', true)
-            ->where(function ($sub) use ($tokenLikes) {
+            ->where(function ($sub) use ($tokenLikes, $phraseLike) {
+                // Phrase match first
+                $sub->where('name', 'like', $phraseLike);
+                // Per-token OR fallback so "floor tiles" matches "Floor Tiles" or "Tiles"
                 foreach ($tokenLikes as $like) {
-                    $sub->where('name', 'like', $like);
+                    $sub->orWhere('name', 'like', $like);
                 }
             })
             ->orderByRaw('CASE WHEN name LIKE ? THEN 0 ELSE 1 END', [$phraseLike])

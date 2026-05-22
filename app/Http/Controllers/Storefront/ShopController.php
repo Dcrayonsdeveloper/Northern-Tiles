@@ -65,9 +65,28 @@ class ShopController extends Controller
         $products = Product::query()
             ->where('is_active', true)
             ->when($filters['q'], function ($query, $q) {
-                $query->where(function ($sub) use ($q) {
+                // Split into per-token list for multi-word OR fallback
+                $terms = array_values(array_filter(
+                    preg_split('/\s+/', $q, -1, PREG_SPLIT_NO_EMPTY),
+                    fn ($t) => mb_strlen($t) >= 2
+                ));
+
+                $query->where(function ($sub) use ($q, $terms) {
+                    // Phrase match across primary fields
                     $sub->where('name', 'like', "%{$q}%")
-                        ->orWhere('short_description', 'like', "%{$q}%");
+                        ->orWhere('short_description', 'like', "%{$q}%")
+                        ->orWhere('brand', 'like', "%{$q}%")
+                        ->orWhere('sku', 'like', "%{$q}%")
+                        // Match products whose category name contains the query (e.g. typing "floor tiles")
+                        ->orWhereHas('category', fn ($c) => $c->where('name', 'like', "%{$q}%"))
+                        ->orWhereHas('categories', fn ($c) => $c->where('name', 'like', "%{$q}%"));
+
+                    // Per-token OR fallback for multi-word queries (e.g. "charcoal matte" matches
+                    // products that contain either word anywhere in name/brand)
+                    foreach ($terms as $term) {
+                        $sub->orWhere('name', 'like', "%{$term}%")
+                            ->orWhere('brand', 'like', "%{$term}%");
+                    }
                 });
             })
             ->when($categorySlug, function ($query) use ($categorySlug) {
@@ -103,8 +122,17 @@ class ShopController extends Controller
                     'name_desc' => $query->orderByDesc('name'),
                     default => $query->orderByDesc('id'),
                 };
-            }, function ($query) {
-                $query->orderByDesc('id');
+            }, function ($query) use ($filters) {
+                if ($filters['q']) {
+                    // Rank exact-name-prefix matches first, then any name match, then everything else
+                    $q = $filters['q'];
+                    $query->orderByRaw(
+                        'CASE WHEN name LIKE ? THEN 0 WHEN name LIKE ? THEN 1 ELSE 2 END',
+                        [$q . '%', '%' . $q . '%']
+                    )->orderBy('name');
+                } else {
+                    $query->orderByDesc('id');
+                }
             })
             ->with(['category:id,name,slug'])
             ->paginate(12)

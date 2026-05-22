@@ -33,6 +33,8 @@ class ProductService
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('meta_title', 'like', "%{$search}%")
                     ->orWhere('brand', 'like', "%{$search}%");
             });
         }
