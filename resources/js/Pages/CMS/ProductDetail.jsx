@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import PublicLayout from '@/Layouts/PublicLayout';
 import MetaTags from '@/Components/SEO/MetaTags';
@@ -16,19 +16,28 @@ export default function ProductDetail({
     seoMeta,
     productSchema,
 }) {
+    const { auth } = usePage().props;
+    const isInactive = !!auth?.user && auth.user.is_active === false;
+
     const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || null);
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
+    const [isBuyingNow, setIsBuyingNow] = useState(false);
     const [isFavorite, setIsFavorite] = useState(initialFavorite);
 
     const images = product.images || [{ url: product.image_url, alt: product.name }];
     const hasVariants = product.variants && product.variants.length > 0;
     const currentPrice = selectedVariant?.price || product.price;
     const comparePrice = selectedVariant?.compare_at_price || product.compare_at_price;
-    const inStock = (selectedVariant?.stock_quantity ?? product.stock_quantity) > 0;
+    // Use inventory_quantity — the actual DB column. inventory_policy is intentionally
+    // ignored here per requirement: inventory_quantity <= 0 always means out of stock.
+    const variantQty = selectedVariant?.inventory_quantity ?? null;
+    const isPurchasable = (parseFloat(currentPrice) || 0) > 0;
+    const inStock = isPurchasable && (variantQty !== null ? variantQty > 0 : (product.inventory_quantity ?? 0) > 0);
 
     const handleAddToCart = async () => {
+        if (!inStock || isInactive) return;
         setIsAddingToCart(true);
         try {
             await api.cart.add({
@@ -41,6 +50,23 @@ export default function ProductDetail({
             console.error('Failed to add to cart:', error);
         } finally {
             setIsAddingToCart(false);
+        }
+    };
+
+    const handleBuyNow = async () => {
+        if (!inStock || isInactive) return;
+        setIsBuyingNow(true);
+        try {
+            await api.cart.add({
+                product_id: product.id,
+                variant_id: selectedVariant?.id,
+                quantity,
+            });
+            window.dispatchEvent(new CustomEvent('cart-updated'));
+            window.location.href = route('checkout.index');
+        } catch (error) {
+            console.error('Failed to buy now:', error);
+            setIsBuyingNow(false);
         }
     };
 
@@ -212,57 +238,83 @@ export default function ProductDetail({
                         </div>
                     )}
 
-                    {/* Quantity & Add to Cart */}
-                    <div className="mt-6 flex flex-wrap items-center gap-4">
-                        <div className="flex items-center rounded-md border border-gray-200">
-                            <button
-                                type="button"
-                                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                                className="px-3 py-2 text-gray-500 hover:text-gray-700"
-                            >
-                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                                </svg>
-                            </button>
-                            <span className="w-12 text-center text-sm font-medium">{quantity}</span>
-                            <button
-                                type="button"
-                                onClick={() => setQuantity((q) => q + 1)}
-                                className="px-3 py-2 text-gray-500 hover:text-gray-700"
-                            >
-                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={handleAddToCart}
-                            disabled={!inStock || isAddingToCart}
-                            className="flex-1 rounded-md bg-brand px-6 py-3 text-sm font-semibold text-white hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {isAddingToCart ? 'Adding...' : inStock ? 'Add to Cart' : 'Out of Stock'}
-                        </button>
-                    </div>
-
-                    {/* Stock Status */}
-                    <div className="mt-4">
-                        {inStock ? (
-                            <span className="inline-flex items-center gap-1 text-sm text-green-600">
-                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                                In Stock
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1 text-sm text-red-600">
-                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    {/* Quantity & Cart Actions */}
+                    <div className="relative mt-6">
+                        {/* Out of Stock badge — top-right corner */}
+                        {!inStock && (
+                            <span className="absolute -top-4 right-0 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                                 </svg>
                                 Out of Stock
                             </span>
                         )}
+
+                        {/* Quantity stepper */}
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex items-center rounded-md border border-gray-200">
+                                <button
+                                    type="button"
+                                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                                    disabled={!inStock}
+                                    className="px-3 py-2 text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                    </svg>
+                                </button>
+                                <span className="w-12 text-center text-sm font-medium">{quantity}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setQuantity((q) => q + 1)}
+                                    disabled={!inStock}
+                                    className="px-3 py-2 text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            {/* Add to Cart */}
+                            <button
+                                type="button"
+                                onClick={handleAddToCart}
+                                disabled={!inStock || isAddingToCart || isInactive}
+                                className="flex-1 rounded-md bg-brand px-6 py-3 text-sm font-semibold text-white hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+                            </button>
+
+                            {/* Buy Now */}
+                            <button
+                                type="button"
+                                onClick={handleBuyNow}
+                                disabled={!inStock || isBuyingNow || isInactive}
+                                className="flex-1 rounded-md border-2 border-brand px-6 py-3 text-sm font-semibold text-brand hover:bg-brand/5 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {isBuyingNow ? 'Processing...' : 'Buy Now'}
+                            </button>
+                        </div>
+
+                        {/* Inline stock indicator */}
+                        <div className="mt-3">
+                            {inStock ? (
+                                <span className="inline-flex items-center gap-1 text-sm text-green-600">
+                                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                    In Stock
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 text-sm text-red-600">
+                                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                    Currently unavailable — check back soon
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Tags */}

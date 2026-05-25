@@ -674,6 +674,7 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
     const cartQuantity = () => billedSqm;
 
     const addToCart = () => {
+        if (!inStock) return;
         setAddingToCart(true);
         router.post(route('cart.store'), { product_id: product.id, quantity: cartQuantity() }, {
             preserveScroll: true,
@@ -683,6 +684,7 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
     };
 
     const buyNow = () => {
+        if (!inStock) return;
         setBuyingNow(true);
         router.post(route('cart.store'), { product_id: product.id, quantity: cartQuantity() }, {
             preserveScroll: true,
@@ -724,6 +726,7 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
 
     const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
     const discountPercent = hasDiscount ? Math.round(((product.compare_at_price - product.price) / product.compare_at_price) * 100) : 0;
+    const inStock = (parseFloat(product.price) || 0) > 0 && ((product.inventory_quantity ?? 0) > 0 || product.inventory_policy === 'continue');
 
     return (
         <PublicLayout>
@@ -792,9 +795,21 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                             <SpecificationsBlock specifications={product.specifications} description={product.description} />
 
                             {/* Stock status */}
-                            <div className="mt-4 flex items-center gap-2">
-                                <div className="h-2 w-2 rounded-full bg-green-500" />
-                                <span className="text-[13px] font-medium text-green-700">In Stock</span>
+                            <div className="relative mt-4">
+                                {!inStock && (
+                                    <span className="absolute -top-1 right-0 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
+                                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                        </svg>
+                                        Out of Stock
+                                    </span>
+                                )}
+                                <div className="flex items-center gap-2">
+                                    <div className={`h-2 w-2 rounded-full ${inStock ? 'bg-green-500' : 'bg-red-500'}`} />
+                                    <span className={`text-[13px] font-medium ${inStock ? 'text-green-700' : 'text-red-600'}`}>
+                                        {inStock ? 'In Stock' : 'Currently unavailable — check back soon'}
+                                    </span>
+                                </div>
                             </div>
 
                             {/* Area Calculator */}
@@ -802,10 +817,10 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                                 <div className="flex flex-wrap items-center gap-4">
                                     <div className="flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5">
                                         <span className="text-[13px] font-semibold text-gray-700">Area</span>
-                                        <button type="button" onClick={() => adjustArea(-1)} disabled={area <= 1} className="text-gray-500 hover:text-brand disabled:opacity-30 transition"><Minus c="h-4 w-4" /></button>
+                                        <button type="button" onClick={() => adjustArea(-1)} disabled={area <= 1 || !inStock} className="text-gray-500 hover:text-brand disabled:opacity-30 transition"><Minus c="h-4 w-4" /></button>
                                         <span className="min-w-[2rem] text-center text-[15px] font-bold text-gray-900">{area}</span>
                                         <span className="text-[13px] text-gray-500">M<sup>2</sup></span>
-                                        <button type="button" onClick={() => adjustArea(1)} className="text-gray-500 hover:text-brand transition"><Plus c="h-4 w-4" /></button>
+                                        <button type="button" onClick={() => adjustArea(1)} disabled={!inStock} className="text-gray-500 hover:text-brand disabled:opacity-30 transition"><Plus c="h-4 w-4" /></button>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[12px] font-semibold text-brand">Please add 10% wastage</span>
@@ -831,12 +846,29 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                                 )}
                             </div>
 
-                            {/* Add to Cart + Get a Sample */}
+                            {/* Add to Cart + Buy Now */}
                             <div className="mt-4 flex flex-wrap gap-3">
-                                <button type="button" onClick={addToCart} disabled={addingToCart || buyingNow} className="flex-1 rounded-lg bg-brand px-8 py-3 text-sm font-bold text-white uppercase tracking-wide hover:bg-brand-dark transition disabled:opacity-50">
+                                <button
+                                    type="button"
+                                    onClick={addToCart}
+                                    disabled={!inStock || addingToCart || buyingNow}
+                                    className="flex-1 rounded-lg bg-brand px-8 py-3 text-sm font-bold text-white uppercase tracking-wide hover:bg-brand-dark transition disabled:cursor-not-allowed disabled:opacity-50"
+                                >
                                     {addingToCart ? 'Adding...' : 'Add to Cart'}
                                 </button>
-                                <button type="button" onClick={addSample} disabled={addingSample} className="flex-1 rounded-lg border-2 border-gray-800 px-8 py-3 text-sm font-bold text-gray-800 uppercase tracking-wide hover:bg-gray-800 hover:text-white transition disabled:opacity-50">
+                                <button
+                                    type="button"
+                                    onClick={buyNow}
+                                    disabled={!inStock || addingToCart || buyingNow}
+                                    className="flex-1 rounded-lg border-2 border-brand px-8 py-3 text-sm font-bold text-brand uppercase tracking-wide hover:bg-brand/5 transition disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {buyingNow ? 'Processing...' : 'Buy Now'}
+                                </button>
+                            </div>
+
+                            {/* Get a Sample */}
+                            <div className="mt-2">
+                                <button type="button" onClick={addSample} disabled={addingSample} className="w-full rounded-lg border-2 border-gray-800 px-8 py-2.5 text-sm font-bold text-gray-800 uppercase tracking-wide hover:bg-gray-800 hover:text-white transition disabled:opacity-50">
                                     {addingSample ? 'Adding...' : 'Get a Sample'}
                                 </button>
                             </div>

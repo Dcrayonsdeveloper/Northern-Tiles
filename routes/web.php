@@ -19,6 +19,7 @@ use App\Http\Controllers\Public\BlogController;
 use App\Http\Controllers\Public\PageController as PublicPageController;
 use App\Http\Controllers\Public\ShopController as PublicShopController;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\SellerMiddleware;
 use App\Domain\Dashboard\Http\Controllers\Admin\AdminDashboardController as WidgetAdminDashboardController;
 use App\Domain\Dashboard\Http\Controllers\Admin\DashboardLayoutController;
@@ -43,7 +44,7 @@ Route::get('/collections/{handle}', [CollectionController::class, 'show'])->name
 
 // Cart routes (Inertia pages)
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
+Route::post('/cart', [CartController::class, 'store'])->name('cart.store')->middleware(EnsureUserIsActive::class);
 Route::patch('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
 
@@ -51,8 +52,8 @@ Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.de
 Route::prefix('api/cart')->name('api.cart.')->group(function () {
     Route::get('count', [\App\Http\Controllers\Api\CartController::class, 'count'])->name('count');
     Route::get('/', [\App\Http\Controllers\Api\CartController::class, 'index'])->name('index');
-    Route::post('add', [\App\Http\Controllers\Api\CartController::class, 'add'])->name('add');
-    Route::post('buy-now', [\App\Http\Controllers\Api\CartController::class, 'buyNow'])->name('buy-now');
+    Route::post('add', [\App\Http\Controllers\Api\CartController::class, 'add'])->name('add')->middleware(EnsureUserIsActive::class);
+    Route::post('buy-now', [\App\Http\Controllers\Api\CartController::class, 'buyNow'])->name('buy-now')->middleware(EnsureUserIsActive::class);
 
     // Coupon routes — MUST be declared before the {item} wildcard routes.
     // If placed after, DELETE api/cart/coupon would match {item}="coupon" (string)
@@ -84,8 +85,10 @@ Route::prefix('api/reviews')->name('api.reviews.')->group(function () {
 
 // Checkout routes (guest checkout allowed)
 Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.index');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])->name('checkout.success');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store')->middleware(EnsureUserIsActive::class);
+Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])
+    ->middleware('throttle:20,1')
+    ->name('checkout.success');
 
 Route::get('/about', [PublicPageController::class, 'show'])
     ->defaults('slug', 'about')
@@ -161,7 +164,8 @@ Route::middleware(['auth', 'verified', AdminMiddleware::class])
         Route::put('/dashboard/layout', [DashboardLayoutController::class, 'update'])->name('dashboard.layout.update');
         Route::resource('orders', OrderController::class)->only(['index', 'show', 'update']);
         Route::resource('categories', CategoryController::class)->except(['show']);
-        Route::resource('users', UserController::class)->only(['index', 'edit', 'update']);
+        Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'destroy']);
+        Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
         Route::resource('messages', ContactMessageController::class)->only(['index', 'show', 'update', 'destroy']);
         Route::get('/settings/ui', [UiSettingsController::class, 'edit'])->name('settings.ui.edit');
         Route::put('/settings/ui', [UiSettingsController::class, 'update'])->name('settings.ui.update');
@@ -185,6 +189,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/orders', [\App\Http\Controllers\User\OrderHistoryController::class, 'index'])
+        ->name('orders.index');
+    Route::get('/orders/{order}', [\App\Http\Controllers\User\OrderHistoryController::class, 'show'])
+        ->name('orders.show');
 });
 
 require __DIR__.'/auth.php';

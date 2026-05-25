@@ -34,12 +34,13 @@ class CartController extends Controller
 
             $items = $cart->items->map(function ($item) {
                 return [
-                    'id' => $item->id,
-                    'product' => $item->product,
-                    'variant' => $item->variant,
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                    'line_total' => $item->price * $item->quantity,
+                    'id'         => $item->id,
+                    'product'    => $item->product,
+                    'variant'    => $item->variant,
+                    'quantity'   => (float) $item->quantity,
+                    'price'      => (float) $item->price,
+                    'line_total' => (float) ($item->price * $item->quantity),
+                    'is_sample'  => (bool)  $item->is_sample,
                 ];
             })->values();
 
@@ -91,6 +92,8 @@ class CartController extends Controller
                 [],
                 (bool) ($validated['is_sample'] ?? false)
             );
+        } catch (\App\Domain\Cart\Exceptions\ProductNotPurchasableException $e) {
+            return Redirect::back()->with('error', $e->getMessage());
         } catch (\App\Domain\Cart\Exceptions\SampleLimitExceededException $e) {
             return Redirect::back()->with('error', $e->getMessage());
         }

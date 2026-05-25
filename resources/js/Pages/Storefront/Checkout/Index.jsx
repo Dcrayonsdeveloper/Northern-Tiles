@@ -1,6 +1,6 @@
 import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { d } from '@/Support/dictionary';
 
@@ -46,6 +46,9 @@ export default function Index({
     isGuest = true,
     user = null,
 }) {
+    const { auth } = usePage().props;
+    const isInactive = !!auth?.user && auth.user.is_active === false;
+
     const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
 
     const { data, setData, post, processing, errors } = useForm({
@@ -99,6 +102,7 @@ export default function Index({
 
     const placeOrder = (e) => {
         e.preventDefault();
+        if (isInactive) return;
         post(route('checkout.store'));
     };
 
@@ -148,6 +152,15 @@ export default function Index({
                         </div>
                     ) : (
                         <form onSubmit={placeOrder}>
+                            {isInactive && (
+                                <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                                    <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                                        <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                                    </svg>
+                                    <p className="text-sm text-amber-800">Your account is inactive. Ordering is disabled. Please contact support.</p>
+                                </div>
+                            )}
                             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                                 {/* Left Column - Forms */}
                                 <div className="lg:col-span-2 space-y-6">
@@ -534,14 +547,16 @@ export default function Index({
                                         {/* Place Order Button */}
                                         <button
                                             type="submit"
-                                            disabled={processing}
-                                            className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
+                                            disabled={processing || isInactive}
+                                            className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             {processing ? (
                                                 <>
                                                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                                                     {d('checkout.processing', 'Processing...')}
                                                 </>
+                                            ) : isInactive ? (
+                                                d('checkout.inactive', 'Ordering disabled')
                                             ) : (
                                                 <>
                                                     <LockIcon className="h-4 w-4" />

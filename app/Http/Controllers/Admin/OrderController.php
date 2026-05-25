@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -40,12 +41,32 @@ class OrderController extends Controller
     public function update(Request $request, Order $order): RedirectResponse
     {
         $validated = $request->validate([
-            'status' => ['required', 'string', 'max:50'],
+            'status' => ['nullable', 'string', Rule::in(['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'])],
+            'payment_status' => ['nullable', Rule::in(['pending', 'paid', 'failed', 'refunded'])],
         ]);
 
-        $order->update([
-            'status' => $validated['status'],
-        ]);
+        try {
+            $updates = [];
+
+            if (!empty($validated['status'])) {
+                $updates['status'] = $validated['status'];
+            }
+
+            if (!empty($validated['payment_status'])) {
+                $updates['payment_status'] = $validated['payment_status'];
+            }
+
+            if (!empty($updates)) {
+                $order->update($updates);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Order update failed: ' . $e->getMessage(), [
+                'order_id' => $order->id,
+                'data' => $validated,
+            ]);
+            return redirect()->route('admin.orders.show', $order->id)
+                ->withErrors(['update' => 'Failed to update order. Please try again.']);
+        }
 
         return redirect()->route('admin.orders.show', $order->id);
     }

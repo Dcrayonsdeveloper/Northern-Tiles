@@ -113,11 +113,18 @@ class CheckoutController extends Controller
         try {
             $order = $this->checkoutService->processCheckout($cart, $checkoutData);
 
+            // For guest orders (no authenticated user) we bind the order number to
+            // this session so the success page can verify ownership.  Authenticated
+            // users are protected by user_id comparison instead, but we store the
+            // token for them too so the success page logic stays uniform.
+            $request->session()->put('order_success_token', $order->order_number);
+
             return Redirect::route('checkout.success', ['order' => $order->order_number])
                 ->with('success', 'Order placed successfully!');
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
+            \Log::error('Checkout failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return Redirect::back()
                 ->withErrors(['checkout' => 'Failed to process order. Please try again.'])
                 ->withInput();
@@ -135,10 +142,27 @@ class CheckoutController extends Controller
             return Redirect::route('shop.index')->with('error', 'Order not found.');
         }
 
-        // Only show order to owner or if recently placed (within session)
         $userId = $request->user()?->id;
-        if ($orderModel->user_id && $orderModel->user_id !== $userId) {
-            return Redirect::route('shop.index')->with('error', 'Order not found.');
+
+        if ($orderModel->user_id) {
+            // Authenticated order: the logged-in user must be the owner.
+            // The old guard was: if ($orderModel->user_id && ...) which is correct
+            // for this branch, but it silently skipped guest orders (user_id = null).
+            if ($orderModel->user_id !== $userId) {
+                return Redirect::route('shop.index')->with('error', 'Order not found.');
+            }
+        } else {
+            // Guest order: user_id is null, so we cannot do a user comparison.
+            // Instead we verify that this browser session is the one that placed
+            // the order.  session()->pull() reads the token AND removes it in one
+            // step — the success page is a one-time view, exactly like Shopify/Stripe.
+            // After the first load the token is gone, so sharing the URL gives the
+            // recipient a redirect to the shop, not access to the order data.
+            $sessionToken = $request->session()->pull('order_success_token');
+
+            if ($sessionToken !== $order) {
+                return Redirect::route('shop.index')->with('error', 'Order not found.');
+            }
         }
 
         $orderModel->load('items');

@@ -91,9 +91,9 @@ class CartController extends Controller
                     'id' => $item->id,
                     'product_id' => $item->product_id,
                     'variant_id' => $item->variant_id,
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                    'line_total' => $item->price * $item->quantity,
+                    'quantity' => (float) $item->quantity,
+                    'price' => (float) $item->price,
+                    'line_total' => (float) ($item->price * $item->quantity),
                     'is_sample' => (bool) $item->is_sample,
                     'product' => [
                         'id' => $product->id,
@@ -150,6 +150,12 @@ class CartController extends Controller
                 $request->input('options', []),
                 (bool) $request->input('is_sample', false)
             );
+        } catch (\App\Domain\Cart\Exceptions\ProductNotPurchasableException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'error_code' => 'product_not_purchasable',
+            ], 422);
         } catch (\App\Domain\Cart\Exceptions\SampleLimitExceededException $e) {
             return response()->json([
                 'success' => false,

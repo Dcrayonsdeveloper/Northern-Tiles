@@ -38,6 +38,13 @@ class CartService
         // Samples are always free — shipping covers the cost
         $price = $isSample ? 0 : ($variant ? $variant->price : $product->price);
 
+        // Zero-price products are display-only and cannot be purchased
+        if (!$isSample && (float) $price <= 0) {
+            throw new \App\Domain\Cart\Exceptions\ProductNotPurchasableException(
+                "'{$product->name}' is not available for purchase."
+            );
+        }
+
         // Enforce sample maximum (5 per order, hard cap)
         if ($isSample) {
             $max = \App\Domain\Cart\Services\PricingService::SAMPLE_MAX_QUANTITY;
@@ -159,6 +166,11 @@ class CartService
         foreach ($cart->items as $item) {
             if (!$item->product || !$item->product->is_active) {
                 $errors[] = "Product '{$item->product?->name}' is no longer available";
+                continue;
+            }
+
+            if (!$item->is_sample && (float) $item->product->price <= 0) {
+                $errors[] = "'{$item->product->name}' is not available for purchase.";
                 continue;
             }
 

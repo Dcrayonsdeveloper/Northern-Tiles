@@ -326,6 +326,9 @@ class Product extends Model
     // Helpers
     public function isInStock(): bool
     {
+        if ((float) $this->price <= 0) {
+            return false;
+        }
         if ($this->variants()->exists()) {
             return $this->variants()->active()->inStock()->exists();
         }

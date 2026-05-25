@@ -1,9 +1,15 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
+const paymentBadgeClass = (status) =>
+    status === 'paid'
+        ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+        : 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200';
+
 export default function Show({ order }) {
     const { data, setData, put, processing } = useForm({
         status: order?.status ?? 'pending',
+        payment_status: order?.payment_status ?? 'pending',
     });
 
     const submit = (e) => {
@@ -94,27 +100,49 @@ export default function Show({ order }) {
                         </div>
                     </div>
 
-                    <form onSubmit={submit} className="mt-5 space-y-2">
-                        <label className="block text-xs font-medium text-gray-700">Status</label>
-                        <select
-                            value={data.status}
-                            onChange={(e) => setData('status', e.target.value)}
-                            className="admin-select"
-                        >
-                            <option value="pending">pending</option>
-                            <option value="paid">paid</option>
-                            <option value="processing">processing</option>
-                            <option value="shipped">shipped</option>
-                            <option value="delivered">delivered</option>
-                            <option value="cancelled">cancelled</option>
-                        </select>
+                    <div className="mt-4 flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Payment:</span>
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${paymentBadgeClass(order?.payment_status)}`}>
+                            {order?.payment_status === 'paid' ? 'Paid' : 'Pending'}
+                        </span>
+                    </div>
+
+                    <form onSubmit={submit} className="mt-5 space-y-3">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700">Order Status</label>
+                            <select
+                                value={data.status}
+                                onChange={(e) => setData('status', e.target.value)}
+                                className="admin-select mt-1"
+                            >
+                                <option value="pending">pending</option>
+                                <option value="processing">processing</option>
+                                <option value="shipped">shipped</option>
+                                <option value="delivered">delivered</option>
+                                <option value="cancelled">cancelled</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700">Payment Status</label>
+                            <select
+                                value={data.payment_status}
+                                onChange={(e) => setData('payment_status', e.target.value)}
+                                className="admin-select mt-1"
+                            >
+                                <option value="pending">pending</option>
+                                <option value="paid">paid</option>
+                                <option value="failed">failed</option>
+                                <option value="refunded">refunded</option>
+                            </select>
+                        </div>
 
                         <button
                             type="submit"
                             disabled={processing}
-                            className="btn-primary mt-3 w-full"
+                            className="btn-primary w-full"
                         >
-                            Update Status
+                            Update
                         </button>
                     </form>
                 </div>

@@ -42,6 +42,7 @@ export default function Index({ users }) {
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Name</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Email</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Admin</th>
+                                <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Status</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Actions</th>
                             </tr>
                         </thead>
@@ -55,12 +56,21 @@ export default function Index({ users }) {
                                         <td className="px-4 py-2 text-xs text-gray-700">{u.email}</td>
                                         <td className="px-4 py-2 text-xs">
                                             {u.is_admin ? (
-                                                <span className="badge-brand">
-                                                    Yes
+                                                <span className="badge-brand">Yes</span>
+                                            ) : (
+                                                <span className="badge-muted">No</span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-2 text-xs">
+                                            {u.is_active ? (
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                                    <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                                                    Active
                                                 </span>
                                             ) : (
-                                                <span className="badge-muted">
-                                                    No
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700 ring-1 ring-inset ring-red-200">
+                                                    <span className="h-1 w-1 rounded-full bg-red-500" />
+                                                    Inactive
                                                 </span>
                                             )}
                                         </td>
@@ -76,7 +86,7 @@ export default function Index({ users }) {
                                 ))
                             ) : (
                                 <tr>
-                                    <td className="px-4 py-6 text-xs text-gray-600" colSpan={4}>
+                                    <td className="px-4 py-6 text-xs text-gray-600" colSpan={5}>
                                         No users.
                                     </td>
                                 </tr>

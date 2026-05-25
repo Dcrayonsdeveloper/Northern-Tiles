@@ -65,8 +65,12 @@ class HandleInertiaRequests extends Middleware
                 ),
             ],
             'flash' => [
-                'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
+                'success'     => fn () => $request->session()->get('success'),
+                'error'       => fn () => $request->session()->get('error'),
+                // Forwarded by AuthenticatedSessionController on account lockout.
+                // The frontend reads this to start a countdown timer and disable
+                // the submit button until the lockout window expires.
+                'retry_after' => fn () => $request->session()->get('retry_after'),
             ],
             // footerConfig, tracking, org schema, social — lazy on navigations
             'footerConfig' => \Inertia\Inertia::lazy(fn () => app(FooterConfigService::class)->getConfig()),

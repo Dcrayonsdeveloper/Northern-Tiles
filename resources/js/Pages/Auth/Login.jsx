@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -5,10 +6,55 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { useD } from '@/Support/dictionary';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+
+/**
+ * Countdown timer driven by flash.retry_after from the server.
+ *
+ * Returns `{ countdown, isLocked }`:
+ *   countdown — seconds remaining (0 = not locked)
+ *   isLocked  — true while countdown > 0
+ *
+ * Design choices:
+ *  - Cascading setTimeout instead of setInterval: each state change schedules
+ *    exactly one timer, which cleans itself up via the useEffect return.
+ *    No interval can "pile up" if a render is delayed.
+ *  - seedRef prevents re-triggering for the same retry_after value (e.g. if
+ *    the parent re-renders without a new server response).
+ *  - Wall-clock accuracy is sufficient for a 60-second window; drift from
+ *    setTimeout is under 1 s per minute in practice.
+ */
+function useLoginCountdown(retryAfter) {
+    const [countdown, setCountdown] = useState(0);
+    const seedRef = useRef(0);
+
+    // Sync from server: only reset when a genuinely new retry_after arrives.
+    useEffect(() => {
+        const sec = retryAfter ?? 0;
+        if (sec > 0 && sec !== seedRef.current) {
+            seedRef.current = sec;
+            setCountdown(sec);
+        }
+    }, [retryAfter]);
+
+    // Tick: schedule a decrement every second while locked.
+    useEffect(() => {
+        if (countdown <= 0) return;
+        const t = setTimeout(
+            () => setCountdown((c) => Math.max(0, c - 1)),
+            1000,
+        );
+        return () => clearTimeout(t);
+    }, [countdown]);
+
+    return { countdown, isLocked: countdown > 0 };
+}
 
 export default function Login({ status, canResetPassword }) {
     const d = useD();
+    const { flash } = usePage().props;
+    const { countdown, isLocked } = useLoginCountdown(flash?.retry_after);
+
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -17,7 +63,7 @@ export default function Login({ status, canResetPassword }) {
 
     const submit = (e) => {
         e.preventDefault();
-
+        if (isLocked) return;
         post(route('login'), {
             onFinish: () => reset('password'),
         });
@@ -61,7 +107,10 @@ export default function Login({ status, canResetPassword }) {
                 </div>
 
                 <div className="mt-4">
-                    <InputLabel htmlFor="password" value={d('auth.password.label')} />
+                    <InputLabel
+                        htmlFor="password"
+                        value={d('auth.password.label')}
+                    />
 
                     <TextInput
                         id="password"
@@ -91,6 +140,16 @@ export default function Login({ status, canResetPassword }) {
                     </label>
                 </div>
 
+                {isLocked && (
+                    <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        Too many failed attempts. Try again in{' '}
+                        <span className="font-semibold tabular-nums">
+                            {countdown}s
+                        </span>
+                        .
+                    </div>
+                )}
+
                 <div className="mt-4 flex items-center justify-end">
                     {canResetPassword && (
                         <Link
@@ -101,8 +160,13 @@ export default function Login({ status, canResetPassword }) {
                         </Link>
                     )}
 
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        {d('auth.sign_in.button')}
+                    <PrimaryButton
+                        className="ms-4"
+                        disabled={processing || isLocked}
+                    >
+                        {isLocked
+                            ? `Locked (${countdown}s)`
+                            : d('auth.sign_in.button')}
                     </PrimaryButton>
                 </div>
 

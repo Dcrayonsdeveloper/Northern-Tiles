@@ -24,6 +24,9 @@ class CheckoutService
      */
     public function processCheckout(Cart $cart, array $data): Order
     {
+        // Eager-load relationships once so all downstream code uses cached data
+        $cart->load(['items.product', 'items.variant']);
+
         // Validate cart has items
         if ($cart->isEmpty()) {
             throw ValidationException::withMessages([
@@ -84,6 +87,7 @@ class CheckoutService
                     'sku' => $item->variant?->sku ?? $item->product->sku ?? null,
                     'quantity' => $item->quantity,
                     'price' => $item->price,
+                    'line_total' => $item->price * $item->quantity,
                     'tax' => 0, // Tax is calculated at order level
                     'options_json' => $item->options_json,
                     'is_sample' => (bool) $item->is_sample,

@@ -1,6 +1,19 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link } from '@inertiajs/react';
 
+const orderStatusClasses = {
+    pending:    'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200',
+    processing: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
+    shipped:    'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200',
+    delivered:  'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+    cancelled:  'bg-red-50 text-red-700 ring-1 ring-red-200',
+};
+
+const paymentBadgeClass = (status) =>
+    status === 'paid'
+        ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+        : 'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200';
+
 function Pagination({ links }) {
     if (!links?.length) return null;
 
@@ -43,6 +56,7 @@ export default function Index({ orders }) {
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Customer</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Total</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Status</th>
+                                <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Payment</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Created</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Actions</th>
                             </tr>
@@ -62,8 +76,13 @@ export default function Index({ orders }) {
                                             {o.currency} {o.total}
                                         </td>
                                         <td className="px-4 py-2 text-xs">
-                                            <span className="badge-muted">
+                                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${orderStatusClasses[o.status] ?? 'bg-gray-50 text-gray-700 ring-1 ring-gray-200'}`}>
                                                 {o.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-2 text-xs">
+                                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${paymentBadgeClass(o.payment_status)}`}>
+                                                {o.payment_status === 'paid' ? 'Paid' : 'Pending'}
                                             </span>
                                         </td>
                                         <td className="px-4 py-2 text-xs text-gray-600">
@@ -81,7 +100,7 @@ export default function Index({ orders }) {
                                 ))
                             ) : (
                                 <tr>
-                                    <td className="px-4 py-6 text-xs text-gray-600" colSpan={6}>
+                                    <td className="px-4 py-6 text-xs text-gray-600" colSpan={7}>
                                         No orders yet.
                                     </td>
                                 </tr>
