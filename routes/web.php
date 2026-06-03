@@ -172,6 +172,10 @@ Route::middleware(['auth', 'verified', AdminMiddleware::class])
         Route::get('/settings/site', [SiteSettingsController::class, 'edit'])->name('settings.site.edit');
         Route::put('/settings/site', [SiteSettingsController::class, 'update'])->name('settings.site.update');
 
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
         require __DIR__.'/admin.php';
     });
 
