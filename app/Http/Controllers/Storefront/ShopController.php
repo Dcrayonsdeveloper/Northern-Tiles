@@ -134,9 +134,23 @@ class ShopController extends Controller
                     $query->orderByDesc('id');
                 }
             })
-            ->with(['category:id,name,slug'])
+            ->with([
+                'category:id,name,slug',
+                'media' => fn ($q) => $q->where('type', 'image')->orderByDesc('is_primary')->orderBy('sort'),
+            ])
             ->paginate(12)
             ->withQueryString();
+
+        // Resolve primary image URL per product using the eager-loaded media,
+        // then strip the relation so it isn't serialised to the frontend payload.
+        $products->getCollection()->transform(function ($product) {
+            $primary = $product->media->first();
+            if ($primary) {
+                $product->image_url = $primary->url;
+            }
+            $product->unsetRelation('media');
+            return $product;
+        });
 
         $categories = Category::query()
             ->whereNull('parent_id')

@@ -73,7 +73,7 @@ class CartController extends Controller
             ]);
         }
 
-        $cart->load(['items.product', 'items.variant']);
+        $cart->load(['items.product.primaryImage', 'items.variant']);
 
         // Always re-evaluate and apply the best eligible coupon on every cart fetch.
         // This ensures the UI reflects the correct coupon even when the sidebar opens
@@ -99,7 +99,7 @@ class CartController extends Controller
                         'id' => $product->id,
                         'name' => $product->name,
                         'slug' => $product->slug,
-                        'image_url' => $product->image_url ?? '/images/placeholder-product.svg',
+                        'image_url' => $product->primaryImage->first()?->url ?? $product->image_url,
                         'compare_at_price' => $product->compare_at_price,
                         'sqm_per_box' => $product->sqm_per_box,
                     ],
@@ -168,7 +168,7 @@ class CartController extends Controller
         $this->upsellService->clearCache($cart);
 
         // Reload cart with fresh data
-        $cart = $cart->fresh(['items.product', 'items.variant']);
+        $cart = $cart->fresh(['items.product.primaryImage', 'items.variant']);
 
         // Re-evaluate and auto-apply the best eligible coupon
         $this->couponService->autoApplyBestCoupon($cart);
@@ -189,7 +189,7 @@ class CartController extends Controller
                     'id' => $item->product->id,
                     'name' => $item->product->name,
                     'slug' => $item->product->slug,
-                    'image_url' => $item->product->image_url ?? '/images/placeholder-product.svg',
+                    'image_url' => $item->product->primaryImage->first()?->url ?? $item->product->image_url,
                     'sqm_per_box' => $item->product->sqm_per_box,
                 ],
             ],
@@ -245,7 +245,7 @@ class CartController extends Controller
         $this->upsellService->clearCache($cart);
 
         // Reload cart with fresh data
-        $cart = $cart->fresh(['items.product', 'items.variant']);
+        $cart = $cart->fresh(['items.product.primaryImage', 'items.variant']);
 
         // Re-evaluate and auto-apply the best eligible coupon
         $this->couponService->autoApplyBestCoupon($cart);
@@ -283,7 +283,7 @@ class CartController extends Controller
         $this->upsellService->clearCache($cart);
 
         // Reload cart with fresh data
-        $cart = $cart->fresh(['items.product', 'items.variant']);
+        $cart = $cart->fresh(['items.product.primaryImage', 'items.variant']);
 
         // Re-evaluate and auto-apply the best eligible coupon
         $this->couponService->autoApplyBestCoupon($cart);
@@ -354,7 +354,7 @@ class CartController extends Controller
         $this->upsellService->clearCache($cart);
 
         // Evaluate and apply the best eligible coupon so it's active at checkout.
-        $cart = $cart->fresh(['items.product', 'items.variant']);
+        $cart = $cart->fresh(['items.product.primaryImage', 'items.variant']);
         $this->couponService->autoApplyBestCoupon($cart);
 
         return response()->json([

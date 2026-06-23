@@ -50,7 +50,12 @@ class ProductMedia extends Model
 
     public function getUrlAttribute(): string
     {
-        return Storage::disk('public')->url($this->path);
+        // External URLs (S3, CDN, Shopify) — return as-is
+        if (str_starts_with($this->path, 'http://') || str_starts_with($this->path, 'https://')) {
+            return $this->path;
+        }
+        // Locally stored files: use root-relative path so it works on any port (dev/prod)
+        return '/storage/' . ltrim($this->path, '/');
     }
 
     public function getPosterUrlAttribute(): ?string
