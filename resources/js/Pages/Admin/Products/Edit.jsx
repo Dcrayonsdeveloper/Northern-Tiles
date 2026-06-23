@@ -927,13 +927,16 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                 {[
                                     { key: 'name',               label: 'Name' },
                                     { key: 'style',              label: 'Style' },
-                                    { key: 'colours',            label: 'Colours' },
+                                    { key: 'colour',             label: 'Colours' },
                                     { key: 'finish',             label: 'Finish' },
                                     { key: 'material',           label: 'Material' },
                                     { key: 'size_nominal',       label: 'Size (Nominal)' },
                                     { key: 'thickness',          label: 'Thickness' },
+                                    { key: 'core',               label: 'Core' },
+                                    { key: 'underlay',           label: 'Underlay' },
                                     { key: 'variation',          label: 'Variation' },
                                     { key: 'application_space',  label: 'Application Space' },
+                                    { key: 'pricing',            label: 'Pricing' },
                                     { key: 'country_of_origin',  label: 'Country of Origin' },
                                     { key: 'quantity_per_box',   label: 'Quantity Per Box' },
                                 ].map(({ key, label }) => (

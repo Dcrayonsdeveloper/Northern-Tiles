@@ -143,6 +143,7 @@ export default function Footer() {
                 { label: 'Mapei', href: '/trade-supplies/mapei' },
                 { label: 'ARDEX', href: '/trade-supplies/ardex' },
                 { label: 'Soudal', href: '/trade-supplies/soudal' },
+                { label: 'Durotech', href: '/trade-supplies/durotech' },
                 { label: 'Levelling Systems', href: '/trade-supplies/levelling-systems' },
                 { label: 'Waterproofing', href: '/trade-supplies/waterproofing' },
             ],

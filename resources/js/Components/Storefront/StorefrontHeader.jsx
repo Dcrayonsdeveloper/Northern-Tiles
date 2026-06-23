@@ -321,6 +321,7 @@ const DEFAULT_NAV = [
             { label: 'Smart Tile Waste', url: '/shop?category=smart-waste' },
             { label: 'ARDEX', url: '/shop?category=ardex' },
             { label: 'Soudal', url: '/shop?category=soudal' },
+            { label: 'Durotech', url: '/shop?category=durotech' },
         ],
     },
     {
