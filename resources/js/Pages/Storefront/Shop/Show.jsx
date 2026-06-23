@@ -31,27 +31,65 @@ const SPEC_FIELDS = [
     { key: 'Material',           icon: SI.cube     },
     { key: 'Size (Nominal)',      icon: SI.resize   },
     { key: 'Thickness',          icon: SI.updown   },
+    { key: 'Core',               icon: SI.cube     },
+    { key: 'Underlay',           icon: SI.updown   },
     { key: 'Variation',          icon: SI.sliders  },
     { key: 'Application Space',  icon: SI.home     },
+    { key: 'Pricing',            icon: SI.tag      },
     { key: 'Country of Origin',  icon: SI.globe    },
     { key: 'Quantity Per Box',   icon: SI.box      },
 ];
 
-// JSON key → SPEC_FIELDS label mapping (must match admin Edit.jsx spec keys)
+// Standard flooring keys in display order
 const SPEC_JSON_KEYS = [
-    'name', 'style', 'colours', 'finish', 'material',
-    'size_nominal', 'thickness', 'variation', 'application_space',
+    'name', 'style', 'colour', 'finish', 'material',
+    'size_nominal', 'thickness', 'core', 'underlay',
+    'variation', 'application_space', 'pricing',
     'country_of_origin', 'quantity_per_box',
 ];
 
+// Icon lookup for non-standard keys
+const EXTRA_ICONS = {
+    type: SI.tag, classification: SI.tag, composition: SI.cube,
+    environmental: SI.sparkles, recoat_time: SI.updown, tile_over_time: SI.updown,
+    flood_test: SI.home, size: SI.resize, base: SI.cube, toxicity: SI.sparkles,
+    odour: SI.sparkles, application: SI.home, drying_time: SI.updown,
+    primary_use: SI.home, system_component: SI.cube, size_thickness: SI.resize,
+    visibility: SI.sliders, compatibility: SI.sliders, installation: SI.home,
+    material: SI.cube, packaging: SI.box, slip_rating: SI.updown,
+};
+
+function toLabel(key) {
+    return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function specsFromJson(json) {
     if (!json || typeof json !== 'object') return [];
-    return SPEC_FIELDS.map((f, i) => {
-        const val = json[SPEC_JSON_KEYS[i]];
-        return val && String(val).trim()
-            ? { label: f.key, value: String(val).trim(), icon: f.icon }
-            : null;
-    }).filter(Boolean);
+
+    const shown = new Set();
+    const rows = [];
+
+    // 1. Standard fields in fixed order
+    SPEC_JSON_KEYS.forEach((k, i) => {
+        const val = json[k];
+        if (val && String(val).trim()) {
+            rows.push({ label: SPEC_FIELDS[i].key, value: String(val).trim(), icon: SPEC_FIELDS[i].icon });
+            shown.add(k);
+        }
+    });
+
+    // 2. Any remaining keys not in the standard list (e.g. Durotech fields)
+    Object.entries(json).forEach(([k, val]) => {
+        if (!shown.has(k) && val && String(val).trim()) {
+            rows.push({
+                label: toLabel(k),
+                value: String(val).trim(),
+                icon: EXTRA_ICONS[k] ?? SI.tag,
+            });
+        }
+    });
+
+    return rows;
 }
 
 function parseSpecifications(html) {
@@ -249,6 +287,7 @@ function SBtn({ dir, disabled, onClick }) {
 /* ── Available Coupons ────────────────────────────────────────────── */
 function AvailableCoupons({ coupons = [] }) {
     const [copiedCode, setCopiedCode] = useState(null);
+    const [open, setOpen] = useState(false);
 
     const copyCode = useCallback(async (text) => {
         try {
@@ -271,10 +310,24 @@ function AvailableCoupons({ coupons = [] }) {
     if (!coupons?.length) return null;
     return (
         <div className="mt-6 rounded-lg border border-dashed border-green-300 bg-green-50 p-4">
-            <div className="flex items-center gap-2 mb-3">
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                aria-expanded={open}
+                className={`flex w-full items-center gap-2 text-left focus:outline-none ${open ? 'mb-3' : ''}`}
+            >
                 <Tag c="h-5 w-5 text-green-600" />
                 <span className="text-sm font-semibold text-green-800">Available Offers</span>
-            </div>
+                <span className="rounded-full bg-green-200 px-2 py-0.5 text-[10px] font-bold text-green-800">{coupons.length}</span>
+                <svg
+                    className={`ml-auto h-4 w-4 text-green-700 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                    aria-hidden="true"
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            {open && (
             <div className="space-y-2">
                 {coupons.map((coupon, i) => {
                     const isCopied = copiedCode === coupon.code;
@@ -329,6 +382,7 @@ function AvailableCoupons({ coupons = [] }) {
                     );
                 })}
             </div>
+            )}
         </div>
     );
 }
@@ -337,25 +391,52 @@ function AvailableCoupons({ coupons = [] }) {
    SECTION: Image Gallery with Thumbnails
    ═══════════════════════════════════════════════════════════════════ */
 function ImageGallery({ product, discountPercent }) {
-    // Build image list: always start with the main image_url (e.g. Shopify CDN),
-    // then append any media entries that are real external URLs (not local storage paths).
+    // Build image list: start with image_url, then append product media images.
+    // For locally-stored media (path doesn't start with http), use a relative
+    // /storage/{path} URL so it works at any port regardless of APP_URL.
     const rawImages = [];
     if (product.image_url) rawImages.push(product.image_url);
     if (product.media?.length) {
         product.media
             .filter(m => m.type === 'image')
-            .map(m => m.url || m.path)
-            .filter(u => u && /^https?:\/\//i.test(u) && !u.includes('localhost') && !u.includes('127.0.0.1'))
+            .map(m => {
+                if (m.path && !/^https?:\/\//i.test(m.path)) {
+                    return `/storage/${m.path}`;
+                }
+                return m.url || m.path;
+            })
+            .filter(Boolean)
             .forEach(u => { if (!rawImages.includes(u)) rawImages.push(u); });
     }
     const images = rawImages.filter(Boolean).length ? rawImages.filter(Boolean) : [null];
 
     const [active, setActive] = useState(0);
 
+    const renderThumb = (img, i) => (
+        <button
+            key={i}
+            type="button"
+            onClick={() => setActive(i)}
+            className={`flex-shrink-0 h-16 w-16 overflow-hidden rounded-lg border-2 bg-white transition ${i === active ? 'border-brand' : 'border-gray-200 opacity-60 hover:opacity-100'}`}
+        >
+            <ProductImage src={img} alt="" className="h-full w-full object-contain" />
+        </button>
+    );
+
     return (
-        <div>
-            {/* Main image */}
-            <div className="relative aspect-square overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex gap-2 sm:gap-3">
+            {/* Vertical thumbnail column on the LEFT (mobile + desktop) */}
+            {images.length > 1 && (
+                <div
+                    className="flex flex-col gap-2 overflow-y-auto"
+                    style={{ scrollbarWidth: 'none', maxHeight: '100%' }}
+                >
+                    {images.map(renderThumb)}
+                </div>
+            )}
+
+            {/* Main image on the RIGHT */}
+            <div className="relative flex-1 aspect-square overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <ProductImage src={images[active]} alt={product.name} className="h-full w-full object-contain" />
                 {discountPercent > 0 && (
                     <div className="absolute left-3 top-3 rounded-md bg-brand px-3 py-1 text-sm font-bold text-white">
@@ -363,16 +444,6 @@ function ImageGallery({ product, discountPercent }) {
                     </div>
                 )}
             </div>
-            {/* Thumbnails */}
-            {images.length > 1 && (
-                <div className="mt-3 flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                    {images.map((img, i) => (
-                        <button key={i} type="button" onClick={() => setActive(i)} className={`flex-shrink-0 h-16 w-16 overflow-hidden rounded-lg border-2 bg-white transition ${i === active ? 'border-brand' : 'border-gray-200 opacity-60 hover:opacity-100'}`}>
-                            <ProductImage src={img} alt="" className="h-full w-full object-contain" />
-                        </button>
-                    ))}
-                </div>
-            )}
         </div>
     );
 }
@@ -791,8 +862,25 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                                 <p className="mt-1 text-[12px] text-gray-500">Inclusive of all taxes · Total calculated in cart</p>
                             </div>
 
-                            {/* Product Specifications */}
-                            <SpecificationsBlock specifications={product.specifications} description={product.description} />
+                            {/* Add to Cart + Buy Now */}
+                            <div className="mt-2 flex flex-wrap gap-3">
+                                <button
+                                    type="button"
+                                    onClick={addToCart}
+                                    disabled={!inStock || addingToCart || buyingNow}
+                                    className="flex-1 rounded-lg bg-brand px-8 py-3 text-sm font-bold text-white uppercase tracking-wide hover:bg-brand-dark transition disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {addingToCart ? 'Adding...' : 'Add to Cart'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={buyNow}
+                                    disabled={!inStock || addingToCart || buyingNow}
+                                    className="flex-1 rounded-lg border-2 border-brand px-8 py-3 text-sm font-bold text-brand uppercase tracking-wide hover:bg-brand/5 transition disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {buyingNow ? 'Processing...' : 'Buy Now'}
+                                </button>
+                            </div>
 
                             {/* Stock status */}
                             <div className="relative mt-4">
@@ -830,49 +918,43 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                                     </div>
                                 </div>
                                 {hasBoxes && <p className="mt-1.5 text-[11px] text-gray-400">We round up to the full box</p>}
-                                {hasBoxes ? (
-                                    <div className="mt-3 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-[13px] text-gray-700">
-                                        <span className="font-semibold text-gray-900">{boxCount} {boxCount === 1 ? 'Box' : 'Boxes'}</span>
-                                        <span className="text-gray-500"> = {billedSqm.toFixed(2)} m²</span>
-                                        <span className="ml-2 text-[12px] font-bold text-gray-900">${(parseFloat(product.price || 0) * billedSqm).toFixed(2)}</span>
-                                        {wastage && <span className="ml-2 text-[11px] text-brand">(incl. 10% wastage)</span>}
-                                    </div>
-                                ) : (
-                                    <div className="mt-3 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-[13px] text-gray-700">
-                                        <span className="font-semibold text-gray-900">{billedSqm.toFixed(2)} m²</span>
-                                        <span className="ml-2 text-[12px] font-bold text-gray-900">${(parseFloat(product.price || 0) * billedSqm).toFixed(2)}</span>
-                                        {wastage && <span className="ml-2 text-[11px] text-brand">(incl. 10% wastage)</span>}
-                                    </div>
-                                )}
                             </div>
 
-                            {/* Add to Cart + Buy Now */}
-                            <div className="mt-4 flex flex-wrap gap-3">
-                                <button
-                                    type="button"
-                                    onClick={addToCart}
-                                    disabled={!inStock || addingToCart || buyingNow}
-                                    className="flex-1 rounded-lg bg-brand px-8 py-3 text-sm font-bold text-white uppercase tracking-wide hover:bg-brand-dark transition disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    {addingToCart ? 'Adding...' : 'Add to Cart'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={buyNow}
-                                    disabled={!inStock || addingToCart || buyingNow}
-                                    className="flex-1 rounded-lg border-2 border-brand px-8 py-3 text-sm font-bold text-brand uppercase tracking-wide hover:bg-brand/5 transition disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    {buyingNow ? 'Processing...' : 'Buy Now'}
-                                </button>
-                            </div>
+                            {/* Subtotal line */}
+                            {hasBoxes ? (
+                                <div className="mt-3 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-[13px] text-gray-700">
+                                    <span className="font-semibold text-gray-900">{boxCount} {boxCount === 1 ? 'Box' : 'Boxes'}</span>
+                                    <span className="text-gray-500"> = {billedSqm.toFixed(2)} m²</span>
+                                    <span className="ml-2 text-[12px] font-bold text-gray-900">${(parseFloat(product.price || 0) * billedSqm).toFixed(2)}</span>
+                                    {wastage && <span className="ml-2 text-[11px] text-brand">(incl. 10% wastage)</span>}
+                                </div>
+                            ) : (
+                                <div className="mt-3 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-[13px] text-gray-700">
+                                    <span className="font-semibold text-gray-900">{billedSqm.toFixed(2)} m²</span>
+                                    <span className="ml-2 text-[12px] font-bold text-gray-900">${(parseFloat(product.price || 0) * billedSqm).toFixed(2)}</span>
+                                    {wastage && <span className="ml-2 text-[11px] text-brand">(incl. 10% wastage)</span>}
+                                </div>
+                            )}
 
                             {/* Get a Sample */}
                             <div className="mt-2">
-                                <button type="button" onClick={addSample} disabled={addingSample} className="w-full rounded-lg border-2 border-gray-800 px-8 py-2.5 text-sm font-bold text-gray-800 uppercase tracking-wide hover:bg-gray-800 hover:text-white transition disabled:opacity-50">
-                                    {addingSample ? 'Adding...' : 'Get a Sample'}
+                                <button type="button" onClick={addSample} disabled={addingSample} className="group w-full rounded-lg border-2 border-gray-800 px-8 py-1.5 hover:bg-gray-800 transition disabled:opacity-50">
+                                    <span className="block text-sm font-bold uppercase tracking-wide leading-tight text-gray-800 group-hover:text-white">
+                                        {addingSample ? 'Adding...' : 'Get a Sample'}
+                                    </span>
+                                    <span className="block text-[10px] font-normal normal-case tracking-normal leading-tight text-gray-500 group-hover:text-gray-300">
+                                        Free samples · Max 5 per order · Flat $9.99 shipping
+                                    </span>
                                 </button>
                             </div>
-                            <p className="mt-1.5 text-[11px] text-gray-400">Free samples · Max 5 per order · Flat $9.99 shipping</p>
+
+                            {/* Product Specifications */}
+                            <div className="mt-4">
+                                <SpecificationsBlock specifications={product.specifications} description={product.description} />
+                            </div>
+
+                            {/* Coupons */}
+                            <AvailableCoupons coupons={availableCoupons} />
 
                             {/* Wishlist + Share */}
                             <div className="mt-4 flex items-center gap-4">
@@ -885,9 +967,6 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                                     Share
                                 </button>
                             </div>
-
-                            {/* Coupons */}
-                            <AvailableCoupons coupons={availableCoupons} />
 
                             {/* Description */}
                             {product.description && (
