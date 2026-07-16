@@ -322,6 +322,9 @@ const DEFAULT_NAV = [
             { label: 'ARDEX', url: '/shop?category=ardex' },
             { label: 'Soudal', url: '/shop?category=soudal' },
             { label: 'Durotech', url: '/shop?category=durotech' },
+            { label: 'ATA Products', url: '/shop?category=ata-products' },
+            { label: 'Efflock', url: '/shop?category=efflock' },
+            { label: 'Soudal Silicone & Caulks', url: '/shop?category=soudal-silicone-caulks' },
         ],
     },
     {
