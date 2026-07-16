@@ -32,3 +32,23 @@ nul
 
 # SSH Keys (NEVER commit these!)
 /.ssh-keys/
+
+# Data — NEVER commit; upload directly to the server instead.
+# Code goes via GitHub, data (DB + images) goes straight to the server.
+# database dumps
+*.sql
+# CSV data exports
+/public/products_export*
+# junk screenshot, not a real site asset
+/public/images/aglasiangranito.com_.png
+# loose product/import photos dropped in the project root
+/*.heic
+/*.jpg
+/*.jpeg
+# ad-hoc python scripts used to extract content from Google Docs before import
+/extract_doc*.py
+# per-doc product content import commands (one-off — not tracked going forward)
+/app/Console/Commands/ImportDoc*Command.php
+# intermediate artifacts produced by the extract_doc*.py scripts
+/doc*_heic.json
+/doc*_php_map.txt
