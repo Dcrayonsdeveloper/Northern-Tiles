@@ -33,6 +33,9 @@ nul
 # SSH Keys (NEVER commit these!)
 /.ssh-keys/
 
+# Database backups — contain every customer record. Never commit.
+/storage/backups
+
 # Data — NEVER commit; upload directly to the server instead.
 # Code goes via GitHub, data (DB + images) goes straight to the server.
 # database dumps

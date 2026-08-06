@@ -76,7 +76,12 @@ class ProfileTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+
+        // Users are soft-deleted, not removed, so their orders keep a valid
+        // customer reference. The row survives but is excluded from normal
+        // queries and the account can no longer be used.
+        $this->assertSoftDeleted($user);
+        $this->assertNull(User::where('id', $user->id)->first());
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

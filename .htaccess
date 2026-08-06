@@ -1,20 +1,102 @@
+# =============================================================================
+# FALLBACK web-root protection — Northern TILE Distributors
+# =============================================================================
+# PREFERRED SETUP: point the domain's document root at  <base>/current/public
+# (hPanel -> Websites -> Manage -> Advanced). Then the application root is
+# never web-accessible and this file is not needed.
+#
+# This file exists only for the legacy layout where the Laravel application
+# root IS the web root. In that layout every file in the project is reachable
+# over HTTP by default — including .env, database dumps and logs. The deny
+# rules below close that hole. Do not remove them while that layout is in use.
+# =============================================================================
+
+# --- Block access to sensitive files ----------------------------------------
+# Apache only blocks .ht* out of the box; .env and friends are served happily.
+<FilesMatch "^\.(env|env\..*|git.*|htaccess|htpasswd|editorconfig|gitattributes|gitignore)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(sql|sqlite|sqlite3|db|log|bak|backup|swp|save|old|orig|dist|ini|sh|bat|ps1|lock|yml|yaml|py)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^(composer\.(json|lock|phar)|package(-lock)?\.json|artisan|phpunit\.xml|vite\.config\.js|tailwind\.config\.js|postcss\.config\.js|jsconfig\.json|README\.md|.*\.md)$">
+    Require all denied
+</FilesMatch>
+
+# --- Block access to application directories --------------------------------
+# Nothing outside public/ should ever be served directly.
+RedirectMatch 404 ^/(app|bootstrap|config|database|resources|routes|storage|tests|vendor|node_modules|scripts|deploy)(/|$)
+
+# Never expose directory listings.
+Options -Indexes
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Redirect /build/* to /public/build/*
+    # Belt-and-braces: hard 403 for sensitive paths even if the FilesMatch
+    # rules above are bypassed by an alternate path spelling.
+    RewriteRule ^\.env - [F,L]
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|storage|tests|vendor|node_modules|scripts|deploy)/ - [F,L]
+    RewriteRule \.(sql|log|bak|backup|old|orig)$ - [F,L]
+
+    # --- Asset routing for the legacy layout --------------------------------
     RewriteCond %{REQUEST_URI} ^/build/(.*)$
     RewriteRule ^build/(.*)$ /public/build/$1 [L]
 
-    # Redirect /images/* to /public/images/*
     RewriteCond %{REQUEST_URI} ^/images/(.*)$
     RewriteRule ^images/(.*)$ /public/images/$1 [L]
 
-    # Redirect /favicon.* to /public/favicon.*
+    RewriteCond %{REQUEST_URI} ^/storage/(.*)$
+    RewriteRule ^storage/(.*)$ /public/storage/$1 [L]
+
     RewriteCond %{REQUEST_URI} ^/favicon\.(.*)$
     RewriteRule ^favicon\.(.*)$ /public/favicon.$1 [L]
 
-    # Send all other requests to Laravel's public/index.php
+    # Send all other requests to Laravel's front controller.
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ /public/index.php [L]
+</IfModule>
+
+# --- Force HTTPS -------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteCond %{REQUEST_URI} !^/\.well-known/
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</IfModule>
+
+# --- Security headers --------------------------------------------------------
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-XSS-Protection "0"
+    # HSTS — only enable once HTTPS is confirmed working on all subdomains.
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
+</IfModule>
+
+# --- Compression -------------------------------------------------------------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/x-javascript
+    AddOutputFilterByType DEFLATE application/json application/xml
+    AddOutputFilterByType DEFLATE image/svg+xml application/rss+xml
+</IfModule>
+
+# --- Browser caching ---------------------------------------------------------
+<IfModule mod_expires.c>
+    ExpiresActive On
+    # Vite emits content-hashed filenames, so these are safe to cache hard.
+    <FilesMatch "\.(js|css|woff2|woff|ttf|otf|eot)$">
+        ExpiresDefault "access plus 1 year"
+        Header append Cache-Control "public, immutable"
+    </FilesMatch>
+    <FilesMatch "\.(jpg|jpeg|png|gif|webp|avif|svg|ico)$">
+        ExpiresDefault "access plus 6 months"
+        Header append Cache-Control "public"
+    </FilesMatch>
+    ExpiresByType text/html "access plus 0 seconds"
 </IfModule>

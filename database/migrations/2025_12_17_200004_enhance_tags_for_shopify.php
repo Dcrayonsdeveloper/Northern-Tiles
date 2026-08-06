@@ -8,6 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // create_tags_table indexed `type`. The index must go before the column
+        // does — SQLite refuses to drop a column an index still references, so
+        // leaving it in place breaks every fresh install and the test suite.
+        if (Schema::hasIndex('tags', 'tags_type_index')) {
+            Schema::table('tags', function (Blueprint $table) {
+                $table->dropIndex('tags_type_index');
+            });
+        }
+
         Schema::table('tags', function (Blueprint $table) {
             // Update type enum if needed (drop and recreate)
             if (Schema::hasColumn('tags', 'type')) {
@@ -29,6 +38,10 @@ return new class extends Migration
         Schema::table('tags', function (Blueprint $table) {
             if (!Schema::hasIndex('tags', 'tags_source_index')) {
                 $table->index('source');
+            }
+            // Restore the index dropped above, now that `type` exists again.
+            if (!Schema::hasIndex('tags', 'tags_type_index')) {
+                $table->index('type');
             }
         });
     }
