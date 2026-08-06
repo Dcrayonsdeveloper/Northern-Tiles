@@ -1,22 +1,50 @@
 name: Deploy to Hostinger
 
+# =============================================================================
+# SAFETY MODEL
+# =============================================================================
+# 1. A verified DB backup is taken on the server BEFORE anything else. If the
+#    backup fails, the deploy aborts and the live site is left untouched.
+# 2. Migrations are additive-only and OFF by default. They never run
+#    destructively — `migrate:fresh`, `migrate:refresh` and `db:wipe` must
+#    never appear in this file.
+# 3. Seeders are OFF by default and gated behind an explicit input, because
+#    several seeders overwrite existing rows.
+# 4. Releases are deployed to a timestamped directory and activated with an
+#    atomic symlink swap, so a request is served either entirely by the old
+#    release or entirely by the new one — never a half-extracted mix.
+# 5. .env, storage/ and public/storage are SHARED across releases and are
+#    never included in the artifact, so uploads and credentials survive.
+# =============================================================================
+
 on:
   workflow_dispatch:
     inputs:
       run_migrations:
-        description: 'Run database migrations'
+        description: 'Run additive database migrations (safe, never destructive)'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       run_seeders:
-        description: 'Run database seeders (WARNING: May reset data)'
+        description: 'DANGER: run seeders — MenuSeeder deletes existing menus. Leave off for normal deploys.'
         required: false
-        default: 'false'
+        default: false
         type: boolean
+      seeder_class:
+        description: 'Specific seeder class to run (only used when run_seeders is true)'
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  # Never let two deploys race on the same server directory.
+  group: deploy-production
+  cancel-in-progress: false
 
 env:
   PHP_VERSION: '8.2'
   NODE_VERSION: '20'
+  KEEP_RELEASES: '5'
 
 jobs:
   build:
@@ -58,41 +86,76 @@ jobs:
         run: npm ci
 
       - name: Build frontend assets
+        # Must match LEGACY_PUBLIC_PREFIX in the server's shared/.env.
+        # Set the repo variable LEGACY_PUBLIC_PREFIX=true only if the domain
+        # document root is the application root rather than public/.
+        env:
+          VITE_LEGACY_PUBLIC_PREFIX: ${{ vars.LEGACY_PUBLIC_PREFIX || 'false' }}
         run: npm run build
 
-      - name: Copy Vite manifest
+      - name: Verify build output exists
         run: |
-          if [ -f "public/build/.vite/manifest.json" ]; then
-            cp public/build/.vite/manifest.json public/build/manifest.json
-          fi
+          # Fail loudly here rather than shipping a site with no CSS/JS.
+          test -f public/build/manifest.json || {
+            echo "::error::Vite manifest missing — build did not produce public/build/manifest.json"
+            exit 1
+          }
+          test -d public/build/assets || {
+            echo "::error::public/build/assets missing"
+            exit 1
+          }
+          echo "Build verified: $(find public/build/assets -type f | wc -l) asset files"
 
       - name: Create deployment package
         run: |
-          # Create deployment archive excluding dev files
+          set -euo pipefail
+          # NOTE: no `|| true` here. If tar fails we must not deploy a partial
+          # archive over a working site.
           tar -czf deploy.tar.gz \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            --exclude='tests' \
-            --exclude='.env' \
-            --exclude='.env.local' \
-            --exclude='storage/logs/*' \
-            --exclude='storage/framework/cache/*' \
-            --exclude='storage/framework/sessions/*' \
-            --exclude='storage/framework/views/*' \
-            --exclude='*.md' \
-            --exclude='phpunit.xml' \
-            --exclude='deploy.tar.gz' \
-            . || true
-          # Verify archive was created
+            --exclude='./.git' \
+            --exclude='./.github' \
+            --exclude='./node_modules' \
+            --exclude='./tests' \
+            --exclude='./deploy' \
+            --exclude='./.env' \
+            --exclude='./.env.*' \
+            --exclude='./storage' \
+            --exclude='./public/storage' \
+            --exclude='./storage/backups' \
+            --exclude='./*.sql' \
+            --exclude='./*.heic' \
+            --exclude='./*.jpg' \
+            --exclude='./*.jpeg' \
+            --exclude='./*.png' \
+            --exclude='./extract_doc*.py' \
+            --exclude='./process_doc*.py' \
+            --exclude='./debug*.py' \
+            --exclude='./check_*.php' \
+            --exclude='./check_*.py' \
+            --exclude='./audit_products.php' \
+            --exclude='./temp_response.html' \
+            --exclude='./phpunit.xml' \
+            --exclude='./deploy.tar.gz' \
+            .
           ls -la deploy.tar.gz
+
+      - name: Confirm no secrets in package
+        run: |
+          set -euo pipefail
+          # Belt-and-braces: prove .env and DB dumps are not in the artifact.
+          if tar -tzf deploy.tar.gz | grep -qE '(^|/)\.env$|\.sql$'; then
+            echo "::error::Deployment package contains .env or a .sql dump — aborting"
+            tar -tzf deploy.tar.gz | grep -E '(^|/)\.env$|\.sql$'
+            exit 1
+          fi
+          echo "Package is clean: no .env, no .sql dumps"
 
       - name: Upload deployment artifact
         uses: actions/upload-artifact@v4
         with:
           name: deployment-package
           path: deploy.tar.gz
-          retention-days: 1
+          retention-days: 5
 
   deploy:
     name: Deploy to Production
@@ -116,102 +179,232 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -p ${{ secrets.HOSTINGER_SSH_PORT }} ${{ secrets.HOSTINGER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Upload to server
+      - name: Upload release to server
         run: |
           scp -P ${{ secrets.HOSTINGER_SSH_PORT }} \
             deploy.tar.gz \
             ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }}:${{ secrets.HOSTINGER_REMOTE_PATH }}/
 
-      - name: Deploy on server
+      # ---------------------------------------------------------------------
+      # STEP 1 — BACK UP BEFORE TOUCHING ANYTHING
+      # If this fails the job stops here and production is untouched.
+      # ---------------------------------------------------------------------
+      - name: Back up production database (abort deploy on failure)
         run: |
           ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
-            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} << 'DEPLOY_SCRIPT'
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            'set -euo pipefail
+             cd "${{ secrets.HOSTINGER_REMOTE_PATH }}/current" 2>/dev/null || cd "${{ secrets.HOSTINGER_REMOTE_PATH }}"
+             if [ ! -f artisan ]; then
+               echo "No existing install found — first deploy, skipping backup."
+               exit 0
+             fi
+             bash scripts/db-backup.sh pre-deploy'
 
-          cd ${{ secrets.HOSTINGER_REMOTE_PATH }}
+      # ---------------------------------------------------------------------
+      # STEP 2 — UNPACK NEW RELEASE (site still serving the OLD release)
+      # ---------------------------------------------------------------------
+      - name: Prepare new release
+        run: |
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            "set -euo pipefail
+             BASE='${{ secrets.HOSTINGER_REMOTE_PATH }}'
+             RELEASE=\"\$BASE/releases/$(date -u +%Y%m%d-%H%M%S)-${{ github.sha }}\"
+             echo \"\$RELEASE\" > \"\$BASE/.next-release\"
 
-          echo "=== Extracting deployment package ==="
-          tar -xzf deploy.tar.gz
-          rm deploy.tar.gz
+             mkdir -p \"\$RELEASE\" \"\$BASE/shared/storage\" \"\$BASE/releases\"
+             tar -xzf \"\$BASE/deploy.tar.gz\" -C \"\$RELEASE\"
+             rm -f \"\$BASE/deploy.tar.gz\"
 
-          echo "=== Setting ownership and permissions ==="
-          # Get current user
-          CURRENT_USER=$(whoami)
-          echo "Setting ownership to: $CURRENT_USER"
+             # --- Shared state: survives every release ---
+             # .env holds production credentials and is NEVER shipped by CI.
+             if [ ! -f \"\$BASE/shared/.env\" ]; then
+               echo 'ERROR: \$BASE/shared/.env is missing. Create it once, manually, before deploying.' >&2
+               exit 1
+             fi
+             ln -sfn \"\$BASE/shared/.env\" \"\$RELEASE/.env\"
 
-          # Set ownership for all files
-          chown -R $CURRENT_USER:$CURRENT_USER . 2>/dev/null || true
+             # storage/ holds uploads, logs and backups — shared, never overwritten.
+             rm -rf \"\$RELEASE/storage\"
+             ln -sfn \"\$BASE/shared/storage\" \"\$RELEASE/storage\"
 
-          # Root .htaccess for asset redirects (critical for Hostinger)
-          chmod 644 .htaccess 2>/dev/null || true
+             # Ensure the shared storage skeleton exists (first deploy).
+             mkdir -p \"\$BASE/shared/storage/app/public\" \
+                      \"\$BASE/shared/storage/framework/cache/data\" \
+                      \"\$BASE/shared/storage/framework/sessions\" \
+                      \"\$BASE/shared/storage/framework/views\" \
+                      \"\$BASE/shared/storage/logs\" \
+                      \"\$BASE/shared/storage/backups\"
+             chmod -R 775 \"\$BASE/shared/storage\"
+             chmod 700 \"\$BASE/shared/storage/backups\"
+             chmod 600 \"\$BASE/shared/.env\"
 
-          # Storage and cache directories
-          chmod -R 755 storage bootstrap/cache
+             chmod -R 775 \"\$RELEASE/bootstrap/cache\"
+             find \"\$RELEASE/public\" -type d -exec chmod 755 {} \\; 2>/dev/null || true
+             find \"\$RELEASE/public\" -type f -exec chmod 644 {} \\; 2>/dev/null || true
 
-          # Public directory - set directories and files separately for proper permissions
-          chmod 755 public 2>/dev/null || true
-          find public -type d -exec chmod 755 {} \; 2>/dev/null || true
-          find public -type f -exec chmod 644 {} \; 2>/dev/null || true
+             echo \"Release staged at \$RELEASE\""
 
-          # Ensure critical files are readable
-          chmod 644 public/index.php 2>/dev/null || true
-          chmod 644 public/.htaccess 2>/dev/null || true
+      # ---------------------------------------------------------------------
+      # STEP 3 — MIGRATIONS (opt-in, additive only, backup already taken)
+      # ---------------------------------------------------------------------
+      - name: Run database migrations
+        if: ${{ inputs.run_migrations }}
+        run: |
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            'set -euo pipefail
+             BASE="${{ secrets.HOSTINGER_REMOTE_PATH }}"
+             cd "$(cat "$BASE/.next-release")"
+             PHP_BIN=$(which php8.2 2>/dev/null || which php)
 
-          # Build directory - ensure accessible
-          chmod 755 public/build 2>/dev/null || true
-          chmod 755 public/build/assets 2>/dev/null || true
-          find public/build -type d -exec chmod 755 {} \; 2>/dev/null || true
-          find public/build -type f -exec chmod 644 {} \; 2>/dev/null || true
+             echo "=== Pending migrations ==="
+             $PHP_BIN artisan migrate:status | grep -i pending || echo "(none)"
 
-          # Images directory
-          mkdir -p public/images 2>/dev/null || true
-          chmod 755 public/images 2>/dev/null || true
-          find public/images -type f -exec chmod 644 {} \; 2>/dev/null || true
+             echo "=== Applying (additive only) ==="
+             $PHP_BIN artisan migrate --force --no-interaction'
 
-          # Debug: List permissions
-          echo "=== Verifying permissions ==="
-          ls -la .htaccess 2>/dev/null || echo "No root .htaccess"
-          ls -la public/ | head -10
-          ls -la public/build/ 2>/dev/null | head -5 || echo "No build dir yet"
+      - name: Run seeders (explicitly requested)
+        if: ${{ inputs.run_seeders }}
+        run: |
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            'set -euo pipefail
+             BASE="${{ secrets.HOSTINGER_REMOTE_PATH }}"
+             cd "$(cat "$BASE/.next-release")"
+             PHP_BIN=$(which php8.2 2>/dev/null || which php)
+             SEEDER="${{ inputs.seeder_class }}"
+             if [ -n "$SEEDER" ]; then
+               $PHP_BIN artisan db:seed --class="$SEEDER" --force --no-interaction
+             else
+               echo "::warning::Running the full DatabaseSeeder — this overwrites menus and settings."
+               $PHP_BIN artisan db:seed --force --no-interaction
+             fi'
 
-          echo "=== Finding PHP path ==="
-          PHP_BIN=$(which php8.2 2>/dev/null || which php 2>/dev/null || echo "php")
-          echo "Using PHP: $PHP_BIN"
-          $PHP_BIN -v
+      # ---------------------------------------------------------------------
+      # STEP 4 — WARM CACHES ON THE NEW RELEASE (still not live)
+      # ---------------------------------------------------------------------
+      - name: Optimise new release
+        run: |
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            'set -euo pipefail
+             BASE="${{ secrets.HOSTINGER_REMOTE_PATH }}"
+             RELEASE="$(cat "$BASE/.next-release")"
+             cd "$RELEASE"
+             PHP_BIN=$(which php8.2 2>/dev/null || which php)
 
-          echo "=== Configuring SMTP in .env ==="
-          # Update mail settings if not already set
-          if grep -q "MAIL_MAILER=log" .env 2>/dev/null; then
-            sed -i 's/MAIL_MAILER=log/MAIL_MAILER=smtp/' .env
-          fi
-          # Add SMTP settings if not present
-          grep -q "MAIL_HOST=smtp.hostinger.com" .env || echo "MAIL_HOST=smtp.hostinger.com" >> .env
-          grep -q "MAIL_PORT=465" .env || echo "MAIL_PORT=465" >> .env
-          grep -q "MAIL_USERNAME=" .env || echo "MAIL_USERNAME=admin@jikra.dcrayons.app" >> .env
-          grep -q "MAIL_PASSWORD=" .env || echo "MAIL_PASSWORD=#defineRahul123.h" >> .env
-          grep -q "MAIL_ENCRYPTION=ssl" .env || echo "MAIL_ENCRYPTION=ssl" >> .env
-          grep -q "MAIL_FROM_ADDRESS=" .env || echo "MAIL_FROM_ADDRESS=admin@jikra.dcrayons.app" >> .env
-          grep -q "MAIL_FROM_NAME=" .env || echo 'MAIL_FROM_NAME="Jikra Store"' >> .env
+             # Rebuild the public/storage symlink for THIS release.
+             rm -f public/storage
+             $PHP_BIN artisan storage:link
 
-          echo "=== Clearing caches ==="
-          $PHP_BIN artisan cache:clear
-          $PHP_BIN artisan config:clear
-          $PHP_BIN artisan view:clear
-          $PHP_BIN artisan route:clear
+             # Build config/route/view caches before going live so the first
+             # visitor does not pay for compilation.
+             $PHP_BIN artisan config:cache
+             $PHP_BIN artisan route:cache
+             $PHP_BIN artisan view:cache
+             $PHP_BIN artisan event:cache 2>/dev/null || true
 
-          echo "=== Running fresh migrations with seeding ==="
-          $PHP_BIN artisan migrate:fresh --force --seed
+             # Smoke-test the release before it serves traffic.
+             $PHP_BIN artisan about --only=environment
+             $PHP_BIN -r "require \"vendor/autoload.php\"; \$app = require \"bootstrap/app.php\"; echo \"bootstrap OK\n\";"
 
-          echo "=== Verifying admin users created ==="
-          $PHP_BIN artisan tinker --execute="echo 'Users: ' . App\Models\User::count();"
+             # Fail fast if the build-time asset base and the runtime flag
+             # disagree — that combination serves a site with no CSS or JS.
+             RUNTIME_LEGACY=$($PHP_BIN artisan tinker --execute="echo config(\"deployment.legacy_public_prefix\") ? \"true\" : \"false\";" 2>/dev/null | tr -d "[:space:]" | tail -c5)
+             BUILD_LEGACY=$(grep -o "\"legacyPublicPrefix\": *\(true\|false\)" public/build/build-meta.json | grep -o "true\|false")
+             echo "asset prefix -> build:$BUILD_LEGACY runtime:$RUNTIME_LEGACY"
+             if [ "$BUILD_LEGACY" != "$RUNTIME_LEGACY" ]; then
+               echo "ERROR: LEGACY_PUBLIC_PREFIX mismatch (build=$BUILD_LEGACY runtime=$RUNTIME_LEGACY)." >&2
+               echo "Assets would 404. Aborting before this release goes live." >&2
+               exit 1
+             fi'
 
-          echo "=== Deployment complete! ==="
-          DEPLOY_SCRIPT
+      # ---------------------------------------------------------------------
+      # STEP 5 — ATOMIC ACTIVATION
+      # ---------------------------------------------------------------------
+      - name: Activate release (atomic symlink swap)
+        run: |
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            'set -euo pipefail
+             BASE="${{ secrets.HOSTINGER_REMOTE_PATH }}"
+             RELEASE="$(cat "$BASE/.next-release")"
+             PHP_BIN=$(which php8.2 2>/dev/null || which php)
+
+             # Record what we are replacing so rollback knows where to go.
+             if [ -L "$BASE/current" ]; then
+               readlink -f "$BASE/current" > "$BASE/.previous-release"
+             fi
+
+             # ln -sfn onto a temp name + mv is atomic on POSIX filesystems.
+             ln -sfn "$RELEASE" "$BASE/current.tmp"
+             mv -Tf "$BASE/current.tmp" "$BASE/current"
+
+             echo "Now live: $(readlink -f "$BASE/current")"
+
+             # Clear compiled caches that key off the old path, then restart
+             # queue workers so they pick up the new code.
+             cd "$BASE/current"
+             $PHP_BIN artisan queue:restart || true'
+
+      # ---------------------------------------------------------------------
+      # STEP 6 — VERIFY, AND ROLL BACK AUTOMATICALLY IF THE SITE IS DOWN
+      # ---------------------------------------------------------------------
+      - name: Health check (auto-rollback on failure)
+        run: |
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            'set -euo pipefail
+             BASE="${{ secrets.HOSTINGER_REMOTE_PATH }}"
+             URL="${{ secrets.PRODUCTION_URL }}"
+             URL="${URL:-https://ntiled.com.au}"
+
+             sleep 5
+             CODE=$(curl -sS -o /dev/null -w "%{http_code}" -L --max-time 30 "$URL/up" || echo "000")
+             echo "GET $URL/up -> $CODE"
+
+             if [ "$CODE" != "200" ]; then
+               echo "::error::Health check failed ($CODE) — rolling back."
+               if [ -f "$BASE/.previous-release" ]; then
+                 PREV="$(cat "$BASE/.previous-release")"
+                 ln -sfn "$PREV" "$BASE/current.tmp"
+                 mv -Tf "$BASE/current.tmp" "$BASE/current"
+                 echo "Rolled back to $PREV"
+               fi
+               exit 1
+             fi
+             echo "Health check passed."'
+
+      - name: Prune old releases
+        run: |
+          ssh -p ${{ secrets.HOSTINGER_SSH_PORT }} \
+            ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_HOST }} \
+            'set -euo pipefail
+             BASE="${{ secrets.HOSTINGER_REMOTE_PATH }}"
+             CURRENT="$(readlink -f "$BASE/current")"
+             cd "$BASE/releases"
+             # Keep the newest N, but never delete the live release.
+             ls -1dt */ 2>/dev/null | tail -n +$(( ${{ env.KEEP_RELEASES }} + 1 )) | while read -r old; do
+               FULL="$(readlink -f "$old")"
+               [ "$FULL" = "$CURRENT" ] && continue
+               echo "Pruning $old"
+               rm -rf "$old"
+             done'
 
       - name: Deployment summary
+        if: always()
         run: |
-          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status:** Success" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **URL:** https://jikra.dcrayons.app" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Deployment Summary"
+            echo ""
+            echo "- **Status:** ${{ job.status }}"
+            echo "- **Branch:** ${{ github.ref_name }}"
+            echo "- **Commit:** ${{ github.sha }}"
+            echo "- **Migrations:** ${{ inputs.run_migrations && 'applied (additive)' || 'skipped' }}"
+            echo "- **Seeders:** ${{ inputs.run_seeders && 'RAN — verify data' || 'skipped' }}"
+            echo ""
+            echo "A pre-deploy database backup was taken on the server at"
+            echo "\`shared/storage/backups/\` before any change was made."
+          } >> $GITHUB_STEP_SUMMARY

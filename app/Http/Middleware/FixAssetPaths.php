@@ -11,8 +11,14 @@ class FixAssetPaths
     {
         $response = $next($request);
 
-        // Only apply in production (Hostinger) - skip for local development
-        if (app()->environment('local')) {
+        // Only rewrites paths for the legacy Hostinger layout, where the
+        // document root is the application root and assets therefore live
+        // under /public/*. When the document root correctly points at
+        // public/, this must stay off or every asset URL gains a bogus
+        // /public prefix and 404s.
+        //
+        // Must match VITE_LEGACY_PUBLIC_PREFIX used at build time.
+        if (! config('deployment.legacy_public_prefix')) {
             return $response;
         }
 

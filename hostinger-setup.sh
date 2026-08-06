@@ -1,35 +1,85 @@
-#!/bin/bash
-# Hostinger Setup Script - Run this on the server
-# Upload this file and execute: bash hostinger-setup.sh
+#!/usr/bin/env bash
+# =============================================================================
+# ONE-TIME server bootstrap — Northern TILE Distributors
+# =============================================================================
+# Run this ONCE on a fresh server to create the shared directory layout that
+# deploy-hostinger.yml expects. It is safe to re-run: it never overwrites an
+# existing .env, never touches the database, and never rotates APP_KEY.
+#
+#   bash hostinger-setup.sh /home/uXXXXXXXX/domains/ntiled.com.au
+#
+# Resulting layout:
+#   <base>/shared/.env          <- production credentials (you create/edit this)
+#   <base>/shared/storage/      <- uploads, logs, backups (survives all deploys)
+#   <base>/releases/<stamp>/    <- one directory per deploy
+#   <base>/current -> releases/<stamp>   <- atomic symlink, the live release
+#
+# IMPORTANT: point the domain's document root at  <base>/current/public
+# in hPanel → Websites → Manage → Advanced. That keeps .env, storage/ and
+# vendor/ outside the web root. Do NOT move public/* into the web root.
+# =============================================================================
 
-cd ~/domains/jikra.dcrayons.app/public_html
+set -euo pipefail
 
-echo "=== Step 1: Moving public folder contents ==="
-mv public/.htaccess . 2>/dev/null || true
-mv public/* . 2>/dev/null || true
-rm -rf public
+BASE="${1:-}"
 
-echo "=== Step 2: Updating index.php paths ==="
-sed -i "s|__DIR__.'/../vendor|__DIR__.'/vendor|g" index.php
-sed -i "s|__DIR__.'/../bootstrap|__DIR__.'/bootstrap|g" index.php
+if [ -z "$BASE" ]; then
+    echo "Usage: bash hostinger-setup.sh <absolute-path-to-domain-dir>" >&2
+    echo "Example: bash hostinger-setup.sh /home/u123456789/domains/ntiled.com.au" >&2
+    exit 1
+fi
 
-echo "=== Step 3: Setting permissions ==="
-chmod -R 755 storage bootstrap/cache
-chmod 644 .env
+echo "=== Creating shared layout under $BASE ==="
+mkdir -p "$BASE/releases"
+mkdir -p "$BASE/shared/storage/app/public"
+mkdir -p "$BASE/shared/storage/framework/cache/data"
+mkdir -p "$BASE/shared/storage/framework/sessions"
+mkdir -p "$BASE/shared/storage/framework/views"
+mkdir -p "$BASE/shared/storage/logs"
+mkdir -p "$BASE/shared/storage/backups"
 
-echo "=== Step 4: Generating app key ==="
-php artisan key:generate --force
+chmod -R 775 "$BASE/shared/storage"
+chmod 700 "$BASE/shared/storage/backups"   # backups contain all your data
 
-echo "=== Step 5: Creating storage link ==="
-php artisan storage:link
+# --- .env -------------------------------------------------------------------
+# Created empty-if-missing ONLY. An existing .env is never modified, so a
+# re-run can't clobber production credentials or the APP_KEY.
+if [ -f "$BASE/shared/.env" ]; then
+    echo "=== shared/.env already exists — leaving it untouched ==="
+else
+    echo "=== Creating shared/.env placeholder ==="
+    cat > "$BASE/shared/.env" <<'ENVEOF'
+# Fill this in from .env.production.example, then run:
+#   php artisan key:generate --force     (ONLY on a brand-new install)
+#
+# WARNING: never regenerate APP_KEY on a site that already has data.
+# It is used to encrypt sessions and any encrypted columns; changing it
+# makes existing encrypted values permanently unreadable.
+APP_KEY=
+ENVEOF
+fi
+chmod 600 "$BASE/shared/.env"
 
-echo "=== Step 6: Caching config ==="
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-
-echo "=== Setup Complete! ==="
-echo "Now update .env with database credentials and run:"
-echo "php artisan migrate --force"
-echo "php artisan db:seed --class=DictionarySeeder --force"
-echo "php artisan db:seed --class=HomePageSeeder --force"
+echo ""
+echo "=== Setup complete ==="
+echo ""
+echo "Next steps (manual, in order):"
+echo ""
+echo "  1. Edit $BASE/shared/.env"
+echo "     Copy the contents of .env.production.example and fill in real values."
+echo ""
+echo "  2. If this is a BRAND-NEW install with no data, generate an app key:"
+echo "       cd $BASE/shared && php artisan key:generate --force"
+echo "     If you are migrating an EXISTING site, copy the OLD APP_KEY across"
+echo "     verbatim instead. Do not generate a new one."
+echo ""
+echo "  3. Point the domain document root at:  $BASE/current/public"
+echo "     (hPanel -> Websites -> Manage -> Advanced -> Change document root)"
+echo ""
+echo "  4. Import your database, then run the GitHub Actions deploy workflow."
+echo ""
+echo "  5. Add the cron entries from PRODUCTION_DEPLOYMENT.md section 4"
+echo "     (scheduler, queue worker and nightly backup — none run without them)."
+echo ""
+echo "  6. Verify:  cd $BASE/current && bash scripts/preflight-check.sh"
+echo ""
