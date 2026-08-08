@@ -442,8 +442,7 @@ function AboutTemplate({ page }) {
                                     <div>
                                         <div className="text-sm font-semibold text-gray-900">Phone</div>
                                         <div className="mt-0.5 space-y-0.5">
-                                            <a href="tel:0394646623" className="block text-sm text-gray-500 hover:text-brand">03 9464 6623</a>
-                                            <a href="tel:0416924324" className="block text-sm text-gray-500 hover:text-brand">0416 924 324</a>
+                                            <a href="tel:0394646623" className="block text-sm text-gray-500 hover:text-brand">(03) 9464 6623</a>
                                         </div>
                                     </div>
                                 </div>
@@ -482,7 +481,7 @@ function AboutTemplate({ page }) {
                                     className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-brand/30 hover:text-brand"
                                 >
                                     <IconPhone />
-                                    Call 03 9464 6623
+                                    Call (03) 9464 6623
                                 </a>
                             </div>
                             <div className="mt-6 rounded-xl bg-brand/5 p-4">

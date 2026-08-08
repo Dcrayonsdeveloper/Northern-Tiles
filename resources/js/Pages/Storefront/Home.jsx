@@ -393,7 +393,7 @@ function OurShowroom() {
                         </p>
                         <div className="mt-6 space-y-2 text-[13px] text-[#4a4a4a]">
                             <p><span className="font-semibold text-[#333]">Hours:</span> Mon–Fri 9:00 AM – 5:00 PM | Sat 9:00 AM – 1:00 PM</p>
-                            <p><span className="font-semibold text-[#333]">Phone:</span> 03 9464 6623 | 0416 924 324</p>
+                            <p><span className="font-semibold text-[#333]">Phone:</span> (03) 9464 6623</p>
                         </div>
                         <Link href="/contact" className="mt-8 inline-block border-2 border-brand px-8 py-3 text-[12px] font-semibold uppercase tracking-[1.5px] text-brand transition hover:bg-brand hover:text-white">
                             Get Directions
@@ -503,7 +503,7 @@ function OurServices() {
     ];
 
     return (
-        <section className="py-16 bg-white">
+        <section className="pt-16 pb-8 bg-white">
             {/* Inline keyframes for clock animation */}
             <style>{`@keyframes ticktock{0%,100%{transform:rotate(0deg)}50%{transform:rotate(20deg)}}`}</style>
             <Container>
@@ -543,7 +543,7 @@ function FeaturedCollections() {
     const { r, l, rr, ck, go } = useHS(380);
 
     return (
-        <section className="py-20 bg-[#f7f7f5]">
+        <section className="pt-10 pb-20 bg-[#f7f7f5]">
             <Container>
                 <div className="text-center mb-10">
                     <p className="text-[11px] font-semibold uppercase tracking-[3px] text-brand mb-2">Featured</p>
@@ -647,7 +647,7 @@ function ShopByCollection() {
                 <div className="mb-12 flex flex-col items-center text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
                     <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[3px] text-brand mb-2">Collections</p>
-                        <h2 className="text-[28px] font-light text-[#222] tracking-[2px] uppercase font-heading">Shop by <span className="font-semibold">Category</span></h2>
+                        <h2 className="text-[28px] font-medium text-[#222] tracking-[2px] uppercase font-heading">Shop by <span className="font-bold">Category</span></h2>
                         <div className="mt-3 h-[2px] w-12 bg-brand sm:mx-0 mx-auto" />
                     </div>
                     <div className="mt-5 hidden gap-2 sm:flex">

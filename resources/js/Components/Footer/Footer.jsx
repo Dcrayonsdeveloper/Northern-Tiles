@@ -66,26 +66,6 @@ const InstagramIcon = () => (
     </svg>
 );
 
-const YouTubeIcon = () => (
-    <svg
-        className="h-5 w-5 fill-[#aaa] transition-colors duration-200 hover:fill-white"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-    >
-        <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-    </svg>
-);
-
-const TikTokIcon = () => (
-    <svg
-        className="h-5 w-5 fill-[#aaa] transition-colors duration-200 hover:fill-white"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-    >
-        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005.8 20.1a6.34 6.34 0 0010.86-4.43V8.65a8.16 8.16 0 004.77 1.52V6.79a4.85 4.85 0 01-1.84-.1z" />
-    </svg>
-);
-
 export default function Footer() {
     const { footerConfig } = usePage().props;
 
@@ -96,14 +76,11 @@ export default function Footer() {
     const brandName = brand.name || 'Northern TILE Distributors';
     const address = brand.address || '19/324 Settlement Road, Thomastown VIC 3074';
     const email = brand.email || 'info@ntiled.com.au';
-    const phone = brand.phone || '03 9464 6623';
-    const phone2 = '0416 924 324';
+    const phone = brand.phone || '(03) 9464 6623';
     const hours = brand.hours || { weekday: 'Mon–Fri 9am – 5pm', saturday: 'Sat 9am – 1pm' };
 
     const facebookUrl = social.facebook || 'https://www.facebook.com/ntiled/';
     const instagramUrl = social.instagram || 'https://www.instagram.com/northern.tile.distributors/';
-    const youtubeUrl = social.youtube || 'https://youtube.com';
-    const tiktokUrl = social.tiktok || 'https://www.tiktok.com/@northern.tile.distributors';
 
     const year = new Date().getFullYear();
 
@@ -228,18 +205,10 @@ export default function Footer() {
                             <div className="space-y-2 text-[13px]">
                                 <p>
                                     <a
-                                        href={`tel:${phone.replace(/\s/g, '')}`}
+                                        href={`tel:${phone.replace(/\D/g, '')}`}
                                         className="text-[#aaa] transition-colors duration-200 hover:text-white"
                                     >
                                         {phone}
-                                    </a>
-                                </p>
-                                <p>
-                                    <a
-                                        href={`tel:${phone2.replace(/\s/g, '')}`}
-                                        className="text-[#aaa] transition-colors duration-200 hover:text-white"
-                                    >
-                                        {phone2}
                                     </a>
                                 </p>
                                 <p>
@@ -274,22 +243,6 @@ export default function Footer() {
                                     aria-label="Instagram"
                                 >
                                     <InstagramIcon />
-                                </a>
-                                <a
-                                    href={youtubeUrl}
-                                    target="_blank"
-                                    rel="noreferrer noopener"
-                                    aria-label="YouTube"
-                                >
-                                    <YouTubeIcon />
-                                </a>
-                                <a
-                                    href={tiktokUrl}
-                                    target="_blank"
-                                    rel="noreferrer noopener"
-                                    aria-label="TikTok"
-                                >
-                                    <TikTokIcon />
                                 </a>
                             </div>
                         </div>

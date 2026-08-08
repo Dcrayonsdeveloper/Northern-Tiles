@@ -253,7 +253,7 @@ class SettingsSeeder extends Seeder
         if (Setting::getValue('company.phone') === null) {
             Setting::query()->updateOrCreate(
                 ['key' => 'company.phone'],
-                ['group' => 'company', 'value_text' => '03 9464 6623'],
+                ['group' => 'company', 'value_text' => '(03) 9464 6623'],
             );
             Setting::forgetCache('company.phone');
         }
