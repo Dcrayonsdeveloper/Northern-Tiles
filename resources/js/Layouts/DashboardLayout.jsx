@@ -89,6 +89,17 @@ function IconTag(props) {
     );
 }
 
+function IconLayers(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+            <path
+                d="M12 2 2 7l10 5 10-5-10-5Zm-7.76 8.62L2 11.73l10 5 10-5-2.24-1.11L12 14.24l-7.76-3.62Zm0 4.5L2 16.23l10 5 10-5-2.24-1.11L12 18.74l-7.76-3.62Z"
+                fill="currentColor"
+            />
+        </svg>
+    );
+}
+
 function IconBox(props) {
     return (
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -499,6 +510,13 @@ export default function DashboardLayout({ title, children }) {
                     href: route('admin.categories.index'),
                     active: route().current('admin.categories.*'),
                     icon: <IconTag className="h-5 w-5" />,
+                },
+                {
+                    key: 'variant-families',
+                    label: 'Variant Families',
+                    href: route('admin.variant-families.index'),
+                    active: route().current('admin.variant-families.*'),
+                    icon: <IconLayers className="h-5 w-5" />,
                 },
                 {
                     key: 'products',

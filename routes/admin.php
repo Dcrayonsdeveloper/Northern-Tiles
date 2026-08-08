@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Auth\Http\Controllers\Admin\RoleController;
+use App\Domain\Catalog\Http\Controllers\Admin\VariantFamilyController;
 use App\Domain\CMS\Http\Controllers\Admin\AuthorController;
 use App\Domain\CMS\Http\Controllers\Admin\PageController;
 use App\Domain\CMS\Http\Controllers\Admin\PostController;
@@ -139,6 +140,21 @@ Route::prefix('collections')->name('collections.')->group(function () {
     Route::post('{collection}/remove-product', [\App\Domain\Catalog\Http\Controllers\Admin\CollectionController::class, 'removeProduct'])->name('remove-product');
     Route::post('preview', [\App\Domain\Catalog\Http\Controllers\Admin\CollectionController::class, 'preview'])->name('preview');
     Route::get('search-products', [\App\Domain\Catalog\Http\Controllers\Admin\CollectionController::class, 'searchProducts'])->name('search-products');
+});
+
+// Variant Families (group standalone products as colour / size variants)
+Route::prefix('variant-families')->name('variant-families.')->group(function () {
+    Route::get('/', [VariantFamilyController::class, 'index'])->name('index');
+    Route::post('/', [VariantFamilyController::class, 'store'])->name('store');
+    // Static routes must be declared before the {family} wildcard.
+    Route::post('reorder', [VariantFamilyController::class, 'reorderFamilies'])->name('reorder');
+    Route::get('search-products', [VariantFamilyController::class, 'searchProducts'])->name('search-products');
+    Route::put('{family}', [VariantFamilyController::class, 'update'])->name('update');
+    Route::delete('{family}', [VariantFamilyController::class, 'destroy'])->name('destroy');
+    Route::post('{family}/products', [VariantFamilyController::class, 'addProduct'])->name('products.add');
+    Route::delete('{family}/products/{product}', [VariantFamilyController::class, 'removeProduct'])->name('products.remove');
+    Route::post('{family}/products/reorder', [VariantFamilyController::class, 'reorderProducts'])->name('products.reorder');
+    Route::post('{family}/default', [VariantFamilyController::class, 'setDefault'])->name('default');
 });
 
 // Abandoned Carts
