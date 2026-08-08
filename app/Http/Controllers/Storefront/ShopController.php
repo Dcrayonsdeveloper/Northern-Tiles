@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Domain\Catalog\Models\Attribute;
+use App\Domain\Catalog\Support\ProductFamily;
 use App\Domain\Marketing\Models\Coupon;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
@@ -172,7 +173,12 @@ class ShopController extends Controller
     {
         abort_unless($product->is_active, 404);
 
-        $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media']);
+        $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media', 'variantFamily']);
+
+        // Same-range products (e.g. every ARGILE tile) presented as a variant
+        // selector. Null when the product isn't in a family, the family is off,
+        // or fewer than 2 members are live.
+        $familyVariants = ProductFamily::selectorFor($product);
 
         // Get related products from same category (app-level shuffle avoids ORDER BY RAND())
         $relatedIds = Product::query()
@@ -209,6 +215,7 @@ class ShopController extends Controller
             'product' => $product,
             'relatedProducts' => $relatedProducts,
             'availableCoupons' => $availableCoupons,
+            'familyVariants' => $familyVariants,
         ]);
     }
 }

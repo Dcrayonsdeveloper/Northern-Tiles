@@ -525,7 +525,7 @@ function NavDropdown({ item }) {
 
     if (!item.children?.length) {
         return (
-            <Link href={item.url} className="px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] text-[#333] hover:text-brand transition-colors font-sans">
+            <Link href={item.url} className="px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] text-white hover:text-white/70 transition-colors font-sans">
                 {item.label}
             </Link>
         );
@@ -533,7 +533,7 @@ function NavDropdown({ item }) {
 
     return (
         <div className="relative" onMouseEnter={enter} onMouseLeave={leave}>
-            <Link href={item.url} className="flex items-center gap-1 px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] text-[#333] hover:text-brand transition-colors font-sans">
+            <Link href={item.url} className="flex items-center gap-1 px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] text-white hover:text-white/70 transition-colors font-sans">
                 {item.label}
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
             </Link>
@@ -596,12 +596,7 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
                         <div className="flex items-center gap-5">
                             <a href="tel:0394646623" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
                                 <PhoneIcon className="h-3.5 w-3.5" />
-                                03 9464 6623
-                            </a>
-                            <span className="hidden sm:inline text-white/40">|</span>
-                            <a href="tel:0416924324" className="hidden sm:flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-                                <PhoneIcon className="h-3.5 w-3.5" />
-                                0416 924 324
+                                (03) 9464 6623
                             </a>
                             <a href="mailto:info@ntiled.com.au" className="hidden sm:flex items-center gap-1.5 hover:opacity-80 transition-opacity">
                                 <MailIcon className="h-3.5 w-3.5" />
@@ -638,11 +633,7 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
                             {/* Phone (desktop) */}
                             <a href="tel:0394646623" className="hidden xl:flex items-center gap-1.5 text-[13px] font-medium text-[#333] hover:text-brand transition-colors">
                                 <PhoneIcon className="h-4 w-4" />
-                                03 9464 6623
-                            </a>
-                            <a href="tel:0416924324" className="hidden xl:flex items-center gap-1.5 text-[13px] font-medium text-[#333] hover:text-brand transition-colors">
-                                <PhoneIcon className="h-4 w-4" />
-                                0416 924 324
+                                (03) 9464 6623
                             </a>
 
                             <div className="hidden xl:block w-px h-5 bg-gray-200 mx-1" />
@@ -692,7 +683,7 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
             </div>
 
             {/* ── Row 3: Nav bar (desktop) ────────────────────────────── */}
-            <div className="bg-white border-b border-gray-100 hidden lg:block">
+            <div className="bg-brand border-b border-brand hidden lg:block">
                 <Container>
                     <nav className="flex items-center justify-center">
                         {navItems.map((item, i) => (

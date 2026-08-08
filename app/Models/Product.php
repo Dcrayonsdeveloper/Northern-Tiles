@@ -14,6 +14,7 @@ use App\Domain\Catalog\Models\ProductOption;
 use App\Domain\Catalog\Models\ProductReview;
 use App\Domain\Catalog\Models\ProductVariant;
 use App\Domain\Catalog\Models\Tag;
+use App\Domain\Catalog\Models\VariantFamily;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,6 +35,8 @@ class Product extends Model
 
     protected $fillable = [
         'category_id',
+        'variant_family_id',
+        'variant_family_position',
         'seller_id',
         'attribute_set_id',
         'created_by',
@@ -122,6 +125,11 @@ class Product extends Model
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'product_category');
+    }
+
+    public function variantFamily(): BelongsTo
+    {
+        return $this->belongsTo(VariantFamily::class);
     }
 
     public function seller(): BelongsTo

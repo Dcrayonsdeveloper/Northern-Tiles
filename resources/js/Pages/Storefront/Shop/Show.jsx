@@ -702,9 +702,85 @@ function RelatedProducts({ products }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   VARIANT FAMILY SELECTOR
+   Sibling products in the same range (e.g. every ARGILE tile). Each card is
+   a real link to that product's own page — no client-side state swap.
+   ═══════════════════════════════════════════════════════════════════ */
+function VariantFamilySelector({ familyVariants }) {
+    const variants = familyVariants?.variants ?? [];
+    if (variants.length < 2) return null;
+
+    const familyName = familyVariants?.family?.name;
+    const currentIndex = variants.findIndex((v) => v.is_current);
+
+    return (
+        <div className="mt-5">
+            <div className="flex items-baseline justify-between gap-2">
+                <label className="text-[13px] font-semibold text-gray-900">
+                    {familyName ? `${familyName} range` : 'Available variants'}
+                    <span className="ml-1.5 font-normal text-gray-500">
+                        ({variants.length} options{currentIndex >= 0 ? ` · viewing ${currentIndex + 1}` : ''})
+                    </span>
+                </label>
+            </div>
+
+            <div className="mt-2 flex gap-2.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible">
+                {variants.map((v) => {
+                    const card = (
+                        <>
+                            <div className="mb-1.5 aspect-square w-full overflow-hidden rounded-md bg-gray-50">
+                                {v.image_url && (
+                                    <img
+                                        src={v.image_url}
+                                        alt={v.label}
+                                        loading="lazy"
+                                        className="h-full w-full object-cover"
+                                    />
+                                )}
+                            </div>
+                            <span className="line-clamp-2 min-h-[2rem] text-[11px] font-medium leading-tight text-gray-800">
+                                {v.label}
+                            </span>
+                            <span className="mt-0.5 text-[13px] font-bold text-gray-900">
+                                ${parseFloat(v.price || 0).toFixed(2)}
+                            </span>
+                            {v.compare_at_price > v.price && (
+                                <span className="text-[11px] text-gray-400 line-through">
+                                    ${parseFloat(v.compare_at_price).toFixed(2)}
+                                </span>
+                            )}
+                            {!v.in_stock && (
+                                <span className="text-[11px] font-medium text-red-600">Out of stock</span>
+                            )}
+                        </>
+                    );
+
+                    const classes =
+                        'flex w-24 flex-shrink-0 flex-col rounded-lg border bg-white p-2 transition-colors sm:w-28 ' +
+                        (v.is_current
+                            ? 'border-brand ring-2 ring-brand/20'
+                            : 'border-gray-200 hover:border-gray-400') +
+                        (v.in_stock ? '' : ' opacity-60');
+
+                    return v.is_current ? (
+                        <div key={v.id} aria-current="true" className={classes}>
+                            {card}
+                        </div>
+                    ) : (
+                        <Link key={v.id} href={route('products.show', v.slug)} className={classes}>
+                            {card}
+                        </Link>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════════════════ */
-export default function Show({ product, relatedProducts, availableCoupons = [] }) {
+export default function Show({ product, relatedProducts, availableCoupons = [], familyVariants = null }) {
     const { settings } = usePage().props;
     const [quantity, setQuantity] = useState(1);
     const [area, setArea] = useState(1);
@@ -861,6 +937,9 @@ export default function Show({ product, relatedProducts, availableCoupons = [] }
                                 </div>
                                 <p className="mt-1 text-[12px] text-gray-500">Inclusive of all taxes · Total calculated in cart</p>
                             </div>
+
+                            {/* Variant family (same range, different colour / size) */}
+                            <VariantFamilySelector familyVariants={familyVariants} />
 
                             {/* Add to Cart + Buy Now */}
                             <div className="mt-2 flex flex-wrap gap-3">
