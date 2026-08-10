@@ -1,5 +1,5 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 
 function Pagination({ links }) {
     if (!links?.length) return null;
@@ -26,6 +26,14 @@ function Pagination({ links }) {
 }
 
 export default function Index({ users }) {
+    const toggleBuilder = (user) => {
+        const message = user.is_builder
+            ? `Revoke builder access for ${user.name}? They drop back to retail pricing but keep their account and orders.`
+            : `Give ${user.name} builder access? They'll be able to use the trade portal and get builder pricing.`;
+        if (!confirm(message)) return;
+        router.patch(route('admin.builder.accounts.toggle', user.id), {}, { preserveScroll: true });
+    };
+
     return (
         <DashboardLayout title="Users">
             <Head title="Users" />
@@ -42,6 +50,7 @@ export default function Index({ users }) {
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Name</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Email</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Admin</th>
+                                <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Builder</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Status</th>
                                 <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Actions</th>
                             </tr>
@@ -62,6 +71,15 @@ export default function Index({ users }) {
                                             )}
                                         </td>
                                         <td className="px-4 py-2 text-xs">
+                                            {u.is_builder ? (
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-inset ring-amber-200">
+                                                    Trade
+                                                </span>
+                                            ) : (
+                                                <span className="badge-muted">No</span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-2 text-xs">
                                             {u.is_active ? (
                                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
                                                     <span className="h-1 w-1 rounded-full bg-emerald-500" />
@@ -75,18 +93,33 @@ export default function Index({ users }) {
                                             )}
                                         </td>
                                         <td className="px-4 py-2">
-                                            <Link
-                                                href={route('admin.users.edit', u.id)}
-                                                className="btn-secondary"
-                                            >
-                                                Edit
-                                            </Link>
+                                            <div className="flex items-center gap-2">
+                                                <Link
+                                                    href={route('admin.users.edit', u.id)}
+                                                    className="btn-secondary"
+                                                >
+                                                    Edit
+                                                </Link>
+                                                {/* Promote an existing customer to trade, or drop them
+                                                    back to retail, without leaving this screen. */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleBuilder(u)}
+                                                    className={`rounded px-2 py-1 text-[11px] font-semibold transition ${
+                                                        u.is_builder
+                                                            ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                    }`}
+                                                >
+                                                    {u.is_builder ? 'Revoke trade' : 'Make builder'}
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td className="px-4 py-6 text-xs text-gray-600" colSpan={5}>
+                                    <td className="px-4 py-6 text-xs text-gray-600" colSpan={6}>
                                         No users.
                                     </td>
                                 </tr>

@@ -57,6 +57,9 @@ class CheckoutService
             // Create order
             $order = Order::create([
                 'user_id' => $cart->user_id,
+                // Stamped now, not derived later: the order stays identifiable
+                // as trade even if the account's builder flag is revoked.
+                'is_builder_order' => (bool) $cart->user?->isBuilder(),
                 'order_number' => $this->generateOrderNumber(),
                 'status' => 'pending',
                 'customer_name' => $data['contact']['name'] ?? null,

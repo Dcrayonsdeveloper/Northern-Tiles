@@ -88,10 +88,19 @@ class CartItem extends Model
         if ($this->is_sample) {
             return 0;
         }
-        if ($this->variant) {
-            return $this->variant->price;
+
+        $retail = (float) ($this->variant
+            ? $this->variant->price
+            : ($this->product->price ?? $this->price));
+
+        if (! $this->product) {
+            return $retail;
         }
-        return $this->product->price ?? $this->price;
+
+        // Re-resolve through builder pricing, otherwise syncPrice() would quietly
+        // reset a trade account's line back to retail on the next cart refresh.
+        return app(\App\Domain\Builder\Services\BuilderPricingService::class)
+            ->effectivePrice($this->product, $retail, $this->cart?->user);
     }
 
     public function syncPrice(): void
