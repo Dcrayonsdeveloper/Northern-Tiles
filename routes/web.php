@@ -164,7 +164,7 @@ Route::middleware(['auth', 'verified', AdminMiddleware::class])
         Route::put('/dashboard/layout', [DashboardLayoutController::class, 'update'])->name('dashboard.layout.update');
         Route::resource('orders', OrderController::class)->only(['index', 'show', 'update']);
         Route::resource('categories', CategoryController::class)->except(['show']);
-        Route::resource('users', UserController::class)->only(['index', 'edit', 'update', 'destroy']);
+        Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
         Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
         Route::resource('messages', ContactMessageController::class)->only(['index', 'show', 'update', 'destroy']);
         Route::get('/settings/ui', [UiSettingsController::class, 'edit'])->name('settings.ui.edit');
