@@ -76,6 +76,9 @@ class CartController extends Controller
             'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
             'quantity' => ['nullable', 'numeric', 'min:0.01', 'max:99'],
             'is_sample' => ['nullable', 'boolean'],
+            'options' => ['nullable', 'array'],
+            'options.colour' => ['nullable', 'string', 'max:100'],
+            'options.finish' => ['nullable', 'string', 'max:100'],
         ]);
 
         $userId = $request->user()?->id;
@@ -89,7 +92,7 @@ class CartController extends Controller
                 $validated['product_id'],
                 $validated['variant_id'] ?? null,
                 $validated['quantity'] ?? 1,
-                [],
+                $validated['options'] ?? [],
                 (bool) ($validated['is_sample'] ?? false)
             );
         } catch (\App\Domain\Cart\Exceptions\ProductNotPurchasableException $e) {
