@@ -33,6 +33,41 @@ class UserController extends Controller
         ]);
     }
 
+    public function create(): Response
+    {
+        return Inertia::render('Admin/Users/Create');
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'is_admin' => ['required', 'boolean'],
+        ]);
+
+        $user = User::create([
+            'name'      => $validated['name'],
+            'email'     => $validated['email'],
+            // The User model casts 'password' as 'hashed', so this is stored
+            // bcrypt-hashed, never in plain text.
+            'password'  => $validated['password'],
+            'is_admin'  => (bool) $validated['is_admin'],
+            'is_active' => true,
+        ]);
+
+        // email_verified_at is not mass-assignable, so set it explicitly.
+        // Admin routes require a verified email; an admin-created account is
+        // trusted, so mark it verified now instead of emailing a link — without
+        // this a new admin could not actually reach the panel.
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', 'User created successfully.');
+    }
+
     public function edit(User $user): Response
     {
         return Inertia::render('Admin/Users/Edit', [

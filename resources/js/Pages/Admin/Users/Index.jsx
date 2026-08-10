@@ -32,6 +32,9 @@ export default function Index({ users }) {
 
             <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-gray-900">Users</div>
+                <Link href={route('admin.users.create')} className="btn-primary">
+                    + New User
+                </Link>
             </div>
 
             <div className="mt-4 rounded-xl border border-gray-200 bg-white shadow-sm">
