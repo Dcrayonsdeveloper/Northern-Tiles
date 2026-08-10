@@ -1,6 +1,9 @@
 <?php
 
 use App\Domain\Auth\Http\Controllers\Admin\RoleController;
+use App\Domain\Builder\Http\Controllers\Admin\BuilderAccountController;
+use App\Domain\Builder\Http\Controllers\Admin\BuilderCatalogController;
+use App\Domain\Builder\Http\Controllers\Admin\BuilderOrderController;
 use App\Domain\Catalog\Http\Controllers\Admin\VariantFamilyController;
 use App\Domain\CMS\Http\Controllers\Admin\AuthorController;
 use App\Domain\CMS\Http\Controllers\Admin\PageController;
@@ -29,6 +32,28 @@ Route::resource('announcements', AnnouncementController::class)->except(['show']
 // Configuration
 Route::get('configuration', [ConfigurationController::class, 'edit'])->name('configuration.edit');
 Route::post('configuration', [ConfigurationController::class, 'update'])->name('configuration.update');
+
+// ── Builder Panel ────────────────────────────────────────────────────
+// Runs the contractor portal from this same admin: which products it
+// carries and at what price, who may log into it, and what they ordered.
+Route::prefix('builder')->name('builder.')->group(function () {
+    // Catalogue — products offered to trade and their prices
+    Route::get('catalog', [BuilderCatalogController::class, 'index'])->name('catalog.index');
+    Route::get('catalog/available', [BuilderCatalogController::class, 'available'])->name('catalog.available');
+    Route::post('catalog', [BuilderCatalogController::class, 'store'])->name('catalog.store');
+    Route::post('catalog/bulk', [BuilderCatalogController::class, 'bulk'])->name('catalog.bulk');
+    Route::put('catalog/{builderProduct}', [BuilderCatalogController::class, 'update'])->name('catalog.update');
+    Route::delete('catalog/{builderProduct}', [BuilderCatalogController::class, 'destroy'])->name('catalog.destroy');
+
+    // Accounts — who gets into the portal
+    Route::get('accounts', [BuilderAccountController::class, 'index'])->name('accounts.index');
+    Route::post('accounts', [BuilderAccountController::class, 'store'])->name('accounts.store');
+    Route::put('accounts/{user}', [BuilderAccountController::class, 'update'])->name('accounts.update');
+    Route::patch('accounts/{user}/toggle', [BuilderAccountController::class, 'toggle'])->name('accounts.toggle');
+
+    // Orders — trade orders only
+    Route::get('orders', [BuilderOrderController::class, 'index'])->name('orders.index');
+});
 
 // Roles & Permissions
 Route::resource('roles', RoleController::class)->except(['show']);

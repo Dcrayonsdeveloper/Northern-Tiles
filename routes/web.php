@@ -19,8 +19,11 @@ use App\Http\Controllers\Public\BlogController;
 use App\Http\Controllers\Public\PageController as PublicPageController;
 use App\Http\Controllers\Public\ShopController as PublicShopController;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\BuilderMiddleware;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\SellerMiddleware;
+use App\Domain\Builder\Http\Controllers\Builder\BuilderDashboardController;
+use App\Domain\Builder\Http\Controllers\Builder\BuilderShopController;
 use App\Domain\Dashboard\Http\Controllers\Admin\AdminDashboardController as WidgetAdminDashboardController;
 use App\Domain\Dashboard\Http\Controllers\Admin\DashboardLayoutController;
 use App\Domain\Dashboard\Http\Controllers\Seller\SellerDashboardController;
@@ -177,6 +180,22 @@ Route::middleware(['auth', 'verified', AdminMiddleware::class])
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
         require __DIR__.'/admin.php';
+    });
+
+// ── Builder (trade) portal ───────────────────────────────────────────
+// Private storefront for approved contractor accounts. Same look as the
+// public site, but scoped to the builder catalogue and priced with the
+// admin-set trade prices. Cart and checkout are the shared ones — the
+// price difference is resolved server-side in BuilderPricingService.
+Route::middleware(['auth', BuilderMiddleware::class])
+    ->prefix('builder')
+    ->name('builder.')
+    ->group(function () {
+        Route::get('/', BuilderDashboardController::class)->name('dashboard');
+        Route::get('/shop', [BuilderShopController::class, 'index'])->name('shop.index');
+        Route::get('/shop/{category}', [BuilderShopController::class, 'index'])->name('shop.category');
+        Route::get('/shop/{category}/{subcategory}', [BuilderShopController::class, 'index'])->name('shop.subcategory');
+        Route::get('/products/{product}', [BuilderShopController::class, 'show'])->name('products.show');
     });
 
 Route::middleware(['auth', 'verified', SellerMiddleware::class])

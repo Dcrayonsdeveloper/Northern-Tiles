@@ -144,6 +144,30 @@ function IconChat(props) {
     );
 }
 
+/* Hard hat — the Builder Panel section marker */
+function IconHardHat(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+            <path
+                d="M2 17h20v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2Zm2-2v-2a8 8 0 0 1 5-7.42V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.58A8 8 0 0 1 20 13v2H4Z"
+                fill="currentColor"
+            />
+        </svg>
+    );
+}
+
+/* Price tag with a dollar — Builder Catalogue */
+function IconPriceTag(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+            <path
+                d="M12.41 2H5a3 3 0 0 0-3 3v7.41a2 2 0 0 0 .59 1.42l8.58 8.58a2 2 0 0 0 2.83 0l7.41-7.41a2 2 0 0 0 0-2.83l-8.58-8.58A2 2 0 0 0 12.41 2ZM7 9a2 2 0 1 1 2-2 2 2 0 0 1-2 2Z"
+                fill="currentColor"
+            />
+        </svg>
+    );
+}
+
 function IconSettings(props) {
     return (
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -531,6 +555,32 @@ export default function DashboardLayout({ title, children }) {
                     href: route('admin.collections.index'),
                     active: route().current('admin.collections.*'),
                     icon: <IconTag className="h-5 w-5" />,
+                },
+
+                // ── Builder Panel ──
+                // The contractor portal is run from this same admin: what it
+                // carries, who gets in, and what they ordered.
+                { key: 'divider-builder', divider: true, label: 'Builder Panel' },
+                {
+                    key: 'builder-catalog',
+                    label: 'Builder Catalogue',
+                    href: route('admin.builder.catalog.index'),
+                    active: route().current('admin.builder.catalog.*'),
+                    icon: <IconPriceTag className="h-5 w-5" />,
+                },
+                {
+                    key: 'builder-accounts',
+                    label: 'Builder Accounts',
+                    href: route('admin.builder.accounts.index'),
+                    active: route().current('admin.builder.accounts.*'),
+                    icon: <IconHardHat className="h-5 w-5" />,
+                },
+                {
+                    key: 'builder-orders',
+                    label: 'Builder Orders',
+                    href: route('admin.builder.orders.index'),
+                    active: route().current('admin.builder.orders.*'),
+                    icon: <IconReceipt className="h-5 w-5" />,
                 },
 
                 // ── Marketing ──

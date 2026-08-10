@@ -23,6 +23,7 @@ class UserController extends Controller
                 'email'             => $user->email,
                 'email_verified_at' => $user->email_verified_at,
                 'is_admin'          => (bool) $user->is_admin,
+                'is_builder'        => (bool) $user->is_builder,
                 'is_active'         => (bool) $user->is_active,
                 'created_at'        => $user->created_at,
             ])

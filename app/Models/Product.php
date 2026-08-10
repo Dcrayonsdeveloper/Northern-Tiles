@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\Cache;
@@ -130,6 +131,15 @@ class Product extends Model
     public function variantFamily(): BelongsTo
     {
         return $this->belongsTo(VariantFamily::class);
+    }
+
+    /**
+     * This product's entry in the trade (builder) catalogue, if the admin has
+     * listed it. Null for the vast majority of products.
+     */
+    public function builderListing(): HasOne
+    {
+        return $this->hasOne(\App\Domain\Builder\Models\BuilderProduct::class);
     }
 
     public function seller(): BelongsTo

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Cart\Services;
 
+use App\Domain\Builder\Services\BuilderPricingService;
 use App\Domain\Cart\Models\Cart;
 use App\Domain\Cart\Models\CartItem;
 use App\Domain\Catalog\Models\ProductVariant;
@@ -36,7 +37,13 @@ class CartService
         $variant = $variantId ? ProductVariant::findOrFail($variantId) : null;
 
         // Samples are always free — shipping covers the cost
-        $price = $isSample ? 0 : ($variant ? $variant->price : $product->price);
+        $retail = $variant ? $variant->price : $product->price;
+        // Trade accounts pay the admin-set builder price for catalogued
+        // products; everyone else pays retail. Resolved server-side here so
+        // the charged price never depends on what the page displayed.
+        $price = $isSample
+            ? 0
+            : app(BuilderPricingService::class)->effectivePrice($product, (float) $retail, $cart->user);
 
         // Zero-price products are display-only and cannot be purchased
         if (!$isSample && (float) $price <= 0) {

@@ -13,6 +13,7 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
+        'is_builder_order',
         'order_number',
         'status',
         'customer_name',
@@ -40,6 +41,7 @@ class Order extends Model
         'total'            => 'decimal:2',
         'shipping_address' => 'array',
         'billing_address'  => 'array',
+        'is_builder_order' => 'boolean',
     ];
 
     public function items()

@@ -23,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Domain\Personalization\Services\PersonalizationService::class);
         $this->app->singleton(\App\Domain\SEO\Services\SeoService::class);
         $this->app->singleton(\App\Domain\Marketing\Services\MarketingService::class);
+        // Singleton so its per-request price memo is actually shared across
+        // the controller, the cart and checkout within one request.
+        $this->app->singleton(\App\Domain\Builder\Services\BuilderPricingService::class);
     }
 
     public function boot(): void

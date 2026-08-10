@@ -26,6 +26,9 @@ class User extends Authenticatable
         'is_seller',
         'is_active',
         'seller_approved_at',
+        'is_builder',
+        'builder_company',
+        'builder_approved_at',
     ];
 
     protected $hidden = [
@@ -42,7 +45,18 @@ class User extends Authenticatable
             'is_seller' => 'boolean',
             'is_active' => 'boolean',
             'seller_approved_at' => 'datetime',
+            'is_builder' => 'boolean',
+            'builder_approved_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Approved trade account — may enter /builder and is charged builder prices.
+     * A deactivated account loses both, without needing the flag cleared.
+     */
+    public function isBuilder(): bool
+    {
+        return (bool) ($this->is_builder && $this->is_active);
     }
 
     public function roles(): BelongsToMany
