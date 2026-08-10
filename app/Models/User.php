@@ -52,11 +52,25 @@ class User extends Authenticatable
 
     /**
      * Approved trade account — may enter /builder and is charged builder prices.
-     * A deactivated account loses both, without needing the flag cleared.
+     *
+     * Approval is builder_approved_at, not is_builder alone: self-registered
+     * builders carry the flag from the moment they sign up but stay pending
+     * until an admin approves them. A deactivated account loses trade access
+     * too, without needing either field cleared.
      */
     public function isBuilder(): bool
     {
-        return (bool) ($this->is_builder && $this->is_active);
+        return (bool) ($this->is_builder && $this->builder_approved_at && $this->is_active);
+    }
+
+    /**
+     * Signed up for trade but not yet approved. Deliberately distinct from
+     * "inactive": a pending builder is still a perfectly good retail customer
+     * and must be able to shop at normal prices while they wait.
+     */
+    public function isPendingBuilder(): bool
+    {
+        return (bool) ($this->is_builder && ! $this->builder_approved_at);
     }
 
     public function roles(): BelongsToMany

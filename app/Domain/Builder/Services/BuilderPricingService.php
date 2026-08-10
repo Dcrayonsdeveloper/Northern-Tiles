@@ -36,7 +36,10 @@ class BuilderPricingService
             return false;
         }
 
-        return (bool) ($user->is_builder || $user->is_admin);
+        // isBuilder() requires approval, so a pending applicant keeps paying
+        // retail until an admin lets them in — the price can never run ahead
+        // of the approval.
+        return (bool) ($user->isBuilder() || $user->is_admin);
     }
 
     /**

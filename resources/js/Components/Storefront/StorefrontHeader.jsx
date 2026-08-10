@@ -250,6 +250,13 @@ function MailIcon({ className }) {
         </svg>
     );
 }
+function HardHatIcon({ className }) {
+    return (
+        <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+            <path d="M2 17h20v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2Zm2-2v-2a8 8 0 0 1 5-7.42V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.58A8 8 0 0 1 20 13v2H4Z" />
+        </svg>
+    );
+}
 function FacebookIcon({ className }) {
     return (
         <svg className={className} fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
@@ -525,7 +532,7 @@ function NavDropdown({ item }) {
 
     if (!item.children?.length) {
         return (
-            <Link href={item.url} className="px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] text-white hover:text-white/70 transition-colors font-sans">
+            <Link href={item.url} className="relative px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] text-white transition-colors font-sans hover:text-amber-300 after:absolute after:inset-x-3 after:bottom-1.5 after:h-[2px] after:origin-left after:scale-x-0 after:bg-amber-400 after:transition-transform hover:after:scale-x-100">
                 {item.label}
             </Link>
         );
@@ -533,7 +540,7 @@ function NavDropdown({ item }) {
 
     return (
         <div className="relative" onMouseEnter={enter} onMouseLeave={leave}>
-            <Link href={item.url} className="flex items-center gap-1 px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] text-white hover:text-white/70 transition-colors font-sans">
+            <Link href={item.url} className={`relative flex items-center gap-1 px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] transition-colors font-sans after:absolute after:inset-x-3 after:bottom-1.5 after:h-[2px] after:origin-left after:bg-amber-400 after:transition-transform ${open ? 'text-amber-300 after:scale-x-100' : 'text-white hover:text-amber-300 after:scale-x-0 hover:after:scale-x-100'}`}>
                 {item.label}
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
             </Link>
@@ -589,8 +596,10 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
 
     return (
         <header className="sticky top-0 z-40" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-            {/* ── Row 1: Blue top bar ─────────────────────────────────── */}
-            <div className="bg-brand text-white">
+            {/* ── Row 1: Blue top bar ─────────────────────────────────────
+                Deliberately a deeper blue than the nav row below it. The two
+                strips were both bg-brand, which read as one flat slab. */}
+            <div className="bg-brand-dark text-white">
                 <Container>
                     <div className="flex items-center justify-between py-1.5 text-[12px]">
                         <div className="flex items-center gap-5">
@@ -604,6 +613,19 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
                             </a>
                         </div>
                         <div className="flex items-center gap-3">
+                            {/* Trade entry point. Amber so it reads as the one
+                                action in an otherwise informational strip. */}
+                            <Link
+                                href="/builder"
+                                className="flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-900 transition-colors hover:bg-amber-400"
+                            >
+                                <HardHatIcon className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Trade Portal</span>
+                                <span className="sm:hidden">Trade</span>
+                            </Link>
+
+                            <span className="hidden h-4 w-px bg-white/25 sm:block" />
+
                             <a href="https://www.facebook.com/ntiled/" target="_blank" rel="noreferrer noopener" aria-label="Facebook" className="hover:opacity-80 transition-opacity">
                                 <FacebookIcon className="h-4 w-4" />
                             </a>
@@ -647,7 +669,7 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
                             <button type="button" onClick={() => setCartSidebarOpen(true)} className="relative p-2 text-[#333] hover:text-brand transition-colors" aria-label="Cart">
                                 <CartIcon className="h-[18px] w-[18px]" />
                                 {cartCount > 0 && (
-                                    <span className="absolute -right-0.5 -top-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-brand text-[9px] font-bold text-white">
+                                    <span className="absolute -right-0.5 -top-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-slate-900">
                                         {cartCount > 99 ? '99+' : cartCount}
                                     </span>
                                 )}
@@ -682,8 +704,10 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
                 </Container>
             </div>
 
-            {/* ── Row 3: Nav bar (desktop) ────────────────────────────── */}
-            <div className="bg-brand border-b border-brand hidden lg:block">
+            {/* ── Row 3: Nav bar (desktop) ────────────────────────────────
+                Amber rule underneath separates the header from the page and
+                ties back to the Trade Portal button in row 1. */}
+            <div className="bg-brand border-b-[3px] border-amber-500 hidden lg:block">
                 <Container>
                     <nav className="flex items-center justify-center">
                         {navItems.map((item, i) => (
