@@ -23,11 +23,8 @@ class RoleController extends Controller
 
     public function create(): Response
     {
-        $permissions = Permission::orderBy('group')->orderBy('name')->get()
-            ->groupBy('group');
-
         return Inertia::render('Admin/Roles/Create', [
-            'permissionGroups' => $permissions,
+            'permissionGroups' => $this->permissionGroups(),
         ]);
     }
 
@@ -58,14 +55,29 @@ class RoleController extends Controller
     public function edit(Role $role): Response
     {
         $role->load('permissions');
-        $permissions = Permission::orderBy('group')->orderBy('name')->get()
-            ->groupBy('group');
 
         return Inertia::render('Admin/Roles/Edit', [
             'role' => $role,
-            'permissionGroups' => $permissions,
+            'permissionGroups' => $this->permissionGroups(),
             'selectedPermissions' => $role->permissions->pluck('id'),
         ]);
+    }
+
+    /**
+     * Permissions grouped for the Create/Edit screens.
+     *
+     * The React pages read each group as `{ permissions: [...] }`, so we wrap
+     * every group in that shape. A bare groupBy() returns a plain array per
+     * group, which made the page read `group.permissions` as undefined and
+     * crash on `.map` (Cannot read properties of undefined).
+     *
+     * @return \Illuminate\Support\Collection<string, array{permissions: \Illuminate\Support\Collection}>
+     */
+    private function permissionGroups()
+    {
+        return Permission::orderBy('group')->orderBy('name')->get()
+            ->groupBy('group')
+            ->map(fn ($perms) => ['permissions' => $perms->values()]);
     }
 
     public function update(Request $request, Role $role)
