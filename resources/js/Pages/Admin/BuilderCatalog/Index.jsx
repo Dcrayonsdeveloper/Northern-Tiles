@@ -322,6 +322,16 @@ export default function BuilderCatalogIndex({ listings, categories, filters, sta
                         <span className="font-semibold text-gray-900">{stats?.active ?? 0}</span> live
                         <span className="text-gray-400"> / {stats?.total ?? 0} total</span>
                     </div>
+                    {/* Admins are allowed into the portal, so the catalogue can be
+                        checked against what builders actually see. */}
+                    <a
+                        href="/builder"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                        View portal ↗
+                    </a>
                     <button
                         type="button"
                         onClick={() => setAddOpen(true)}
