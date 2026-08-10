@@ -263,6 +263,7 @@ class CheckoutService
                 'line_total' => $item->price * $item->quantity,
                 'is_sample' => (bool) $item->is_sample,
                 'image_url' => $item->product->image_url ?? '/images/placeholder-product.svg',
+                'options' => $item->options_json,
             ];
         });
 

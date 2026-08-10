@@ -463,6 +463,11 @@ export default function Index({
                                                                     </span>
                                                                 )}
                                                             </div>
+                                                            {(item.options?.colour || item.options?.finish) && (
+                                                                <p className="text-[11px] text-gray-500">
+                                                                    {[item.options.colour, item.options.finish].filter(Boolean).join(' · ')}
+                                                                </p>
+                                                            )}
                                                             {!item.is_sample && (
                                                                 <p className="text-xs text-gray-500">
                                                                     ${parseFloat(item.price || 0).toFixed(2)} / sqm × {parseFloat(item.quantity).toFixed(2)} m²

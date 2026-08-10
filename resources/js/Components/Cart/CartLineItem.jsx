@@ -84,6 +84,11 @@ function CartLineItem({
                         {variant && (
                             <p className="mt-0.5 text-xs text-gray-500">{variant.name}</p>
                         )}
+                        {(item.options?.colour || item.options?.finish) && (
+                            <p className="mt-0.5 text-xs text-gray-500">
+                                {[item.options.colour, item.options.finish].filter(Boolean).join(' · ')}
+                            </p>
+                        )}
                     </div>
                     <button
                         type="button"

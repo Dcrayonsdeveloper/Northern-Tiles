@@ -59,12 +59,17 @@ class CartService
             $quantity = min($quantity, $available);
         }
 
-        // Sample and non-sample lines of the same product stay separate
+        // Sample and non-sample lines of the same product stay separate.
+        // Options (selected colour / finish) are part of the identity too, so
+        // the same tile chosen in a different colour becomes its own line
+        // instead of merging and silently discarding the new selection.
+        $normalizedOptions = $options ?: null;
         $existingItem = $cart->items()
             ->where('product_id', $productId)
             ->where('variant_id', $variantId)
             ->where('is_sample', $isSample)
-            ->first();
+            ->get()
+            ->first(fn ($it) => ($it->options_json ?: null) == $normalizedOptions);
 
         if ($existingItem) {
             $existingItem->incrementQuantity($quantity);

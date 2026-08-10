@@ -777,6 +777,24 @@ function VariantFamilySelector({ familyVariants }) {
     );
 }
 
+/* Colour name -> swatch hex. Covers the catalogue's colour words; anything
+   not listed falls back to a neutral circle showing the colour's initials. */
+const COLOUR_HEX = {
+    white: '#ffffff', 'warm white': '#f7f3ea', 'off white': '#f4f1e9', ivory: '#fffff0',
+    cream: '#f5f0e1', beige: '#d8c6a8', 'beige white mix': '#e5dcc5', sand: '#dcc9a6',
+    peach: '#f0cbb0', tan: '#c9a67a', brown: '#7a4f2a', cinnamon: '#8b4a2f',
+    terracotta: '#c96f4c', orange: '#d47a3a', rust: '#a5502f',
+    grey: '#9aa0a6', gray: '#9aa0a6', 'light grey': '#cfd3d7', 'light gray': '#cfd3d7',
+    'dark grey': '#5a5f63', ash: '#b2b5b7', 'ash grey': '#a9adb0', silver: '#c0c4c8',
+    charcoal: '#36454f', carbon: '#2b2b2b', graphite: '#3a3f44', black: '#1a1a1a',
+    green: '#5a7d5a', 'sage green': '#9caf88', moss: '#6b7d54', olive: '#7a7a3c',
+    khaki: '#8f8b5a', blue: '#3b6ea5', 'sky blue': '#8fc1e3', 'ocean blue': '#2e6b8a',
+    teal: '#2b7a78', 'teal blue': '#2b7a78', navy: '#2a3d5a', amber: '#c98a2b', aqua: '#7fc6c1',
+};
+function colourHex(name) {
+    return name ? (COLOUR_HEX[String(name).trim().toLowerCase()] ?? null) : null;
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════════════════ */
@@ -791,6 +809,24 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
     const [addingSample, setAddingSample] = useState(false);
     const [buyingNow, setBuyingNow] = useState(false);
     const [wishlisted, setWishlisted] = useState(false);
+
+    // Selectable colour + finish parsed from the spec strings.
+    // "Black, Charcoal, Carbon" -> 3 colours; "Matt / Soft Touch" -> 2 finishes.
+    const colourOptions = String(product.specifications?.colour || product.specifications?.color || '')
+        .split(',').map((s) => s.trim()).filter(Boolean);
+    const finishOptions = String(product.specifications?.finish || '')
+        .split(/[/,]/).map((s) => s.trim()).filter(Boolean);
+    const [selectedColour, setSelectedColour] = useState(colourOptions[0] ?? null);
+    const [selectedFinish, setSelectedFinish] = useState(finishOptions[0] ?? null);
+
+    // The customer's colour/finish choice, sent with every add-to-cart so it
+    // travels through to the cart, checkout and the order.
+    const cartOptions = () => {
+        const o = {};
+        if (selectedColour) o.colour = selectedColour;
+        if (selectedFinish) o.finish = selectedFinish;
+        return o;
+    };
 
     const generateJsonLd = () => {
         const baseUrl = window.location.origin;
@@ -823,7 +859,7 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
     const addToCart = () => {
         if (!inStock) return;
         setAddingToCart(true);
-        router.post(route('cart.store'), { product_id: product.id, quantity: cartQuantity() }, {
+        router.post(route('cart.store'), { product_id: product.id, quantity: cartQuantity(), options: cartOptions() }, {
             preserveScroll: true,
             onSuccess: () => { window.dispatchEvent(new CustomEvent('cart-updated')); window.dispatchEvent(new CustomEvent('open-cart-sidebar')); },
             onFinish: () => setAddingToCart(false),
@@ -833,7 +869,7 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
     const buyNow = () => {
         if (!inStock) return;
         setBuyingNow(true);
-        router.post(route('cart.store'), { product_id: product.id, quantity: cartQuantity() }, {
+        router.post(route('cart.store'), { product_id: product.id, quantity: cartQuantity(), options: cartOptions() }, {
             preserveScroll: true,
             onSuccess: () => { window.dispatchEvent(new CustomEvent('cart-updated')); router.visit('/checkout'); },
             onFinish: () => setBuyingNow(false),
@@ -842,7 +878,7 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
 
     const doAddSample = () => {
         setAddingSample(true);
-        router.post(route('cart.store'), { product_id: product.id, quantity: 1, is_sample: true }, {
+        router.post(route('cart.store'), { product_id: product.id, quantity: 1, is_sample: true, options: cartOptions() }, {
             preserveScroll: true,
             onSuccess: () => { window.dispatchEvent(new CustomEvent('cart-updated')); window.dispatchEvent(new CustomEvent('open-cart-sidebar')); },
             onFinish: () => setAddingSample(false),
@@ -938,29 +974,76 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 <p className="mt-1 text-[12px] text-gray-500">Inclusive of all taxes · Total calculated in cart</p>
                             </div>
 
-                            {/* Colour & Finish (from product specifications) */}
-                            {(() => {
-                                const specs = product.specifications || {};
-                                const colour = specs.colour || specs.color || specs.colours;
-                                const finish = specs.finish;
-                                if (!colour && !finish) return null;
-                                return (
-                                    <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:gap-10">
-                                        {colour && (
-                                            <div>
-                                                <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">Colour</p>
-                                                <p className="mt-1 text-[14px] font-semibold text-gray-800">{colour}</p>
+                            {/* Colour & Finish — customer selects one of each */}
+                            {(colourOptions.length > 0 || finishOptions.length > 0) && (
+                                <div className="mt-4 space-y-4">
+                                    {colourOptions.length > 0 && (
+                                        <div>
+                                            <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">
+                                                Colour
+                                                {selectedColour && (
+                                                    <span className="ml-2 font-semibold normal-case tracking-normal text-gray-800">
+                                                        {selectedColour}
+                                                    </span>
+                                                )}
+                                            </p>
+                                            <div className="mt-2 flex flex-wrap gap-2.5">
+                                                {colourOptions.map((c) => {
+                                                    const hex = colourHex(c);
+                                                    const isSel = c === selectedColour;
+                                                    return (
+                                                        <button
+                                                            key={c}
+                                                            type="button"
+                                                            title={c}
+                                                            aria-pressed={isSel}
+                                                            onClick={() => setSelectedColour(c)}
+                                                            className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                                                                isSel
+                                                                    ? 'border-transparent ring-2 ring-brand ring-offset-2'
+                                                                    : 'border-gray-300 hover:border-gray-500'
+                                                            }`}
+                                                            style={hex ? { backgroundColor: hex } : undefined}
+                                                        >
+                                                            {!hex && (
+                                                                <span className="text-[10px] font-bold text-gray-500">
+                                                                    {c.slice(0, 2).toUpperCase()}
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
-                                        )}
-                                        {finish && (
-                                            <div>
-                                                <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">Finish</p>
-                                                <p className="mt-1 text-[14px] font-semibold text-gray-800">{finish}</p>
+                                        </div>
+                                    )}
+
+                                    {finishOptions.length > 0 && (
+                                        <div>
+                                            <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">Finish</p>
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {finishOptions.map((f) => {
+                                                    const isSel = f === selectedFinish;
+                                                    return (
+                                                        <button
+                                                            key={f}
+                                                            type="button"
+                                                            aria-pressed={isSel}
+                                                            onClick={() => setSelectedFinish(f)}
+                                                            className={`rounded-md border-2 px-4 py-1.5 text-[13px] font-bold uppercase tracking-wide transition ${
+                                                                isSel
+                                                                    ? 'border-gray-900 bg-white text-gray-900'
+                                                                    : 'border-gray-200 text-gray-500 hover:border-gray-400'
+                                                            }`}
+                                                        >
+                                                            {f}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
-                                        )}
-                                    </div>
-                                );
-                            })()}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Variant family (same range, different colour / size) */}
                             <VariantFamilySelector familyVariants={familyVariants} />
