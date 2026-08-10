@@ -304,7 +304,7 @@ export default function Index({
                                             </div>
                                             <div>
                                                 <label className="text-xs font-medium text-gray-600">
-                                                    {d('checkout.shipping.postal_code', 'PIN Code')} *
+                                                    {d('checkout.shipping.postal_code', 'Postal Code')} *
                                                 </label>
                                                 <input
                                                     type="text"
