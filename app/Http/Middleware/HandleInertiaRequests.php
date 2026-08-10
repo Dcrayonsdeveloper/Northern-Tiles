@@ -38,11 +38,18 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            // dictionary: lazy so it's excluded from Inertia partial-reload responses
-            'dictionary' => \Inertia\Inertia::lazy(fn () => [
+            // dictionary: shared on every response (closure = resolved only when
+            // Inertia serialises props). It powers the d()/useD() translator used
+            // for all UI labels — including the auth pages, which have no fallback
+            // text — so it must always be present, not lazy. It was previously
+            // Inertia::lazy(), which is sent ONLY on explicit partial reloads and
+            // is therefore absent on normal page loads; that made every d() key
+            // render as its raw string (e.g. "auth.sign_in.title"). The payload is
+            // ~77 short rows, so always sharing it is negligible.
+            'dictionary' => fn () => [
                 'locale' => app()->getLocale(),
                 'items' => app(DictionaryService::class)->mergedLocale(app()->getLocale()),
-            ]),
+            ],
             // ui.topBar wrapped in fn() — only resolved when Inertia uses it, not on every boot
             'ui' => fn () => [
                 'topBar' => Setting::getValue('ui.topBar', config('ui.topBar')),
