@@ -20,14 +20,23 @@ class BuilderPricingService
     private array $priceMemo = [];
 
     /**
-     * Is this account approved for trade pricing?
+     * Is this account entitled to trade pricing?
      * Falls back to the logged-in user when none is passed.
+     *
+     * Admins count too. They can browse the portal to check the catalogue, and
+     * if the preview showed trade prices while the cart charged retail the two
+     * would disagree — so the entitlement follows the access, not just the
+     * builder flag.
      */
     public function isBuilder(?User $user = null): bool
     {
         $user = $user ?? Auth::user();
 
-        return (bool) ($user?->is_builder && $user?->is_active);
+        if (! $user?->is_active) {
+            return false;
+        }
+
+        return (bool) ($user->is_builder || $user->is_admin);
     }
 
     /**
