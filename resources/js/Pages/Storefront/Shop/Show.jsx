@@ -938,6 +938,30 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 <p className="mt-1 text-[12px] text-gray-500">Inclusive of all taxes · Total calculated in cart</p>
                             </div>
 
+                            {/* Colour & Finish (from product specifications) */}
+                            {(() => {
+                                const specs = product.specifications || {};
+                                const colour = specs.colour || specs.color || specs.colours;
+                                const finish = specs.finish;
+                                if (!colour && !finish) return null;
+                                return (
+                                    <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:gap-10">
+                                        {colour && (
+                                            <div>
+                                                <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">Colour</p>
+                                                <p className="mt-1 text-[14px] font-semibold text-gray-800">{colour}</p>
+                                            </div>
+                                        )}
+                                        {finish && (
+                                            <div>
+                                                <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">Finish</p>
+                                                <p className="mt-1 text-[14px] font-semibold text-gray-800">{finish}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+
                             {/* Variant family (same range, different colour / size) */}
                             <VariantFamilySelector familyVariants={familyVariants} />
 
