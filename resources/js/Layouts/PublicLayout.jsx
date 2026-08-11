@@ -112,7 +112,12 @@ export default function PublicLayout({ children }) {
     const faviconUrl = site?.favicon_url ?? null;
 
     return (
-        <div className="min-h-screen bg-gray-50 text-gray-900">
+        // Flex column with a growing <main>: the footer is pinned to the bottom
+        // of the viewport on any page shorter than the screen. Without it a
+        // short page (an empty blog index, a stub CMS page, a no-results search)
+        // let the footer ride up directly under the nav bar, which is what made
+        // /privacy-policy and /blog look broken.
+        <div className="flex min-h-screen flex-col bg-gray-50 text-gray-900">
             <Head>
                 {faviconUrl ? <link rel="icon" href={faviconUrl} type="image/x-icon" /> : null}
                 {siteDescription ? <meta name="description" content={siteDescription} /> : null}
@@ -152,7 +157,7 @@ export default function PublicLayout({ children }) {
                 </Container>
             )}
 
-            <main>
+            <main className="flex-1">
                 {children}
             </main>
 

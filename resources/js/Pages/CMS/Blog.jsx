@@ -14,8 +14,14 @@ export default function Blog({ posts, categories = [], filters = {} }) {
         });
     };
 
-    const featuredPost = posts?.data?.[0];
-    const regularPosts = posts?.data?.slice(1) || [];
+    const allPosts = posts?.data ?? [];
+    // The first post is promoted to the featured slot, so "no regular posts"
+    // is not the same as "no posts" — keying the empty state off regularPosts
+    // showed a featured article and "No posts found" on the same screen
+    // whenever there was exactly one published post.
+    const featuredPost = !category ? allPosts[0] : undefined;
+    const regularPosts = featuredPost ? allPosts.slice(1) : allPosts;
+    const hasPosts = allPosts.length > 0;
 
     return (
         <PublicLayout>
@@ -66,20 +72,22 @@ export default function Blog({ posts, categories = [], filters = {} }) {
             )}
 
             {/* Featured Post */}
-            {featuredPost && !category && (
+            {featuredPost && (
                 <div className="mb-12">
                     <BlogPostCard post={featuredPost} variant="featured" />
                 </div>
             )}
 
             {/* Posts Grid */}
-            {regularPosts.length > 0 ? (
+            {regularPosts.length > 0 && (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {regularPosts.map((post) => (
                         <BlogPostCard key={post.id} post={post} />
                     ))}
                 </div>
-            ) : (
+            )}
+
+            {!hasPosts && (
                 <div className="py-12 text-center">
                     <svg
                         className="mx-auto h-12 w-12 text-gray-300"
