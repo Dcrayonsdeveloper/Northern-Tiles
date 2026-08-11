@@ -46,7 +46,7 @@ export default function BuilderLayout({ children, categories = [], title }) {
 
             <main>{children}</main>
 
-            <Footer />
+            <Footer minimal />
         </div>
     );
 }

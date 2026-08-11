@@ -66,7 +66,7 @@ const InstagramIcon = () => (
     </svg>
 );
 
-export default function Footer() {
+export default function Footer({ minimal = false }) {
     const { footerConfig } = usePage().props;
 
     const brand = footerConfig?.brand ?? {};
@@ -147,26 +147,29 @@ export default function Footer() {
 
     return (
         <footer className="font-sans">
-            {/* Section 1 - Product Links */}
-            <div className="bg-[#1a1a1a]">
-                <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
-                    <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
-                        {productColumns.map((col) => (
-                            <ProductColumn
-                                key={col.heading}
-                                heading={col.heading}
-                                links={col.links}
-                            />
-                        ))}
+            {/* Section 1 - Product Links (hidden on the trade portal) */}
+            {!minimal && (
+                <div className="bg-[#1a1a1a]">
+                    <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+                        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
+                            {productColumns.map((col) => (
+                                <ProductColumn
+                                    key={col.heading}
+                                    heading={col.heading}
+                                    links={col.links}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Section 2 - Company Info */}
             <div className="border-t border-[#333] bg-[#1a1a1a]">
                 <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
-                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-                        {/* Info & Links */}
+                    <div className={`grid grid-cols-1 gap-8 sm:grid-cols-2 ${minimal ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
+                        {/* Info & Links (hidden on the trade portal) */}
+                        {!minimal && (
                         <div>
                             <h3 className="mb-4 border-b-2 border-brand pb-2 text-[14px] font-semibold uppercase tracking-[1px] text-white">
                                 Info &amp; Links
@@ -182,6 +185,7 @@ export default function Footer() {
                                 ))}
                             </ul>
                         </div>
+                        )}
 
                         {/* Visit Us */}
                         <div>
