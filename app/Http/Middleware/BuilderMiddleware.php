@@ -9,10 +9,10 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Gates the /builder trade portal.
  *
- * Guests are sent to login rather than shown a 403, so a builder who clicks a
- * bookmarked portal link lands on the sign-in page and is returned afterwards.
- * Signed-in customers get a 404 — the portal's existence, its catalogue and
- * its pricing are all private.
+ * Guests and signed-in customers who are not builders yet are sent to the
+ * trade application page — the "Trade Portal" button that links here is shown
+ * to everyone, so a 404 would just be a broken link. Approved builders and
+ * admins get the portal itself.
  *
  * Admins are let through so the person who curates the catalogue can actually
  * see what builders see. They are treated as trade for pricing too (see
@@ -48,8 +48,12 @@ class BuilderMiddleware
             return redirect()->route('builder.pending');
         }
 
+        // A signed-in customer who is not a builder yet: send them to the trade
+        // application page instead of a dead-end 404. The apply page handles a
+        // logged-in user (it upgrades the account they already have), so this is
+        // exactly where the "Trade Portal" button should take them.
         if (! $user->isBuilder()) {
-            abort(404);
+            return redirect()->route('builder.register');
         }
 
         return $next($request);
