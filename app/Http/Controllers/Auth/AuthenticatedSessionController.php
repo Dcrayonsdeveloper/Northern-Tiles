@@ -57,7 +57,31 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = $request->user();
+
+        // Route each account type to where it belongs. Regular customers land
+        // on the storefront (the website) — never the member dashboard.
+        //   - Pending builder  -> the "account under review (24–48h)" page
+        //   - Approved builder -> the trade portal
+        //   - Admin / seller   -> their own panel
+        //   - Everyone else    -> the website home
+        if ($user->isPendingBuilder()) {
+            return redirect()->route('builder.pending');
+        }
+
+        if ($user->isBuilder()) {
+            return redirect()->intended(route('builder.dashboard', absolute: false));
+        }
+
+        if ($user->is_admin) {
+            return redirect()->intended(route('admin.dashboard', absolute: false));
+        }
+
+        if ($user->isApprovedSeller()) {
+            return redirect()->intended(route('seller.dashboard', absolute: false));
+        }
+
+        return redirect()->intended(route('home', absolute: false));
     }
 
     /**
