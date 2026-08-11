@@ -5,6 +5,7 @@ namespace App\Domain\Builder\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\User;
+use App\Rules\AustralianBusinessNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -32,6 +33,8 @@ class BuilderAccountController extends Controller
                 $q->where(function ($sub) use ($search) {
                     $sub->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('builder_abn', 'like', "%{$search}%")
                         ->orWhere('builder_company', 'like', "%{$search}%");
                 });
             })
@@ -46,6 +49,10 @@ class BuilderAccountController extends Controller
             $user->total_spent = (float) Order::where('user_id', $user->id)
                 ->where('payment_status', 'paid')
                 ->sum('total');
+
+            $user->last_order_at = Order::where('user_id', $user->id)
+                ->latest('created_at')
+                ->value('created_at');
 
             return $user;
         });
@@ -101,14 +108,18 @@ class BuilderAccountController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('deleted_at')],
+            'phone' => ['nullable', 'string', 'max:30'],
             'builder_company' => ['nullable', 'string', 'max:255'],
+            'builder_abn' => ['nullable', 'string', 'max:20', new AustralianBusinessNumber()],
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
             'builder_company' => $validated['builder_company'] ?? null,
+            'builder_abn' => AustralianBusinessNumber::normalise($validated['builder_abn'] ?? null),
             'password' => Hash::make($validated['password']),
             'is_builder' => true,
             'is_active' => true,
@@ -125,7 +136,9 @@ class BuilderAccountController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)->whereNull('deleted_at')],
+            'phone' => ['nullable', 'string', 'max:30'],
             'builder_company' => ['nullable', 'string', 'max:255'],
+            'builder_abn' => ['nullable', 'string', 'max:20', new AustralianBusinessNumber()],
             'is_active' => ['required', 'boolean'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
         ]);
@@ -133,7 +146,9 @@ class BuilderAccountController extends Controller
         $user->fill([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
             'builder_company' => $validated['builder_company'] ?? null,
+            'builder_abn' => AustralianBusinessNumber::normalise($validated['builder_abn'] ?? null),
             'is_active' => $validated['is_active'],
         ]);
 

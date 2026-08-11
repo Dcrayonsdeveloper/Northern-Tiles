@@ -31,6 +31,7 @@ export default function BuilderRegister({ isLoggedIn = false, currentUser = null
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         builder_company: '',
+        builder_abn: '',
         email: '',
         phone: '',
         password: '',
@@ -105,7 +106,7 @@ export default function BuilderRegister({ isLoggedIn = false, currentUser = null
                         {isLoggedIn && currentUser ? (
                             <p className="mt-1 text-sm text-gray-600">
                                 Applying as <span className="font-semibold text-slate-900">{currentUser.email}</span>.
-                                We just need your company name.
+                                We just need your company details.
                             </p>
                         ) : (
                             <p className="mt-1 text-sm text-gray-600">
@@ -117,9 +118,12 @@ export default function BuilderRegister({ isLoggedIn = false, currentUser = null
                         <form onSubmit={submit} className="mt-5 space-y-4">
                             {!isLoggedIn && (
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium text-gray-700">Your name *</label>
+                                    <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700">Your name *</label>
                                     <input
+                                        id="name"
                                         type="text"
+                                        required
+                                        autoComplete="name"
                                         value={data.name}
                                         onChange={(e) => setData('name', e.target.value)}
                                         className="w-full rounded border-gray-300 text-sm focus:border-slate-900 focus:ring-slate-900"
@@ -129,9 +133,12 @@ export default function BuilderRegister({ isLoggedIn = false, currentUser = null
                             )}
 
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">Company name *</label>
+                                <label htmlFor="builder_company" className="mb-1 block text-sm font-medium text-gray-700">Company name *</label>
                                 <input
+                                    id="builder_company"
                                     type="text"
+                                    required
+                                    autoComplete="organization"
                                     value={data.builder_company}
                                     onChange={(e) => setData('builder_company', e.target.value)}
                                     placeholder="e.g. Northside Constructions Pty Ltd"
@@ -140,11 +147,33 @@ export default function BuilderRegister({ isLoggedIn = false, currentUser = null
                                 {errors.builder_company && <p className="mt-1 text-xs text-red-600">{errors.builder_company}</p>}
                             </div>
 
+                            <div>
+                                <label htmlFor="builder_abn" className="mb-1 block text-sm font-medium text-gray-700">Company ABN *</label>
+                                <input
+                                    id="builder_abn"
+                                    type="text"
+                                    required
+                                    inputMode="numeric"
+                                    maxLength={14}
+                                    value={data.builder_abn}
+                                    onChange={(e) => setData('builder_abn', e.target.value)}
+                                    placeholder="e.g. 51 824 753 556"
+                                    className="w-full rounded border-gray-300 text-sm focus:border-slate-900 focus:ring-slate-900"
+                                />
+                                <p className="mt-1 text-xs text-gray-500">
+                                    11 digits. We verify this before approving trade pricing.
+                                </p>
+                                {errors.builder_abn && <p className="mt-1 text-xs text-red-600">{errors.builder_abn}</p>}
+                            </div>
+
                             {!isLoggedIn && (
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium text-gray-700">Email *</label>
+                                    <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">Email *</label>
                                     <input
+                                        id="email"
                                         type="email"
+                                        required
+                                        autoComplete="email"
                                         value={data.email}
                                         onChange={(e) => setData('email', e.target.value)}
                                         className="w-full rounded border-gray-300 text-sm focus:border-slate-900 focus:ring-slate-900"
@@ -154,11 +183,15 @@ export default function BuilderRegister({ isLoggedIn = false, currentUser = null
                             )}
 
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">Phone</label>
+                                <label htmlFor="phone" className="mb-1 block text-sm font-medium text-gray-700">Phone *</label>
                                 <input
+                                    id="phone"
                                     type="tel"
+                                    required
+                                    autoComplete="tel"
                                     value={data.phone}
                                     onChange={(e) => setData('phone', e.target.value)}
+                                    placeholder="e.g. 03 9464 6623"
                                     className="w-full rounded border-gray-300 text-sm focus:border-slate-900 focus:ring-slate-900"
                                 />
                                 {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
@@ -167,9 +200,12 @@ export default function BuilderRegister({ isLoggedIn = false, currentUser = null
                             {!isLoggedIn && (
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div>
-                                        <label className="mb-1 block text-sm font-medium text-gray-700">Password *</label>
+                                        <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">Password *</label>
                                         <input
+                                            id="password"
                                             type="password"
+                                            required
+                                            autoComplete="new-password"
                                             value={data.password}
                                             onChange={(e) => setData('password', e.target.value)}
                                             className="w-full rounded border-gray-300 text-sm focus:border-slate-900 focus:ring-slate-900"
@@ -177,16 +213,22 @@ export default function BuilderRegister({ isLoggedIn = false, currentUser = null
                                         {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
                                     </div>
                                     <div>
-                                        <label className="mb-1 block text-sm font-medium text-gray-700">Confirm *</label>
+                                        <label htmlFor="password_confirmation" className="mb-1 block text-sm font-medium text-gray-700">Confirm *</label>
                                         <input
+                                            id="password_confirmation"
                                             type="password"
+                                            required
+                                            autoComplete="new-password"
                                             value={data.password_confirmation}
                                             onChange={(e) => setData('password_confirmation', e.target.value)}
                                             className="w-full rounded border-gray-300 text-sm focus:border-slate-900 focus:ring-slate-900"
                                         />
+                                        {errors.password_confirmation && <p className="mt-1 text-xs text-red-600">{errors.password_confirmation}</p>}
                                     </div>
                                 </div>
                             )}
+
+                            <p className="text-xs text-gray-500">All fields are required.</p>
 
                             <button
                                 type="submit"

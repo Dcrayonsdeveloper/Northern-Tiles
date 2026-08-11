@@ -21,8 +21,14 @@ export default function Blog({ posts, categories = [], filters = {} }) {
         <PublicLayout>
             <Head title="Blog" />
 
+            {/* Every other public page wraps itself in a container; this one did
+                not, so its content sat flush against the viewport edge with no
+                vertical padding and the page collapsed to barely any height —
+                which is what dragged the footer up under the navbar when you
+                arrived here from a long page like About. */}
+            <div className="mx-auto min-h-[60vh] max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Blog</h1>
+                <h1 className="font-heading text-3xl font-bold text-gray-900">Blog</h1>
                 <p className="mt-2 text-gray-600">
                     Insights, tips, and stories from our team.
                 </p>
@@ -119,6 +125,7 @@ export default function Blog({ posts, categories = [], filters = {} }) {
                     ))}
                 </div>
             )}
+            </div>
         </PublicLayout>
     );
 }

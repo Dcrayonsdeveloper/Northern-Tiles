@@ -704,10 +704,8 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
                 </Container>
             </div>
 
-            {/* ── Row 3: Nav bar (desktop) ────────────────────────────────
-                Amber rule underneath separates the header from the page and
-                ties back to the Trade Portal button in row 1. */}
-            <div className="bg-brand border-b-[3px] border-amber-500 hidden lg:block">
+            {/* ── Row 3: Nav bar (desktop) ─────────────────────────────── */}
+            <div className="bg-brand hidden lg:block">
                 <Container>
                     <nav className="flex items-center justify-center">
                         {navItems.map((item, i) => (

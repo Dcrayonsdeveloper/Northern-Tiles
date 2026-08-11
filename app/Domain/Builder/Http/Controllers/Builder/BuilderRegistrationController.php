@@ -4,6 +4,7 @@ namespace App\Domain\Builder\Http\Controllers\Builder;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\AustralianBusinessNumber;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -58,31 +59,39 @@ class BuilderRegistrationController extends Controller
         if ($user) {
             $validated = $request->validate([
                 'builder_company' => ['required', 'string', 'max:255'],
-                'phone' => ['nullable', 'string', 'max:30'],
-            ]);
+                'builder_abn' => ['required', 'string', 'max:20', new AustralianBusinessNumber()],
+                'phone' => ['required', 'string', 'max:30'],
+            ], [], $this->attributeNames());
 
             $user->update([
                 'is_builder' => true,
                 'builder_company' => $validated['builder_company'],
+                'builder_abn' => AustralianBusinessNumber::normalise($validated['builder_abn']),
+                'phone' => $validated['phone'],
                 'builder_approved_at' => null,
             ]);
 
             return redirect()->route('builder.pending');
         }
 
+        // Every field is compulsory: an application we cannot phone back or
+        // verify against an ABN is not one an admin can approve.
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'builder_company' => ['required', 'string', 'max:255'],
+            'builder_abn' => ['required', 'string', 'max:20', new AustralianBusinessNumber()],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->whereNull('deleted_at')],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['required', 'string', 'max:30'],
             'password' => ['required', 'confirmed', Password::defaults()],
-        ]);
+        ], [], $this->attributeNames());
 
         $newUser = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'phone' => $validated['phone'],
             'password' => Hash::make($validated['password']),
             'builder_company' => $validated['builder_company'],
+            'builder_abn' => AustralianBusinessNumber::normalise($validated['builder_abn']),
             'is_builder' => true,
             // Pending, not approved. Deliberately NOT is_active = false: that
             // flag disables ordering site-wide, which would stop an applicant
@@ -123,5 +132,18 @@ class BuilderRegistrationController extends Controller
             'company' => $user->builder_company,
             'email' => $user->email,
         ]);
+    }
+
+    /**
+     * Friendlier names in validation messages — "The builder abn field is
+     * required" reads badly next to a field labelled "Company ABN".
+     */
+    protected function attributeNames(): array
+    {
+        return [
+            'builder_company' => 'company name',
+            'builder_abn' => 'Company ABN',
+            'phone' => 'phone number',
+        ];
     }
 }

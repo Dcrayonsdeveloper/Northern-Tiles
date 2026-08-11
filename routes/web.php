@@ -115,6 +115,13 @@ Route::get('/privacy-policy', [PublicPageController::class, 'show'])
 Route::get('/terms-of-service', [PublicPageController::class, 'show'])
     ->defaults('slug', 'terms-of-service')
     ->name('terms-of-service');
+// Footer "Resources" links to these two; without a route they were plain 404s.
+Route::get('/faq', [PublicPageController::class, 'show'])
+    ->defaults('slug', 'faq')
+    ->name('faq');
+Route::get('/shipping', [PublicPageController::class, 'show'])
+    ->defaults('slug', 'shipping')
+    ->name('shipping');
 // /return-policy and /returns both serve the same CMS page (footer links to /returns)
 Route::get('/return-policy', [PublicPageController::class, 'show'])
     ->defaults('slug', 'return-policy')

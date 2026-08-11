@@ -5,6 +5,15 @@ import { useEffect, useState } from 'react';
 
 const money = (v) => `$${parseFloat(v || 0).toFixed(2)}`;
 
+const date = (v) =>
+    v ? new Date(v).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+// Stored bare (11 digits); shown in the ATO's 2-3-3-3 grouping.
+const abn = (v) => {
+    const d = String(v ?? '').replace(/\D/g, '');
+    return d.length === 11 ? `${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 8)} ${d.slice(8)}` : (v || '—');
+};
+
 /* ── Create / edit account modal ───────────────────────────────────── */
 function AccountModal({ open, onClose, account }) {
     const isEdit = !!account;
@@ -12,7 +21,9 @@ function AccountModal({ open, onClose, account }) {
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         name: '',
         email: '',
+        phone: '',
         builder_company: '',
+        builder_abn: '',
         password: '',
         password_confirmation: '',
         is_active: true,
@@ -25,7 +36,9 @@ function AccountModal({ open, onClose, account }) {
             setData({
                 name: account.name ?? '',
                 email: account.email ?? '',
+                phone: account.phone ?? '',
                 builder_company: account.builder_company ?? '',
+                builder_abn: account.builder_abn ?? '',
                 password: '',
                 password_confirmation: '',
                 is_active: !!account.is_active,
@@ -83,6 +96,18 @@ function AccountModal({ open, onClose, account }) {
                     </div>
 
                     <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Phone</label>
+                        <input
+                            type="tel"
+                            value={data.phone}
+                            onChange={(e) => setData('phone', e.target.value)}
+                            placeholder="e.g. 03 9464 6623"
+                            className="w-full rounded border-gray-300 text-sm focus:border-brand focus:ring-brand"
+                        />
+                        {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
+                    </div>
+
+                    <div>
                         <label className="mb-1 block text-sm font-medium text-gray-700">Company</label>
                         <input
                             type="text"
@@ -92,6 +117,20 @@ function AccountModal({ open, onClose, account }) {
                             className="w-full rounded border-gray-300 text-sm focus:border-brand focus:ring-brand"
                         />
                         {errors.builder_company && <p className="mt-1 text-xs text-red-600">{errors.builder_company}</p>}
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">Company ABN</label>
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={14}
+                            value={data.builder_abn}
+                            onChange={(e) => setData('builder_abn', e.target.value)}
+                            placeholder="e.g. 51 824 753 556"
+                            className="w-full rounded border-gray-300 text-sm focus:border-brand focus:ring-brand"
+                        />
+                        {errors.builder_abn && <p className="mt-1 text-xs text-red-600">{errors.builder_abn}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -222,7 +261,7 @@ export default function BuilderAccounts({ builders, filters, stats }) {
                     type="search"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search name, email or company…"
+                    placeholder="Search name, email, phone, ABN or company…"
                     className="w-full max-w-sm rounded border-gray-300 text-sm focus:border-brand focus:ring-brand"
                 />
             </form>
@@ -233,7 +272,8 @@ export default function BuilderAccounts({ builders, filters, stats }) {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Account</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Company</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Company &amp; ABN</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Applied / Approved</th>
                                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Orders</th>
                                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Spent</th>
                                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
@@ -243,7 +283,7 @@ export default function BuilderAccounts({ builders, filters, stats }) {
                         <tbody className="divide-y divide-gray-100">
                             {rows.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-4 py-16 text-center">
+                                    <td colSpan={7} className="px-4 py-16 text-center">
                                         <p className="text-sm font-medium text-gray-900">No builder accounts yet.</p>
                                         <p className="mt-1 text-sm text-gray-500">
                                             Create one here, or promote an existing customer from Admin → Users.
@@ -252,14 +292,41 @@ export default function BuilderAccounts({ builders, filters, stats }) {
                                 </tr>
                             ) : rows.map((account) => (
                                 <tr key={account.id} className="hover:bg-gray-50">
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-3 align-top">
                                         <div className="font-medium text-gray-900">{account.name}</div>
-                                        <div className="text-xs text-gray-500">{account.email}</div>
+                                        <div className="text-xs text-gray-500">
+                                            <a href={`mailto:${account.email}`} className="hover:text-brand hover:underline">{account.email}</a>
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                            {account.phone
+                                                ? <a href={`tel:${String(account.phone).replace(/\s/g, '')}`} className="hover:text-brand hover:underline">{account.phone}</a>
+                                                : <span className="text-gray-400">No phone</span>}
+                                        </div>
                                     </td>
-                                    <td className="px-4 py-3 text-gray-600">{account.builder_company || '—'}</td>
-                                    <td className="px-4 py-3 text-right text-gray-600">{account.orders_count ?? 0}</td>
-                                    <td className="px-4 py-3 text-right font-medium text-gray-900">{money(account.total_spent)}</td>
-                                    <td className="px-4 py-3 text-center">
+                                    <td className="px-4 py-3 align-top text-gray-600">
+                                        <div>{account.builder_company || '—'}</div>
+                                        <div className="text-xs text-gray-500">
+                                            {account.builder_abn
+                                                ? <>ABN {abn(account.builder_abn)}</>
+                                                : <span className="text-gray-400">No ABN</span>}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 align-top text-xs text-gray-600">
+                                        <div>Applied {date(account.created_at)}</div>
+                                        <div className="text-gray-500">
+                                            {account.builder_approved_at
+                                                ? `Approved ${date(account.builder_approved_at)}`
+                                                : <span className="text-amber-700">Not approved</span>}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 align-top text-right text-gray-600">
+                                        <div>{account.orders_count ?? 0}</div>
+                                        {account.last_order_at && (
+                                            <div className="text-xs text-gray-400">Last {date(account.last_order_at)}</div>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-3 align-top text-right font-medium text-gray-900">{money(account.total_spent)}</td>
+                                    <td className="px-4 py-3 align-top text-center">
                                         {statusOf(account) === 'pending' ? (
                                             <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
                                                 Pending
@@ -274,7 +341,7 @@ export default function BuilderAccounts({ builders, filters, stats }) {
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-right">
+                                    <td className="px-4 py-3 align-top text-right whitespace-nowrap">
                                         {statusOf(account) === 'pending' ? (
                                             <button
                                                 type="button"

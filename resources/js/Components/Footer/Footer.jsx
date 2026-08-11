@@ -84,45 +84,54 @@ export default function Footer({ minimal = false }) {
 
     const year = new Date().getFullYear();
 
-    // Product link columns with fallbacks
+    // Product link columns with fallbacks.
+    //
+    // These point at /shop?category=<slug> — the same shape the header nav uses,
+    // and the only one that resolves. The previous /tiles/…, /flooring/…,
+    // /stone/… and /trade-supplies/… paths matched no route at all, so every
+    // link in these five columns 404'd. Slugs below are real rows in the
+    // categories table; keep them in step if a category is renamed.
     const productColumns = [
         {
             heading: 'Tiles',
             links: menus.tiles?.items || [
-                { label: 'Porcelain', href: '/tiles/porcelain' },
-                { label: 'Subway', href: '/tiles/subway' },
-                { label: 'External Porcelain', href: '/tiles/external-porcelain' },
-                { label: 'Pool Coping', href: '/tiles/pool-coping' },
-                { label: 'Specialty Tiles', href: '/tiles/specialty' },
+                { label: 'Porcelain', href: '/shop?category=porcelain' },
+                { label: 'Subway', href: '/shop?category=subway' },
+                { label: 'External Porcelain', href: '/shop?category=external-porcelain' },
+                { label: 'Italian Porcelain', href: '/shop?category=italian-porcelain' },
+                { label: 'Decorative Tile', href: '/shop?category=decorative-tile' },
+                { label: 'Terrazzo', href: '/shop?category=terrazzo' },
             ],
         },
         {
             heading: 'Flooring',
             links: menus.flooring?.items || [
-                { label: 'Hybrid Flooring', href: '/flooring/hybrid' },
-                { label: 'Solid Oak', href: '/flooring/solid-oak' },
-                { label: 'Engineered Oak', href: '/flooring/engineered-oak' },
-                { label: 'Herringbone', href: '/flooring/herringbone' },
-                { label: 'Tile-Look', href: '/flooring/tile-look' },
+                { label: 'Hybrid Flooring', href: '/shop?category=hybrid' },
+                { label: 'Timber Oak Range', href: '/shop?category=hybrid-timber-oak-range' },
+                { label: 'Engineered Oak', href: '/shop?category=engineered-oak' },
+                { label: 'Engineered Timber', href: '/shop?category=engineered-timber' },
+                { label: 'Herringbone', href: '/shop?category=hybrid-herringbone' },
+                { label: 'Tile-Look', href: '/shop?category=hybrid-tile' },
             ],
         },
         {
             heading: 'Stone',
             links: menus.stone?.items || [
-                { label: 'Natural Stone', href: '/stone/natural' },
-                { label: 'Stone Pavers', href: '/stone/pavers' },
-                { label: 'Ethically Sourced', href: '/stone/ethically-sourced' },
+                { label: 'Natural Stone', href: '/shop?category=stone' },
+                { label: 'Marble', href: '/shop?category=marble' },
+                { label: 'Baltic Stone', href: '/shop?category=baltic-stone' },
+                { label: 'Tundra', href: '/shop?category=tundra' },
             ],
         },
         {
             heading: 'Trade Supplies',
             links: menus.tradeSupplies?.items || [
-                { label: 'Mapei', href: '/trade-supplies/mapei' },
-                { label: 'ARDEX', href: '/trade-supplies/ardex' },
-                { label: 'Soudal', href: '/trade-supplies/soudal' },
-                { label: 'Durotech', href: '/trade-supplies/durotech' },
-                { label: 'Levelling Systems', href: '/trade-supplies/levelling-systems' },
-                { label: 'Waterproofing', href: '/trade-supplies/waterproofing' },
+                { label: 'Mapei', href: '/shop?category=mapei' },
+                { label: 'ARDEX', href: '/shop?category=ardex' },
+                { label: 'Soudal', href: '/shop?category=soudal' },
+                { label: 'Durotech', href: '/shop?category=durotech' },
+                { label: 'Levelling Systems', href: '/shop?category=levelling-system' },
+                { label: 'Tiling & Waterproofing', href: '/shop?category=tiling-waterproofing' },
             ],
         },
         {
@@ -133,16 +142,18 @@ export default function Footer({ minimal = false }) {
                 { label: 'FAQ', href: '/faq' },
                 { label: 'Shipping Info', href: '/shipping' },
                 { label: 'Returns', href: '/returns' },
+                { label: 'Trade Portal', href: '/builder/register' },
             ],
         },
     ];
 
-    // Company info links
+    // Company info links. "About" lives in the Resources column above as
+    // "About Us"; repeating it here was the same page twice in one footer.
     const infoLinks = menus.info?.items || [
         { label: 'Blog', href: '/blog' },
-        { label: 'About', href: '/about' },
         { label: 'Privacy Policy', href: '/privacy-policy' },
         { label: 'Terms of Service', href: '/terms-of-service' },
+        { label: 'Return Policy', href: '/returns' },
     ];
 
     return (

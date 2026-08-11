@@ -55,7 +55,14 @@ class HandleInertiaRequests extends Middleware
                 'topBar' => Setting::getValue('ui.topBar', config('ui.topBar')),
             ],
             'site' => fn () => app(SiteConfigService::class)->getSiteData(),
-            // menus: lazy — sent only on full page loads, not on Inertia navigations
+            // menus stays lazy on purpose. Inertia::lazy() props are sent ONLY
+            // when a partial reload asks for them by name, so this is always
+            // absent and the header falls back to DEFAULT_NAV in
+            // StorefrontHeader.jsx. That fallback is the full merchandised nav;
+            // the `header` menu tree in the database is still a four-item stub
+            // (Shop / Collections / About / Contact), so sharing this eagerly
+            // would REPLACE the good nav with the stub. Populate the menu tree
+            // in admin first, then make this a plain closure like the others.
             'menus' => \Inertia\Inertia::lazy(fn () => [
                 'header_top' => app(SettingService::class)->menuItems('menu.header_top', []),
                 'header_main' => app(MenuService::class)->getTree('header'),
@@ -79,11 +86,18 @@ class HandleInertiaRequests extends Middleware
                 // the submit button until the lockout window expires.
                 'retry_after' => fn () => $request->session()->get('retry_after'),
             ],
-            // footerConfig, tracking, org schema, social — lazy on navigations
-            'footerConfig' => \Inertia\Inertia::lazy(fn () => app(FooterConfigService::class)->getConfig()),
-            'tracking' => \Inertia\Inertia::lazy(fn () => app(SiteConfigService::class)->getTrackingData()),
-            'organizationJsonLd' => \Inertia\Inertia::lazy(fn () => app(SiteConfigService::class)->getOrganizationJsonLd()),
-            'socialLinks' => \Inertia\Inertia::lazy(fn () => app(SiteConfigService::class)->getSocialLinks()),
+            // These four were Inertia::lazy(), which sends a prop ONLY on an
+            // explicit partial reload — so they never arrived on a normal page
+            // load, exactly like the dictionary bug above. The damage: the
+            // footer ignored the address/phone/email set in admin and used its
+            // hardcoded fallbacks, GTM / GA4 / the Meta Pixel never loaded at
+            // all, and no organisation JSON-LD was emitted for search engines.
+            // Plain closures are still lazily *evaluated* — nothing runs unless
+            // Inertia serialises the prop — but they are always *present*.
+            'footerConfig' => fn () => app(FooterConfigService::class)->getConfig(),
+            'tracking' => fn () => app(SiteConfigService::class)->getTrackingData(),
+            'organizationJsonLd' => fn () => app(SiteConfigService::class)->getOrganizationJsonLd(),
+            'socialLinks' => fn () => app(SiteConfigService::class)->getSocialLinks(),
         ];
     }
 }
