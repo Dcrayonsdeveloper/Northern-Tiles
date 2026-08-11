@@ -46,6 +46,8 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // New sign-ups are regular customers — send them to the storefront,
+        // not the member dashboard.
+        return redirect(route('home', absolute: false));
     }
 }
