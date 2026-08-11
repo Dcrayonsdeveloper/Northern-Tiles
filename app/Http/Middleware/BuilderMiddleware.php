@@ -26,15 +26,29 @@ class BuilderMiddleware
     {
         $user = $request->user();
 
+        // Guests land on the trade sign-up page, which offers both "sign in"
+        // and "apply". Sending them to the bare login form would strand any
+        // builder who does not have an account yet.
         if (! $user) {
-            return redirect()->guest(route('login'));
+            return redirect()->route('builder.register');
         }
 
         if (! $user->is_active) {
             abort(404);
         }
 
-        if (! $user->is_builder && ! $user->is_admin) {
+        if ($user->is_admin) {
+            return $next($request);
+        }
+
+        // Signed up but not approved yet: send them to the status page rather
+        // than a 404, so they can see their application is being reviewed
+        // instead of thinking the site is broken.
+        if ($user->isPendingBuilder()) {
+            return redirect()->route('builder.pending');
+        }
+
+        if (! $user->isBuilder()) {
             abort(404);
         }
 

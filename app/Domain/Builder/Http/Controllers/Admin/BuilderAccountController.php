@@ -36,7 +36,9 @@ class BuilderAccountController extends Controller
                 });
             })
             ->withCount('orders')
-            ->orderByDesc('builder_approved_at')
+            // Pending applications first — they are the ones needing action.
+            ->orderByRaw('builder_approved_at IS NULL DESC')
+            ->orderByDesc('created_at')
             ->paginate(20)
             ->withQueryString();
 
@@ -53,9 +55,41 @@ class BuilderAccountController extends Controller
             'filters' => ['q' => $search],
             'stats' => [
                 'total' => User::where('is_builder', true)->count(),
-                'active' => User::where('is_builder', true)->where('is_active', true)->count(),
+                'active' => User::where('is_builder', true)
+                    ->whereNotNull('builder_approved_at')
+                    ->where('is_active', true)
+                    ->count(),
+                'pending' => User::where('is_builder', true)
+                    ->whereNull('builder_approved_at')
+                    ->count(),
             ],
         ]);
+    }
+
+    /**
+     * Approve a pending application — this is what actually opens the portal
+     * and switches the account onto trade pricing.
+     */
+    public function approve(User $user): RedirectResponse
+    {
+        $user->update([
+            'is_builder' => true,
+            'builder_approved_at' => now(),
+            'is_active' => true,
+        ]);
+
+        return back()->with('success', "{$user->name} approved — trade pricing is now active for them.");
+    }
+
+    /**
+     * Send an account back to pending without deleting it, e.g. if the details
+     * need checking. They keep retail access throughout.
+     */
+    public function unapprove(User $user): RedirectResponse
+    {
+        $user->update(['builder_approved_at' => null]);
+
+        return back()->with('success', "{$user->name} moved back to pending — they are on retail pricing again.");
     }
 
     /**

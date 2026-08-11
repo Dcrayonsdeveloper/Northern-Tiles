@@ -23,6 +23,7 @@ use App\Http\Middleware\BuilderMiddleware;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\SellerMiddleware;
 use App\Domain\Builder\Http\Controllers\Builder\BuilderDashboardController;
+use App\Domain\Builder\Http\Controllers\Builder\BuilderRegistrationController;
 use App\Domain\Builder\Http\Controllers\Builder\BuilderShopController;
 use App\Domain\Dashboard\Http\Controllers\Admin\AdminDashboardController as WidgetAdminDashboardController;
 use App\Domain\Dashboard\Http\Controllers\Admin\DashboardLayoutController;
@@ -182,12 +183,29 @@ Route::middleware(['auth', 'verified', AdminMiddleware::class])
         require __DIR__.'/admin.php';
     });
 
+// ── Builder (trade) sign-up ──────────────────────────────────────────
+// Public on purpose: this is the "apply for a trade account" funnel the
+// header button points at. Applying is not access — store() creates the
+// account in a pending state that an admin must approve.
+Route::prefix('builder')->name('builder.')->group(function () {
+    Route::get('/register', [BuilderRegistrationController::class, 'create'])->name('register');
+    Route::post('/register', [BuilderRegistrationController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('register.store');
+    Route::get('/pending', [BuilderRegistrationController::class, 'pending'])
+        ->middleware('auth')
+        ->name('pending');
+});
+
 // ── Builder (trade) portal ───────────────────────────────────────────
 // Private storefront for approved contractor accounts. Same look as the
 // public site, but scoped to the builder catalogue and priced with the
 // admin-set trade prices. Cart and checkout are the shared ones — the
 // price difference is resolved server-side in BuilderPricingService.
-Route::middleware(['auth', BuilderMiddleware::class])
+// No 'auth' here on purpose: BuilderMiddleware handles the guest case itself,
+// sending them to the trade sign-up page. With 'auth' in front, Laravel's own
+// redirect to /login fired first and a builder without an account had no way in.
+Route::middleware([BuilderMiddleware::class])
     ->prefix('builder')
     ->name('builder.')
     ->group(function () {

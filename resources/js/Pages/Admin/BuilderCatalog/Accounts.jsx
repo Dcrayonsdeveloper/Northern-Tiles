@@ -163,6 +163,23 @@ export default function BuilderAccounts({ builders, filters, stats }) {
         router.patch(route('admin.builder.accounts.toggle', account.id), {}, { preserveScroll: true });
     };
 
+    const approve = (account) => {
+        if (!confirm(`Approve ${account.name}${account.builder_company ? ` (${account.builder_company})` : ''}? They'll get portal access and trade pricing immediately.`)) return;
+        router.patch(route('admin.builder.accounts.approve', account.id), {}, { preserveScroll: true });
+    };
+
+    const unapprove = (account) => {
+        if (!confirm(`Move ${account.name} back to pending? They lose trade pricing but keep their account and can still shop at retail.`)) return;
+        router.patch(route('admin.builder.accounts.unapprove', account.id), {}, { preserveScroll: true });
+    };
+
+    // Three states, not two: an applicant who has not been approved yet is
+    // distinct from one who has been switched off.
+    const statusOf = (account) => {
+        if (!account.builder_approved_at) return 'pending';
+        return account.is_active ? 'active' : 'disabled';
+    };
+
     return (
         <DashboardLayout>
             <Head title="Builder Accounts" />
@@ -175,6 +192,11 @@ export default function BuilderAccounts({ builders, filters, stats }) {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
+                    {(stats?.pending ?? 0) > 0 && (
+                        <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                            {stats.pending} awaiting approval
+                        </span>
+                    )}
                     <div className="text-sm text-gray-600">
                         <span className="font-semibold text-gray-900">{stats?.active ?? 0}</span> active
                         <span className="text-gray-400"> / {stats?.total ?? 0} total</span>
@@ -238,13 +260,38 @@ export default function BuilderAccounts({ builders, filters, stats }) {
                                     <td className="px-4 py-3 text-right text-gray-600">{account.orders_count ?? 0}</td>
                                     <td className="px-4 py-3 text-right font-medium text-gray-900">{money(account.total_spent)}</td>
                                     <td className="px-4 py-3 text-center">
-                                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                                            account.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'
-                                        }`}>
-                                            {account.is_active ? 'Active' : 'Disabled'}
-                                        </span>
+                                        {statusOf(account) === 'pending' ? (
+                                            <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                                                Pending
+                                            </span>
+                                        ) : statusOf(account) === 'active' ? (
+                                            <span className="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-800">
+                                                Active
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
+                                                Disabled
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3 text-right">
+                                        {statusOf(account) === 'pending' ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => approve(account)}
+                                                className="mr-3 rounded bg-green-600 px-3 py-1 text-xs font-semibold text-white hover:bg-green-700"
+                                            >
+                                                Approve
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => unapprove(account)}
+                                                className="mr-3 text-sm font-medium text-amber-700 hover:underline"
+                                            >
+                                                Deactivate
+                                            </button>
+                                        )}
                                         <button type="button" onClick={() => openEdit(account)} className="mr-3 text-sm font-medium text-brand hover:underline">
                                             Edit
                                         </button>

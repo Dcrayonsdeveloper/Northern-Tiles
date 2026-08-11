@@ -50,6 +50,8 @@ Route::prefix('builder')->name('builder.')->group(function () {
     Route::post('accounts', [BuilderAccountController::class, 'store'])->name('accounts.store');
     Route::put('accounts/{user}', [BuilderAccountController::class, 'update'])->name('accounts.update');
     Route::patch('accounts/{user}/toggle', [BuilderAccountController::class, 'toggle'])->name('accounts.toggle');
+    Route::patch('accounts/{user}/approve', [BuilderAccountController::class, 'approve'])->name('accounts.approve');
+    Route::patch('accounts/{user}/unapprove', [BuilderAccountController::class, 'unapprove'])->name('accounts.unapprove');
 
     // Orders — trade orders only
     Route::get('orders', [BuilderOrderController::class, 'index'])->name('orders.index');
