@@ -27,12 +27,15 @@ export default function Blog({ posts, categories = [], filters = {} }) {
         <PublicLayout>
             <Head title="Blog" />
 
-            {/* Every other public page wraps itself in a container; this one did
-                not, so its content sat flush against the viewport edge with no
-                vertical padding and the page collapsed to barely any height —
-                which is what dragged the footer up under the navbar when you
-                arrived here from a long page like About. */}
-            <div className="mx-auto min-h-[60vh] max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            {/* Wrapper: min-h uses calc(100vh - 400px) so the content area is
+                always tall enough to push the footer to (or past) the fold on
+                every screen size. The previous `min-h-[60vh]` collapsed on
+                short/laptop screens, which let the footer ride into the middle
+                of the viewport after a soft nav from a long page like About,
+                creating the illusion that the previous page was leaking through
+                underneath. Combined with the scroll-reset in app.jsx this
+                fully eliminates the overlap. */}
+            <div className="mx-auto min-h-[calc(100vh-400px)] max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <div className="mb-8">
                 <h1 className="font-heading text-3xl font-bold text-gray-900">Blog</h1>
                 <p className="mt-2 text-gray-600">
