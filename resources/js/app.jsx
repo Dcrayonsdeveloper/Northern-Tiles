@@ -1,11 +1,24 @@
 import '../scss/app.scss';
 import './bootstrap';
 
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { initDictionary } from '@/Support/dictionary';
 import { Component } from 'react';
+
+// Fix: after a soft SPA nav (e.g. About -> Blog), the browser sometimes keeps
+// the previous scroll position on top of a stale layout snapshot, so the new
+// short page paints its footer under the header and the previous page's tail
+// leaks through underneath. Forcing a hard scroll-to-top the tick after every
+// navigation eliminates the visual overlap. Skips when the caller opted into
+// preserveScroll (used by filter/pagination flows on shop, admin, etc.).
+router.on('navigate', (event) => {
+    if (event?.detail?.page?.rememberedState) return;
+    if (event?.detail?.preserveScroll) return;
+    // Defer to next frame so the new page has painted first.
+    requestAnimationFrame(() => window.scrollTo(0, 0));
+});
 
 class ErrorBoundary extends Component {
     constructor(props) { super(props); this.state = { error: null }; }
