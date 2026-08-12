@@ -2,7 +2,10 @@
 
 namespace App\Domain\Builder\Http\Controllers\Builder;
 
+use App\Domain\Builder\Models\BuilderProduct;
+use App\Domain\Builder\Services\TradeUnitResolver;
 use App\Domain\Catalog\Models\Attribute;
+use App\Domain\Catalog\Support\ProductFamily;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
@@ -20,6 +23,8 @@ class BuilderShopController extends Controller
 {
     /** Attribute facets accepted as comma-separated query params (?color=white,grey). */
     private const ATTRIBUTE_FILTERS = ['color', 'space', 'size', 'material', 'finish', 'style'];
+
+    public function __construct(private TradeUnitResolver $units) {}
 
     public function index(Request $request, ?string $category = null, ?string $subcategory = null): Response
     {
@@ -164,7 +169,7 @@ class BuilderShopController extends Controller
         $listing = $product->builderListing()->where('is_active', true)->first();
         abort_unless($listing !== null, 404);
 
-        $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media']);
+        $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media', 'variantFamily']);
         $this->decorateWithBuilderPrice($product);
 
         $relatedIds = Product::query()
@@ -179,8 +184,10 @@ class BuilderShopController extends Controller
         $relatedProducts = collect();
         if ($relatedIds->isNotEmpty()) {
             $relatedProducts = Product::whereIn('id', $relatedIds)
-                ->with('builderListing')
-                ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description'])
+                ->with(['builderListing', 'category:id,name,slug'])
+                // category_id and sqm_per_box are needed by TradeUnitResolver;
+                // without them every related card falls back to "not per m²".
+                ->get(['id', 'category_id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description', 'sqm_per_box'])
                 ->map(fn (Product $p) => $this->decorateWithBuilderPrice($p))
                 ->shuffle()
                 ->values();
@@ -189,7 +196,52 @@ class BuilderShopController extends Controller
         return Inertia::render('Builder/Shop/Show', [
             'product' => $product,
             'relatedProducts' => $relatedProducts,
+            'familyVariants' => $this->builderFamilySelector($product),
         ]);
+    }
+
+    /**
+     * The product's range selector, rewritten for trade.
+     *
+     * Two differences from the retail selector: siblings that are not on the
+     * builder list are dropped (their pages 404 in the portal, so linking to
+     * them would be a dead end), and the survivors are re-priced to trade with
+     * retail kept alongside for the strikethrough.
+     *
+     * @return array{family: array{id:int,name:string}, variants: array<int, array<string, mixed>>}|null
+     */
+    private function builderFamilySelector(Product $product): ?array
+    {
+        $selector = ProductFamily::selectorFor($product);
+
+        if (! $selector) {
+            return null;
+        }
+
+        $tradePrices = BuilderProduct::live()
+            ->whereIn('product_id', array_column($selector['variants'], 'id'))
+            ->pluck('price', 'product_id');
+
+        $variants = [];
+        foreach ($selector['variants'] as $variant) {
+            if (! isset($tradePrices[$variant['id']])) {
+                continue;
+            }
+
+            $retail = (float) $variant['price'];
+            $trade = (float) $tradePrices[$variant['id']];
+
+            $variant['retail_price'] = $retail;
+            $variant['price'] = $trade;
+            $variant['compare_at_price'] = $retail > $trade ? $retail : null;
+
+            $variants[] = $variant;
+        }
+
+        // Same rule the retail page uses: a single remaining card is not a choice.
+        return count($variants) > 1
+            ? ['family' => $selector['family'], 'variants' => $variants]
+            : null;
     }
 
     /**
@@ -214,6 +266,10 @@ class BuilderShopController extends Controller
         $product->setAttribute('compare_at_price', $retail > $builderPrice ? $retail : null);
         $product->unsetRelation('builderListing');
 
-        return $product;
+        // Tiles and flooring are priced per m²; grouts, adhesives, silicones and
+        // trims are not. Adds is_sold_per_sqm / unit_label to the payload so the
+        // trade views can drop the "/ sqm" suffix where it does not apply.
+        // Trade-side only — the retail storefront and admin never see this.
+        return $this->units->decorate($product);
     }
 }
