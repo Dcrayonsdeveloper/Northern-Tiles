@@ -91,7 +91,7 @@ export default function Index({
             city: '',
             state: '',
             postal_code: '',
-            country: 'Australia',
+            country: '',
             phone: user?.phone || '',
         },
         billing_address: {
@@ -101,7 +101,7 @@ export default function Index({
             city: '',
             state: '',
             postal_code: '',
-            country: 'Australia',
+            country: '',
         },
         billing_same_as_shipping: true,
         shipping_method: shippingMethods[0]?.id || 'standard',
@@ -348,14 +348,16 @@ export default function Index({
                                                 <label className="text-xs font-medium text-gray-600">
                                                     Country *
                                                 </label>
-                                                <select
+                                                <input
+                                                    type="text"
                                                     value={data.shipping_address.country}
                                                     onChange={(e) => updateShippingAddress('country', e.target.value)}
                                                     className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                                     required
-                                                >
-                                                    <option value="Australia">Australia</option>
-                                                </select>
+                                                />
+                                                {errors['shipping_address.country'] && (
+                                                    <p className="mt-1 text-xs text-red-600">{errors['shipping_address.country']}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
