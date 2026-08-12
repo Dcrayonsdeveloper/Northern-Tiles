@@ -64,16 +64,50 @@ class BuilderPricingService
      * Price this user actually pays. Returns the retail/variant price for
      * everyone who is not an approved builder, or for products the admin has
      * not put in the builder catalogue.
+     *
+     * $channel is the CART/SURFACE the price is being charged on:
+     *   - 'retail' (default): always retail, even for approved builders. A
+     *     builder can still buy at retail from the public storefront if they
+     *     want to keep a purchase off their trade account.
+     *   - 'trade': trade price when the user qualifies, otherwise retail.
+     *
+     * Making channel decide (not just the user) is what keeps a builder's
+     * retail cart at retail prices after this system split.
      */
-    public function effectivePrice(Product $product, ?float $fallback = null, ?User $user = null): float
-    {
+    public function effectivePrice(
+        Product $product,
+        ?float $fallback = null,
+        ?User $user = null,
+        string $channel = 'retail'
+    ): float {
         $fallback ??= (float) $product->price;
+
+        if ($channel !== 'trade') {
+            return $fallback;
+        }
 
         if (! $this->isBuilder($user)) {
             return $fallback;
         }
 
         return $this->builderPrice($product) ?? $fallback;
+    }
+
+    /**
+     * Bulk lookup gated by channel. Same shape as priceMap(), but on the
+     * retail channel it short-circuits to an empty map so listing renderers
+     * on the public storefront never accidentally show trade prices.
+     *
+     * @param  iterable<int>  $productIds
+     * @return array<int, float>
+     */
+    public function priceMapForChannel(iterable $productIds, ?User $user = null, string $channel = 'retail'): array
+    {
+        if ($channel !== 'trade' || ! $this->isBuilder($user)) {
+            return [];
+        }
+
+        return $this->priceMap($productIds);
     }
 
     /**

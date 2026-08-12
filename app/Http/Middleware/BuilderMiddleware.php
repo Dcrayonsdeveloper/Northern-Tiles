@@ -26,34 +26,38 @@ class BuilderMiddleware
     {
         $user = $request->user();
 
-        // Guests land on the trade sign-up page, which offers both "sign in"
-        // and "apply". Sending them to the bare login form would strand any
-        // builder who does not have an account yet.
+        // JSON callers (the trade cart drawer + sticky ATC, all of which
+        // fetch(/api/builder/cart/*)) need a JSON error, not an HTML redirect
+        // — otherwise response.json() throws a SyntaxError on the 302 body
+        // and the UI hangs in a loading state with no user-visible message.
+        $wantsJson = $request->expectsJson() || $request->is('api/*');
+
         if (! $user) {
-            return redirect()->route('builder.register');
+            return $wantsJson
+                ? response()->json(['message' => 'Unauthenticated.'], 401)
+                : redirect()->route('builder.register');
         }
 
         if (! $user->is_active) {
-            abort(404);
+            return $wantsJson
+                ? response()->json(['message' => 'Your account is inactive. Ordering is disabled.'], 403)
+                : abort(404);
         }
 
         if ($user->is_admin) {
             return $next($request);
         }
 
-        // Signed up but not approved yet: send them to the status page rather
-        // than a 404, so they can see their application is being reviewed
-        // instead of thinking the site is broken.
         if ($user->isPendingBuilder()) {
-            return redirect()->route('builder.pending');
+            return $wantsJson
+                ? response()->json(['message' => 'Your trade application is still being reviewed.'], 403)
+                : redirect()->route('builder.pending');
         }
 
-        // A signed-in customer who is not a builder yet: send them to the trade
-        // application page instead of a dead-end 404. The apply page handles a
-        // logged-in user (it upgrades the account they already have), so this is
-        // exactly where the "Trade Portal" button should take them.
         if (! $user->isBuilder()) {
-            return redirect()->route('builder.register');
+            return $wantsJson
+                ? response()->json(['message' => 'Trade access is required.'], 403)
+                : redirect()->route('builder.register');
         }
 
         return $next($request);

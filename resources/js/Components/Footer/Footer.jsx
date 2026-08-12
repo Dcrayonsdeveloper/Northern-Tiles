@@ -152,6 +152,7 @@ export default function Footer({ minimal = false }) {
     const infoLinks = menus.info?.items || [
         { label: 'Blog', href: '/blog' },
         { label: 'Privacy Policy', href: '/privacy-policy' },
+        { label: 'Cookie Policy', href: '/cookie-policy' },
         { label: 'Terms of Service', href: '/terms-of-service' },
         { label: 'Return Policy', href: '/returns' },
     ];

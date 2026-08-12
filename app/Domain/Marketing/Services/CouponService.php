@@ -12,6 +12,18 @@ class CouponService
      */
     public function applyCoupon(Cart $cart, string $code): array
     {
+        // Retail coupons don't apply to trade carts — trade pricing is
+        // already discounted at the line level and stacking a retail promo
+        // on top would double-discount. See autoApplyBestCoupon for the
+        // same gate on the auto-apply path.
+        if ($cart->channel === \App\Domain\Cart\Models\Cart::CHANNEL_TRADE) {
+            return [
+                'success' => false,
+                'error' => 'Coupons are not available on trade orders.',
+                'error_code' => 'trade_cart',
+            ];
+        }
+
         $coupon = Coupon::findByCode($code);
 
         if (!$coupon) {
@@ -230,6 +242,18 @@ class CouponService
      */
     public function autoApplyBestCoupon(Cart $cart): void
     {
+        // Trade carts are excluded from retail coupon auto-apply. Coupons are
+        // authored for the retail customer base — stacking WELCOME10 on top
+        // of already-discounted trade prices would double-discount and leak
+        // revenue on every builder order. When trade-only coupons exist in
+        // future, add a channel column to coupons and gate here instead.
+        if ($cart->channel === \App\Domain\Cart\Models\Cart::CHANNEL_TRADE) {
+            if ($cart->coupon_id) {
+                $cart->update(['coupon_id' => null, 'discount_amount' => 0]);
+            }
+            return;
+        }
+
         $subtotal = $cart->getSubtotal();
 
         if ($subtotal <= 0) {

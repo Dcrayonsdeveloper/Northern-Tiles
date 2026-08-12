@@ -121,7 +121,23 @@ class BuilderShopController extends Controller
                     'name_desc' => $query->orderByDesc('name'),
                     default => $query->orderByDesc('products.id'),
                 };
-            }, fn ($query) => $query->orderByDesc('products.id'))
+            }, function ($query) use ($filters) {
+                // Default order for a search query: rank exact-name-prefix matches
+                // first, then any name match containing the phrase, then the
+                // per-token OR fallback. Without this, an exact match on an old
+                // product (low id) drops below every newer product whose name
+                // just happens to share a token, so a user searching by full
+                // product name has to scroll past 10 unrelated hits.
+                if ($filters['q']) {
+                    $q = $filters['q'];
+                    $query->orderByRaw(
+                        'CASE WHEN products.name LIKE ? THEN 0 WHEN products.name LIKE ? THEN 1 ELSE 2 END',
+                        [$q . '%', '%' . $q . '%']
+                    )->orderBy('products.name');
+                } else {
+                    $query->orderByDesc('products.id');
+                }
+            })
             ->with([
                 'category:id,name,slug',
                 'builderListing',
@@ -132,7 +148,14 @@ class BuilderShopController extends Controller
 
         $products->getCollection()->transform(function (Product $product) {
             $primary = $product->media->first();
-            if ($primary) {
+            // Only overwrite the DB image_url if the primary media file actually
+            // exists on disk. Older imports left dead product_media rows that
+            // point at storage/app/public/products/<id>/images/… files that
+            // were never synced; without this check the transform threw away
+            // a perfectly good external CDN url in image_url and replaced it
+            // with a 403 local path, so the trade catalogue showed "No Image"
+            // for every affected product even though the storefront rendered fine.
+            if ($primary && \Illuminate\Support\Facades\Storage::disk('public')->exists($primary->path)) {
                 $product->image_url = $primary->url;
             }
             $product->unsetRelation('media');

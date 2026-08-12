@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Domain\Cart\Services\CartService;
 use App\Domain\Cart\Services\PricingService;
 use App\Domain\Marketing\Services\CouponService;
+use App\Http\Controllers\Concerns\HasCartChannel;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CouponController extends Controller
 {
+    use HasCartChannel;
+
     public function __construct(
         protected CouponService $couponService,
         protected CartService $cartService,
@@ -25,7 +28,7 @@ class CouponController extends Controller
     {
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
         $subtotal = $cart ? $cart->getSubtotal() : 0;
 
         $coupons = \App\Domain\Marketing\Models\Coupon::active()
@@ -64,7 +67,7 @@ class CouponController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
 
         if (!$cart) {
             return response()->json([
@@ -99,7 +102,7 @@ class CouponController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
 
         if (!$cart) {
             return response()->json([
@@ -130,7 +133,7 @@ class CouponController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
         $subtotal = $cart ? $cart->getSubtotal() : 0;
         $email = $cart?->email ?? $request->user()?->email;
 

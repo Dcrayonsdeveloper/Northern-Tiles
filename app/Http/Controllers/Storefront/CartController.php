@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Domain\Cart\Services\CartService;
 use App\Domain\Cart\Services\PricingService;
+use App\Http\Controllers\Concerns\HasCartChannel;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
@@ -14,6 +15,8 @@ use Inertia\Response;
 
 class CartController extends Controller
 {
+    use HasCartChannel;
+
     public function __construct(
         protected CartService $cartService,
         protected PricingService $pricingService
@@ -24,7 +27,7 @@ class CartController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
 
         $items = collect();
         $subtotal = 0;
@@ -84,7 +87,7 @@ class CartController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getOrCreate($userId, $sessionId);
+        $cart = $this->cartService->getOrCreate($userId, $sessionId, $this->channel());
 
         try {
             $this->cartService->addItem(
@@ -117,7 +120,7 @@ class CartController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
 
         if ($cart) {
             $item = $cart->items()->find($itemId);
@@ -134,7 +137,7 @@ class CartController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
 
         if ($cart) {
             $item = $cart->items()->find($itemId);

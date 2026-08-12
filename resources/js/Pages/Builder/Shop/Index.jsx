@@ -22,17 +22,20 @@ function TradeProductCard({ product }) {
     // so a bag of grout no longer advertises itself as priced per square metre.
     const perUnit = product.is_sold_per_sqm === true ? ` / ${product.unit_label ?? 'sqm'}` : '';
 
+    // Add to the TRADE cart. Pointing at the retail cart.store here would
+    // dump trade-catalogue items into the retail cart at retail prices —
+    // exactly the bug the split is meant to prevent.
     const addToCart = (e) => {
         e.preventDefault();
         e.stopPropagation();
         setAdding(true);
         router.post(
-            route('cart.store'),
+            route('builder.cart.store'),
             { product_id: product.id, quantity: 1 },
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    window.dispatchEvent(new CustomEvent('cart-updated'));
+                    window.dispatchEvent(new CustomEvent('cart-updated:trade'));
                     window.dispatchEvent(new CustomEvent('open-cart-sidebar'));
                 },
                 onFinish: () => setAdding(false),

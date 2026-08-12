@@ -57,9 +57,13 @@ class CheckoutService
             // Create order
             $order = Order::create([
                 'user_id' => $cart->user_id,
-                // Stamped now, not derived later: the order stays identifiable
-                // as trade even if the account's builder flag is revoked.
-                'is_builder_order' => (bool) $cart->user?->isBuilder(),
+                // Trade flag comes from the CART'S CHANNEL, not the user role.
+                // Before the split this was derived from ->isBuilder(), which
+                // meant a builder buying from the retail storefront had the
+                // order flagged as trade — the reverse of what the invoicing
+                // team expected. Cart channel is the ground truth: 'trade' cart
+                // → trade order, 'retail' cart → retail order, always.
+                'is_builder_order' => $cart->channel === \App\Domain\Cart\Models\Cart::CHANNEL_TRADE,
                 'order_number' => $this->generateOrderNumber(),
                 'status' => 'pending',
                 'customer_name' => $data['contact']['name'] ?? null,
@@ -129,9 +133,17 @@ class CheckoutService
 
     /**
      * Validate checkout data.
+     *
+     * $channel gates which payment methods are accepted. Trade cart checkouts
+     * can additionally choose 'invoice' (net-30) — retail POSTs cannot smuggle
+     * that in because a retail cart submits with $channel = 'retail'.
      */
-    public function validateCheckoutData(array $data, bool $isGuest): array
+    public function validateCheckoutData(array $data, bool $isGuest, string $channel = 'retail'): array
     {
+        $paymentMethods = $channel === \App\Domain\Cart\Models\Cart::CHANNEL_TRADE
+            ? 'cod,upi,card,invoice'
+            : 'cod,upi,card';
+
         $rules = [
             'contact.email' => 'required|email|max:255',
             'contact.phone' => 'nullable|string|max:20',
@@ -145,9 +157,14 @@ class CheckoutService
             'shipping_address.country' => 'required|string|max:100',
             'shipping_address.phone' => 'nullable|string|max:20',
             'shipping_method' => 'required|string|in:standard,express',
-            'payment_method' => 'required|string|in:cod,upi,card',
+            'payment_method' => 'required|string|in:' . $paymentMethods,
             'billing_same_as_shipping' => 'boolean',
             'notes' => 'nullable|string|max:500',
+            // Trade-only: PO number and site-vs-address delivery flag. Retail
+            // POSTs may still send them (they'll be ignored), but the trade
+            // page collects them so the order write can pick them up.
+            'po_number' => 'nullable|string|max:100',
+            'deliver_to_site' => 'nullable|boolean',
         ];
 
         // If billing is different from shipping

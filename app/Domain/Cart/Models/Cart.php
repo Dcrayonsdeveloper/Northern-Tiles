@@ -12,12 +12,22 @@ use Illuminate\Support\Str;
 
 class Cart extends Model
 {
+    /**
+     * A cart is uniquely identified by (user_id or session_id) AND channel.
+     * channel is one of self::CHANNEL_* — retail = public storefront, trade =
+     * builder portal. A logged-in builder can hold one of each simultaneously.
+     */
+    public const CHANNEL_RETAIL = 'retail';
+    public const CHANNEL_TRADE = 'trade';
+    public const CHANNELS = [self::CHANNEL_RETAIL, self::CHANNEL_TRADE];
+
     protected $fillable = [
         'user_id',
         'session_id',
         'email',
         'customer_id',
         'vendor_id',
+        'channel',
         'currency',
         'coupon_id',
         'discount_amount',
@@ -68,34 +78,75 @@ class Cart extends Model
         return $query->where('expires_at', '<=', now());
     }
 
-    public static function getOrCreate(?int $userId, ?string $sessionId): self
+    /**
+     * Fetch or create the active cart for this identity ON THE GIVEN CHANNEL.
+     * Every branch is scoped by $channel so a retail lookup never returns a
+     * trade cart and vice versa — critical because the same user_id can now
+     * own two live rows.
+     *
+     * Race safety: the DB has a UNIQUE constraint on (user_id, channel) and
+     * (session_id, channel), so two concurrent INSERTs from the same
+     * identity/channel can't both succeed. On the collision we swallow the
+     * duplicate-key exception and re-read the winning row.
+     */
+    public static function getOrCreate(?int $userId, ?string $sessionId, string $channel = self::CHANNEL_RETAIL): self
     {
-        if ($userId) {
-            $cart = static::where('user_id', $userId)->active()->first();
-            if ($cart) {
-                return $cart;
-            }
+        if (!in_array($channel, self::CHANNELS, true)) {
+            throw new \InvalidArgumentException("Unknown cart channel: {$channel}");
         }
 
-        if ($sessionId) {
-            $cart = static::where('session_id', $sessionId)
-                ->whereNull('user_id')
-                ->active()
-                ->first();
-            if ($cart) {
-                if ($userId) {
-                    $cart->update(['user_id' => $userId]);
+        $lookup = function () use ($userId, $sessionId, $channel) {
+            if ($userId) {
+                $cart = static::where('user_id', $userId)
+                    ->where('channel', $channel)
+                    ->active()
+                    ->first();
+                if ($cart) {
+                    return $cart;
                 }
-                return $cart;
             }
+
+            if ($sessionId) {
+                $cart = static::where('session_id', $sessionId)
+                    ->whereNull('user_id')
+                    ->where('channel', $channel)
+                    ->active()
+                    ->first();
+                if ($cart) {
+                    if ($userId) {
+                        $cart->update(['user_id' => $userId]);
+                    }
+                    return $cart;
+                }
+            }
+
+            return null;
+        };
+
+        $existing = $lookup();
+        if ($existing) {
+            return $existing;
         }
 
-        return static::create([
-            'user_id' => $userId,
-            'session_id' => $sessionId,
-            'currency' => 'AUD',
-            'expires_at' => now()->addDays(30),
-        ]);
+        try {
+            return static::create([
+                'user_id' => $userId,
+                'session_id' => $sessionId,
+                'channel' => $channel,
+                'currency' => 'AUD',
+                'expires_at' => now()->addDays(30),
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // 23000 = integrity constraint violation. Another concurrent request
+            // won the INSERT race; re-read and return their row.
+            if ($e->getCode() === '23000' || str_contains($e->getMessage(), 'Duplicate entry')) {
+                $again = $lookup();
+                if ($again) {
+                    return $again;
+                }
+            }
+            throw $e;
+        }
     }
 
     public function getSubtotal(): float
@@ -105,8 +156,13 @@ class Cart extends Model
 
     public function getItemCount(): int
     {
-        // quantity is decimal:2 (m²); ceil for the cart-badge integer count.
-        return (int) ceil((float) $this->items->sum('quantity'));
+        // Number of distinct LINE ITEMS in the cart — what the header badge
+        // should show. Do NOT sum the `quantity` column: quantity is stored
+        // as decimal m² (e.g. one tile line at 1.10 m²), and ceil(1.10) = 2
+        // made the badge display "2" for a single product line, which is
+        // both misleading and inconsistent with how retail carts behave
+        // everywhere else on the web (one product = one badge tick).
+        return (int) $this->items->count();
     }
 
     public function isEmpty(): bool

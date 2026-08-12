@@ -132,11 +132,43 @@ function AccountMenu({ user }) {
  * cart — but on a dark trade skin and with every link pointed at /builder,
  * so a builder can never wander into retail pricing by accident.
  */
-export default function BuilderHeader({ user, cartCount = 0, categories = [] }) {
+export default function BuilderHeader({ user, cartCount: initialCartCount = 0, categories = [] }) {
     const [cartOpen, setCartOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [query, setQuery] = useState('');
+    const [cartCount, setCartCount] = useState(initialCartCount);
     const { url } = usePage();
+
+    useEffect(() => { setCartCount(initialCartCount); }, [initialCartCount]);
+
+    // Keep the trade badge live between Inertia navigations by listening for
+    // the trade-scoped cart event. Mirror the pattern StorefrontHeader uses
+    // for retail. Without this the badge was stale after add-to-cart.
+    useEffect(() => {
+        const handle = async (event) => {
+            if (event?.detail?.count !== undefined) {
+                setCartCount(event.detail.count);
+                return;
+            }
+            try {
+                const r = await fetch('/api/builder/cart/count', {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                });
+                if (r.ok) {
+                    const d = await r.json();
+                    setCartCount(d.count ?? 0);
+                }
+            } catch (e) { /* silent — bad-network fallback */ }
+        };
+        const handleOpenCart = () => setCartOpen(true);
+        window.addEventListener('cart-updated:trade', handle);
+        window.addEventListener('open-cart-sidebar', handleOpenCart);
+        return () => {
+            window.removeEventListener('cart-updated:trade', handle);
+            window.removeEventListener('open-cart-sidebar', handleOpenCart);
+        };
+    }, []);
 
     const submitSearch = (e) => {
         e.preventDefault();
@@ -288,7 +320,7 @@ export default function BuilderHeader({ user, cartCount = 0, categories = [] }) 
                 )}
             </header>
 
-            <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
+            <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} scope="trade" />
         </>
     );
 }

@@ -72,7 +72,20 @@ function SampleBanner({ totals }) {
     );
 }
 
-export default function CartSidebar({ open, onClose }) {
+/**
+ * scope decides which cart this drawer talks to.
+ *   'retail' (default): /api/cart/* endpoints, /checkout button, listens for
+ *     the `cart-updated:retail` event.
+ *   'trade': /api/builder/cart/* endpoints, /builder/checkout button, listens
+ *     for `cart-updated:trade`.
+ * Namespacing the event stops a retail add-to-cart from bumping the trade
+ * badge and vice versa when both headers are on the page.
+ */
+export default function CartSidebar({ open, onClose, scope = 'retail' }) {
+    const isTrade = scope === 'trade';
+    const apiBase = isTrade ? '/api/builder/cart' : '/api/cart';
+    const checkoutUrl = isTrade ? '/builder/checkout' : '/checkout';
+    const updateEvent = isTrade ? 'cart-updated:trade' : 'cart-updated:retail';
     const [cart, setCart] = useState({
         items: [],
         totals: {
@@ -107,7 +120,7 @@ export default function CartSidebar({ open, onClose }) {
 
         setLoading(true);
         try {
-            const response = await fetch('/api/cart', {
+            const response = await fetch(apiBase, {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
@@ -149,7 +162,7 @@ export default function CartSidebar({ open, onClose }) {
         inFlight.current.add(itemId);
         setUpdating(itemId);
         try {
-            const response = await fetch(`/api/cart/${itemId}`, {
+            const response = await fetch(`${apiBase}/${itemId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -174,7 +187,7 @@ export default function CartSidebar({ open, onClose }) {
                     coupon: data.coupon,
                     shipping_estimate: data.shipping_estimate ?? prev.shipping_estimate,
                 }));
-                window.dispatchEvent(new CustomEvent('cart-updated'));
+                window.dispatchEvent(new CustomEvent(updateEvent));
             }
         } catch (error) {
             console.error('Failed to update quantity:', error);
@@ -188,7 +201,7 @@ export default function CartSidebar({ open, onClose }) {
     const removeItem = useCallback(async (itemId) => {
         setUpdating(itemId);
         try {
-            const response = await fetch(`/api/cart/${itemId}`, {
+            const response = await fetch(`${apiBase}/${itemId}`, {
                 method: 'DELETE',
                 headers: {
                     'Accept': 'application/json',
@@ -207,7 +220,7 @@ export default function CartSidebar({ open, onClose }) {
                     coupon: data.coupon,
                     shipping_estimate: data.shipping_estimate ?? prev.shipping_estimate,
                 }));
-                window.dispatchEvent(new CustomEvent('cart-updated'));
+                window.dispatchEvent(new CustomEvent(updateEvent));
             }
         } catch (error) {
             console.error('Failed to remove item:', error);
@@ -219,7 +232,7 @@ export default function CartSidebar({ open, onClose }) {
     // Add upsell to cart
     const addUpsell = async (productId) => {
         try {
-            const response = await fetch('/api/cart/add', {
+            const response = await fetch(`${apiBase}/add`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -233,7 +246,7 @@ export default function CartSidebar({ open, onClose }) {
 
             if (response.ok) {
                 await fetchCart();
-                window.dispatchEvent(new CustomEvent('cart-updated'));
+                window.dispatchEvent(new CustomEvent(updateEvent));
             }
         } catch (error) {
             console.error('Failed to add upsell:', error);
@@ -372,7 +385,11 @@ export default function CartSidebar({ open, onClose }) {
                                         {/* Footer */}
                                         {!isEmpty && !loading && (
                                             <div className="border-t border-gray-200 px-4 py-4">
-                                                {/* Coupon Input */}
+                                                {/* Coupon Input — retail only.
+                                                    Trade orders don't take retail coupon codes; without
+                                                    this guard a trade user could apply WELCOME10 and
+                                                    double-discount trade pricing. */}
+                                                {!isTrade && (
                                                 <div className="mb-4">
                                                     <CouponInput
                                                         appliedCoupon={cart.coupon}
@@ -397,6 +414,7 @@ export default function CartSidebar({ open, onClose }) {
                                                         }}
                                                     />
                                                 </div>
+                                                )}
 
                                                 <CartSummary
                                                     totals={cart.totals}
@@ -409,7 +427,7 @@ export default function CartSidebar({ open, onClose }) {
                                                         type="button"
                                                         onClick={() => {
                                                             onClose();
-                                                            router.visit('/checkout');
+                                                            router.visit(checkoutUrl);
                                                         }}
                                                         className="block w-full rounded-md bg-gray-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-gray-800"
                                                     >
