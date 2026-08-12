@@ -96,8 +96,20 @@ function GtmNoscript({ gtmId }) {
 }
 
 export default function PublicLayout({ children }) {
-    const { auth, cart, flash, ui, site, menus, tracking, organizationJsonLd } = usePage().props;
+    const page = usePage();
+    const { auth, cart, flash, ui, site, menus, tracking, organizationJsonLd } = page.props;
     const user = auth?.user;
+    // Root cause of the "About -> Blog leaks content under the footer" bug:
+    // pages that use dangerouslySetInnerHTML (About's Our Story section) mount
+    // a real HTML subtree that is NOT part of React's virtual DOM. When Inertia
+    // soft-navigates to a page whose component doesn't render at that same
+    // JSX position (Blog uses a different top-level layout), React keeps the
+    // outer <main> element instance and reconciles children — but the raw
+    // innerHTML that was set on descendants isn't in the vDOM, so the
+    // reconciler doesn't know to remove it. Keying <main> on the current URL
+    // forces React to unmount the old element entirely and create a fresh one
+    // on every navigation, which garbage-collects any residual innerHTML with it.
+    const pageUrl = page.url;
 
     const cartCount = cart?.count ?? 0;
     const topBar = ui?.topBar;
@@ -157,7 +169,7 @@ export default function PublicLayout({ children }) {
                 </Container>
             )}
 
-            <main className="flex-1">
+            <main key={pageUrl} className="flex-1">
                 {children}
             </main>
 
