@@ -55,9 +55,28 @@ class AuthenticatedSessionController extends Controller
             throw $e;
         }
 
+        // Capture the guest session id BEFORE regenerate() — otherwise the
+        // guest cart row (session_id = OLD_SID, user_id = NULL) is orphaned
+        // when regenerate() mints a fresh id, its items vanish from the badge,
+        // and the abandoned-cart job later emails the user about the empty
+        // cart they're staring at.
+        $oldSessionId = $request->session()->getId();
+
         $request->session()->regenerate();
 
         $user = $request->user();
+
+        // Reclaim the pre-login retail guest cart onto the user account.
+        // mergeGuestCart is retail-only by construction (guests never have
+        // trade access), and its dedupe key includes is_sample + options_json
+        // so free samples stay free and colour/finish selections survive.
+        try {
+            app(\App\Domain\Cart\Services\CartService::class)
+                ->mergeGuestCart($user->id, $oldSessionId);
+        } catch (\Throwable $e) {
+            // Never fail login because a cart merge went wrong.
+            \Log::warning('Guest cart merge on login failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+        }
 
         // Route each account type to where it belongs. Regular customers land
         // on the storefront (the website) — never the member dashboard.

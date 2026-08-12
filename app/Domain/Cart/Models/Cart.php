@@ -83,6 +83,11 @@ class Cart extends Model
      * Every branch is scoped by $channel so a retail lookup never returns a
      * trade cart and vice versa — critical because the same user_id can now
      * own two live rows.
+     *
+     * Race safety: the DB has a UNIQUE constraint on (user_id, channel) and
+     * (session_id, channel), so two concurrent INSERTs from the same
+     * identity/channel can't both succeed. On the collision we swallow the
+     * duplicate-key exception and re-read the winning row.
      */
     public static function getOrCreate(?int $userId, ?string $sessionId, string $channel = self::CHANNEL_RETAIL): self
     {
@@ -90,37 +95,58 @@ class Cart extends Model
             throw new \InvalidArgumentException("Unknown cart channel: {$channel}");
         }
 
-        if ($userId) {
-            $cart = static::where('user_id', $userId)
-                ->where('channel', $channel)
-                ->active()
-                ->first();
-            if ($cart) {
-                return $cart;
-            }
-        }
-
-        if ($sessionId) {
-            $cart = static::where('session_id', $sessionId)
-                ->whereNull('user_id')
-                ->where('channel', $channel)
-                ->active()
-                ->first();
-            if ($cart) {
-                if ($userId) {
-                    $cart->update(['user_id' => $userId]);
+        $lookup = function () use ($userId, $sessionId, $channel) {
+            if ($userId) {
+                $cart = static::where('user_id', $userId)
+                    ->where('channel', $channel)
+                    ->active()
+                    ->first();
+                if ($cart) {
+                    return $cart;
                 }
-                return $cart;
             }
+
+            if ($sessionId) {
+                $cart = static::where('session_id', $sessionId)
+                    ->whereNull('user_id')
+                    ->where('channel', $channel)
+                    ->active()
+                    ->first();
+                if ($cart) {
+                    if ($userId) {
+                        $cart->update(['user_id' => $userId]);
+                    }
+                    return $cart;
+                }
+            }
+
+            return null;
+        };
+
+        $existing = $lookup();
+        if ($existing) {
+            return $existing;
         }
 
-        return static::create([
-            'user_id' => $userId,
-            'session_id' => $sessionId,
-            'channel' => $channel,
-            'currency' => 'AUD',
-            'expires_at' => now()->addDays(30),
-        ]);
+        try {
+            return static::create([
+                'user_id' => $userId,
+                'session_id' => $sessionId,
+                'channel' => $channel,
+                'currency' => 'AUD',
+                'expires_at' => now()->addDays(30),
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // 23000 = integrity constraint violation. Another concurrent request
+            // won the INSERT race; re-read and return their row.
+            if ($e->getCode() === '23000' || str_contains($e->getMessage(), 'Duplicate entry')) {
+                $again = $lookup();
+                if ($again) {
+                    return $again;
+                }
+            }
+            throw $e;
+        }
     }
 
     public function getSubtotal(): float
