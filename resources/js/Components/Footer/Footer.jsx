@@ -111,7 +111,7 @@ export default function Footer({ minimal = false }) {
                 { label: 'Engineered Oak', href: '/shop?category=engineered-oak' },
                 { label: 'Engineered Timber', href: '/shop?category=engineered-timber' },
                 { label: 'Herringbone', href: '/shop?category=hybrid-herringbone' },
-                { label: 'Tile-Look', href: '/shop?category=hybrid-tile' },
+                { label: 'Quads / Scotia', href: '/shop?category=quad' },
             ],
         },
         {
