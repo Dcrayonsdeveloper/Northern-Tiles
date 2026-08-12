@@ -3,6 +3,8 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import debounce from 'lodash/debounce';
 import RichTextEditor from '@/Components/Admin/RichTextEditor';
+import SpecListInput from '@/Components/Admin/SpecListInput';
+import { COLOUR_NAMES, SPEC_LIST_FORMATS } from '@/Support/colours';
 
 // Media Upload Component
 function MediaUploader({ product, media = [], onUpdate }) {
@@ -941,13 +943,33 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     { key: 'quantity_per_box',   label: 'Quantity Per Box' },
                                 ].map(({ key, label }) => (
                                     <div key={key} className={key === 'variation' || key === 'application_space' ? 'col-span-2' : ''}>
-                                        <label className="block text-xs font-medium text-gray-700">{label}</label>
-                                        <input
-                                            value={data.specifications?.[key] ?? ''}
-                                            onChange={(e) => setData('specifications', { ...data.specifications, [key]: e.target.value })}
-                                            className="mt-1 admin-input w-full"
-                                            placeholder={label}
-                                        />
+                                        {SPEC_LIST_FORMATS[key] ? (
+                                            /* Colour and Finish drive the pickers on the product page,
+                                               so they are edited as add/remove chips rather than raw
+                                               delimited text. Still stored as the same string. */
+                                            <SpecListInput
+                                                label={label}
+                                                value={data.specifications?.[key] ?? ''}
+                                                onChange={(v) => setData('specifications', { ...data.specifications, [key]: v })}
+                                                format={SPEC_LIST_FORMATS[key]}
+                                                withSwatches={key === 'colour'}
+                                                suggestions={key === 'colour' ? COLOUR_NAMES : []}
+                                                placeholder={key === 'colour' ? 'e.g. Charcoal' : 'e.g. Matt'}
+                                                hint={key === 'colour'
+                                                    ? 'Shown as swatches on the product page, in this order.'
+                                                    : 'Shown as buttons on the product page, in this order.'}
+                                            />
+                                        ) : (
+                                            <>
+                                                <label className="block text-xs font-medium text-gray-700">{label}</label>
+                                                <input
+                                                    value={data.specifications?.[key] ?? ''}
+                                                    onChange={(e) => setData('specifications', { ...data.specifications, [key]: e.target.value })}
+                                                    className="mt-1 admin-input w-full"
+                                                    placeholder={label}
+                                                />
+                                            </>
+                                        )}
                                     </div>
                                 ))}
                             </div>
