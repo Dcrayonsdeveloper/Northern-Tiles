@@ -84,10 +84,19 @@ export default function BuilderProductShow({ product, relatedProducts = [], fami
     const perUnit = perSqm ? ` / ${unitLabel}` : '';
 
     const images = useMemo(() => {
-        const fromMedia = (product.media ?? [])
+        // image_url first, then media — mirrors the retail Show page. Some
+        // older products have dead product_media rows pointing at storage
+        // paths that were never synced; keeping image_url in the list means
+        // ProductImage's onError fallback has something valid to fall back to
+        // when a media path 404s, instead of just showing "No Image".
+        const list = [];
+        if (product.image_url) list.push(product.image_url);
+        (product.media ?? [])
             .filter((m) => m.type === 'image')
-            .map((m) => m.url);
-        return fromMedia.length ? fromMedia : [product.image_url].filter(Boolean);
+            .map((m) => m.url)
+            .filter(Boolean)
+            .forEach((u) => { if (!list.includes(u)) list.push(u); });
+        return list.length ? list : [null];
     }, [product]);
 
     const lineTotal = trade * (parseFloat(quantity) || 0);
@@ -111,14 +120,18 @@ export default function BuilderProductShow({ product, relatedProducts = [], fami
         return o;
     };
 
+    // POSTs go to the TRADE cart, not the retail cart — same reason as the
+    // add-to-cart on the listing page. Namespaced cart-updated event so
+    // only the trade header badge (BuilderHeader) refreshes; the retail
+    // header ignores it.
     const post = (onDone, after) => {
         router.post(
-            route('cart.store'),
+            route('builder.cart.store'),
             { product_id: product.id, quantity: parseFloat(quantity) || 1, options: cartOptions() },
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    window.dispatchEvent(new CustomEvent('cart-updated'));
+                    window.dispatchEvent(new CustomEvent('cart-updated:trade'));
                     after?.();
                 },
                 onFinish: onDone,
@@ -133,7 +146,7 @@ export default function BuilderProductShow({ product, relatedProducts = [], fami
 
     const buyNow = () => {
         setBuying(true);
-        post(() => setBuying(false), () => router.visit('/checkout'));
+        post(() => setBuying(false), () => router.visit('/builder/checkout'));
     };
 
     const specs = product.specifications && typeof product.specifications === 'object'

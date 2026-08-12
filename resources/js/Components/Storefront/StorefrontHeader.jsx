@@ -586,9 +586,18 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
             }
         };
         const handleOpenCart = () => setCartSidebarOpen(true);
+        // Legacy alias (older event dispatchers use plain 'cart-updated');
+        // the new namespaced event fires from CartSidebar and any *retail*
+        // shop page after add-to-cart. The trade equivalent fires
+        // 'cart-updated:trade' which this listener deliberately ignores.
         window.addEventListener('cart-updated', handleCartUpdate);
+        window.addEventListener('cart-updated:retail', handleCartUpdate);
         window.addEventListener('open-cart-sidebar', handleOpenCart);
-        return () => { window.removeEventListener('cart-updated', handleCartUpdate); window.removeEventListener('open-cart-sidebar', handleOpenCart); };
+        return () => {
+            window.removeEventListener('cart-updated', handleCartUpdate);
+            window.removeEventListener('cart-updated:retail', handleCartUpdate);
+            window.removeEventListener('open-cart-sidebar', handleOpenCart);
+        };
     }, []);
 
     const navItems = (menus?.header_main ?? []).length > 0 ? menus.header_main : DEFAULT_NAV;
@@ -716,7 +725,7 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
             </div>
 
             <MobileMenu open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} navItems={mobileItems} user={user} />
-            <CartSidebar open={cartSidebarOpen} onClose={() => setCartSidebarOpen(false)} />
+            <CartSidebar open={cartSidebarOpen} onClose={() => setCartSidebarOpen(false)} scope="retail" />
         </header>
     );
 }

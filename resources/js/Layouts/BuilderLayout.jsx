@@ -12,7 +12,10 @@ import { Head, usePage } from '@inertiajs/react';
 export default function BuilderLayout({ children, categories = null, title }) {
     const { auth, cart, flash, site, builderCategories } = usePage().props;
     const user = auth?.user;
-    const cartCount = cart?.count ?? 0;
+    // Prefer trade_count (post cart-split); fall back to the legacy `count`
+    // which is set to whichever surface (retail/trade) the current request is
+    // on and will match trade_count when the user is on /builder/*.
+    const cartCount = cart?.trade_count ?? cart?.count ?? 0;
 
     // Categories come from a shared prop so the nav is identical on every page
     // of the portal. The explicit prop stays supported as an override for any
