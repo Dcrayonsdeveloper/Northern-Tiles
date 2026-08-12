@@ -3,6 +3,7 @@
 namespace App\Domain\Builder\Http\Controllers\Builder;
 
 use App\Domain\Builder\Models\BuilderProduct;
+use App\Domain\Builder\Services\BuilderNavigationService;
 use App\Domain\Builder\Services\TradeUnitResolver;
 use App\Domain\Catalog\Models\Attribute;
 use App\Domain\Catalog\Support\ProductFamily;
@@ -139,17 +140,9 @@ class BuilderShopController extends Controller
             return $this->decorateWithBuilderPrice($product);
         });
 
-        // Only categories that actually contain builder products — an empty
-        // category in the trade sidebar is just a dead end.
-        $categories = Category::query()
-            ->whereNull('parent_id')
-            ->whereHas('products', fn ($q) => $q->where('is_active', true)
-                ->whereHas('builderListing', fn ($b) => $b->where('is_active', true)))
-            ->with(['children' => fn ($q) => $q->whereHas('products', fn ($p) => $p->where('is_active', true)
-                ->whereHas('builderListing', fn ($b) => $b->where('is_active', true)))
-                ->select('id', 'parent_id', 'name', 'slug')])
-            ->orderBy('name')
-            ->get(['id', 'name', 'slug']);
+        // Same list the header uses — the sidebar and the nav must not disagree
+        // about which categories have trade stock.
+        $categories = app(BuilderNavigationService::class)->categories();
 
         return Inertia::render('Builder/Shop/Index', [
             'products' => $products,
