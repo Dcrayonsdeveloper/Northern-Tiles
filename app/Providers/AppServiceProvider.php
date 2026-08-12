@@ -26,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
         // Singleton so its per-request price memo is actually shared across
         // the controller, the cart and checkout within one request.
         $this->app->singleton(\App\Domain\Builder\Services\BuilderPricingService::class);
+        // Singleton so the header's category query runs once per request, not
+        // once per place that asks for it.
+        $this->app->singleton(\App\Domain\Builder\Services\BuilderNavigationService::class);
     }
 
     public function boot(): void

@@ -9,10 +9,16 @@ import { Head, usePage } from '@inertiajs/react';
  * scripts — the portal is private, so there is nothing to analytics-track and
  * nothing that should be indexed.
  */
-export default function BuilderLayout({ children, categories = [], title }) {
-    const { auth, cart, flash, site } = usePage().props;
+export default function BuilderLayout({ children, categories = null, title }) {
+    const { auth, cart, flash, site, builderCategories } = usePage().props;
     const user = auth?.user;
     const cartCount = cart?.count ?? 0;
+
+    // Categories come from a shared prop so the nav is identical on every page
+    // of the portal. The explicit prop stays supported as an override for any
+    // page that needs a different list, but no page has to pass it just to get
+    // the standard header.
+    const navCategories = categories ?? builderCategories ?? [];
 
     const success = flash?.success;
     const error = flash?.error;
@@ -27,7 +33,7 @@ export default function BuilderLayout({ children, categories = [], title }) {
                 <meta name="robots" content="noindex, nofollow" />
             </Head>
 
-            <BuilderHeader user={user} cartCount={cartCount} categories={categories} />
+            <BuilderHeader user={user} cartCount={cartCount} categories={navCategories} />
 
             {(success || error) && (
                 <Container className="pt-4">

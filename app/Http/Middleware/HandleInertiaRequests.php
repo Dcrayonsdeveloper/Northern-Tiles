@@ -72,6 +72,14 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // Category nav for the trade portal header. Shared rather than
+            // passed per page: every /builder page renders the same header, and
+            // when this was a per-page prop only the shop page had it, so the
+            // nav collapsed to "All Products" everywhere else.
+            // Closure + path guard = no query at all outside /builder.
+            'builderCategories' => fn () => $request->is('builder', 'builder/*')
+                ? app(\App\Domain\Builder\Services\BuilderNavigationService::class)->categories()
+                : [],
             'cart' => fn () => [
                 'count' => app(CartService::class)->getCount(
                     $request->user()?->id,
