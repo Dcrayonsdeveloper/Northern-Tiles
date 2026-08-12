@@ -6,7 +6,85 @@ import { useMemo, useState } from 'react';
 
 const money = (v) => `$${parseFloat(v || 0).toFixed(2)}`;
 
-export default function BuilderProductShow({ product, relatedProducts = [] }) {
+/* Colour name -> swatch hex. Same map the retail product page uses, so a tile
+   renders the identical swatch on both sites. Anything unlisted falls back to
+   a neutral circle showing the colour's initials. */
+const COLOUR_HEX = {
+    white: '#ffffff', 'warm white': '#f7f3ea', 'off white': '#f4f1e9', ivory: '#fffff0',
+    cream: '#f5f0e1', beige: '#d8c6a8', 'beige white mix': '#e5dcc5', sand: '#dcc9a6',
+    peach: '#f0cbb0', tan: '#c9a67a', brown: '#7a4f2a', cinnamon: '#8b4a2f',
+    terracotta: '#c96f4c', orange: '#d47a3a', rust: '#a5502f',
+    grey: '#9aa0a6', gray: '#9aa0a6', 'light grey': '#cfd3d7', 'light gray': '#cfd3d7',
+    'dark grey': '#5a5f63', ash: '#b2b5b7', 'ash grey': '#a9adb0', silver: '#c0c4c8',
+    charcoal: '#36454f', carbon: '#2b2b2b', graphite: '#3a3f44', black: '#1a1a1a',
+    green: '#5a7d5a', 'sage green': '#9caf88', moss: '#6b7d54', olive: '#7a7a3c',
+    khaki: '#8f8b5a', blue: '#3b6ea5', 'sky blue': '#8fc1e3', 'ocean blue': '#2e6b8a',
+    teal: '#2b7a78', 'teal blue': '#2b7a78', navy: '#2a3d5a', amber: '#c98a2b', aqua: '#7fc6c1',
+};
+function colourHex(name) {
+    return name ? (COLOUR_HEX[String(name).trim().toLowerCase()] ?? null) : null;
+}
+
+/* ── Range selector ───────────────────────────────────────────────────
+   Siblings in the same range. The server has already dropped any that are
+   not on the trade list and re-priced the rest, so every card here is a
+   real, buyable trade product. Each is a link to its own page. */
+function TradeRangeSelector({ familyVariants, perUnit }) {
+    const variants = familyVariants?.variants ?? [];
+    if (variants.length < 2) return null;
+
+    const familyName = familyVariants?.family?.name;
+    const currentIndex = variants.findIndex((v) => v.is_current);
+
+    return (
+        <div className="mt-6">
+            <p className="text-[13px] font-semibold text-slate-900">
+                {familyName ? `${familyName} range` : 'Available variants'}
+                <span className="ml-1.5 font-normal text-gray-500">
+                    ({variants.length} options{currentIndex >= 0 ? ` · viewing ${currentIndex + 1}` : ''})
+                </span>
+            </p>
+
+            <div className="mt-2 flex gap-2.5 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible">
+                {variants.map((v) => {
+                    const card = (
+                        <>
+                            <div className="mb-1.5 aspect-square w-full overflow-hidden rounded-md bg-gray-50">
+                                {v.image_url && (
+                                    <img src={v.image_url} alt={v.label} loading="lazy" className="h-full w-full object-cover" />
+                                )}
+                            </div>
+                            <span className="line-clamp-2 min-h-[2rem] text-[11px] font-medium leading-tight text-gray-800">
+                                {v.label}
+                            </span>
+                            <span className="mt-0.5 text-[13px] font-bold text-slate-900">
+                                {money(v.price)}
+                                {perUnit ? <span className="font-normal text-gray-400">{perUnit}</span> : null}
+                            </span>
+                            {v.compare_at_price > v.price && (
+                                <span className="text-[11px] text-gray-400 line-through">{money(v.compare_at_price)}</span>
+                            )}
+                            {!v.in_stock && <span className="text-[11px] font-medium text-red-600">Out of stock</span>}
+                        </>
+                    );
+
+                    const classes =
+                        'flex w-24 flex-shrink-0 flex-col rounded-lg border bg-white p-2 transition-colors sm:w-28 ' +
+                        (v.is_current ? 'border-amber-500 ring-2 ring-amber-500/25' : 'border-gray-200 hover:border-gray-400') +
+                        (v.in_stock ? '' : ' opacity-60');
+
+                    return v.is_current ? (
+                        <div key={v.id} aria-current="true" className={classes}>{card}</div>
+                    ) : (
+                        <Link key={v.id} href={route('builder.products.show', v.slug)} className={classes}>{card}</Link>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+export default function BuilderProductShow({ product, relatedProducts = [], familyVariants = null }) {
     const [quantity, setQuantity] = useState(1);
     const [adding, setAdding] = useState(false);
     const [buying, setBuying] = useState(false);
@@ -32,10 +110,29 @@ export default function BuilderProductShow({ product, relatedProducts = [] }) {
 
     const lineTotal = trade * (parseFloat(quantity) || 0);
 
+    // Selectable colour + finish parsed from the spec strings, exactly as the
+    // retail page does it: "Black, Charcoal, Carbon" -> 3 colours;
+    // "Matt / Soft Touch" -> 2 finishes.
+    const colourOptions = String(product.specifications?.colour || product.specifications?.color || '')
+        .split(',').map((s) => s.trim()).filter(Boolean);
+    const finishOptions = String(product.specifications?.finish || '')
+        .split(/[/,]/).map((s) => s.trim()).filter(Boolean);
+    const [selectedColour, setSelectedColour] = useState(colourOptions[0] ?? null);
+    const [selectedFinish, setSelectedFinish] = useState(finishOptions[0] ?? null);
+
+    // Travels with every add-to-cart so the choice reaches the cart, checkout
+    // and the order — the same options payload the retail site sends.
+    const cartOptions = () => {
+        const o = {};
+        if (selectedColour) o.colour = selectedColour;
+        if (selectedFinish) o.finish = selectedFinish;
+        return o;
+    };
+
     const post = (onDone, after) => {
         router.post(
             route('cart.store'),
-            { product_id: product.id, quantity: parseFloat(quantity) || 1 },
+            { product_id: product.id, quantity: parseFloat(quantity) || 1, options: cartOptions() },
             {
                 preserveScroll: true,
                 onSuccess: () => {
@@ -145,6 +242,80 @@ export default function BuilderProductShow({ product, relatedProducts = [] }) {
                                 </div>
                             ) : null}
                         </div>
+
+                        {/* ── Colour & Finish ── */}
+                        {(colourOptions.length > 0 || finishOptions.length > 0) && (
+                            <div className="mt-6 space-y-4">
+                                {colourOptions.length > 0 && (
+                                    <div>
+                                        <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">
+                                            Colour
+                                            {selectedColour && (
+                                                <span className="ml-2 font-semibold normal-case tracking-normal text-gray-800">
+                                                    {selectedColour}
+                                                </span>
+                                            )}
+                                        </p>
+                                        <div className="mt-2 flex flex-wrap gap-2.5">
+                                            {colourOptions.map((c) => {
+                                                const hex = colourHex(c);
+                                                const isSel = c === selectedColour;
+                                                return (
+                                                    <button
+                                                        key={c}
+                                                        type="button"
+                                                        title={c}
+                                                        aria-pressed={isSel}
+                                                        onClick={() => setSelectedColour(c)}
+                                                        className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                                                            isSel
+                                                                ? 'border-transparent ring-2 ring-amber-500 ring-offset-2'
+                                                                : 'border-gray-300 hover:border-gray-500'
+                                                        }`}
+                                                        style={hex ? { backgroundColor: hex } : undefined}
+                                                    >
+                                                        {!hex && (
+                                                            <span className="text-[10px] font-bold text-gray-500">
+                                                                {c.slice(0, 2).toUpperCase()}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {finishOptions.length > 0 && (
+                                    <div>
+                                        <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">Finish</p>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                            {finishOptions.map((f) => {
+                                                const isSel = f === selectedFinish;
+                                                return (
+                                                    <button
+                                                        key={f}
+                                                        type="button"
+                                                        aria-pressed={isSel}
+                                                        onClick={() => setSelectedFinish(f)}
+                                                        className={`rounded-md border-2 px-4 py-1.5 text-[13px] font-bold uppercase tracking-wide transition ${
+                                                            isSel
+                                                                ? 'border-slate-900 bg-white text-slate-900'
+                                                                : 'border-gray-200 text-gray-500 hover:border-gray-400'
+                                                        }`}
+                                                    >
+                                                        {f}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ── Range (same family, different colour / size) ── */}
+                        <TradeRangeSelector familyVariants={familyVariants} perUnit={perUnit} />
 
                         {/* ── Quantity + actions ── */}
                         <div className="mt-6">
