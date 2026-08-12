@@ -2,6 +2,7 @@
 
 namespace App\Domain\Builder\Http\Controllers\Builder;
 
+use App\Domain\Builder\Services\TradeUnitResolver;
 use App\Domain\Catalog\Models\Attribute;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
@@ -20,6 +21,8 @@ class BuilderShopController extends Controller
 {
     /** Attribute facets accepted as comma-separated query params (?color=white,grey). */
     private const ATTRIBUTE_FILTERS = ['color', 'space', 'size', 'material', 'finish', 'style'];
+
+    public function __construct(private TradeUnitResolver $units) {}
 
     public function index(Request $request, ?string $category = null, ?string $subcategory = null): Response
     {
@@ -179,8 +182,10 @@ class BuilderShopController extends Controller
         $relatedProducts = collect();
         if ($relatedIds->isNotEmpty()) {
             $relatedProducts = Product::whereIn('id', $relatedIds)
-                ->with('builderListing')
-                ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description'])
+                ->with(['builderListing', 'category:id,name,slug'])
+                // category_id and sqm_per_box are needed by TradeUnitResolver;
+                // without them every related card falls back to "not per m²".
+                ->get(['id', 'category_id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description', 'sqm_per_box'])
                 ->map(fn (Product $p) => $this->decorateWithBuilderPrice($p))
                 ->shuffle()
                 ->values();
@@ -214,6 +219,10 @@ class BuilderShopController extends Controller
         $product->setAttribute('compare_at_price', $retail > $builderPrice ? $retail : null);
         $product->unsetRelation('builderListing');
 
-        return $product;
+        // Tiles and flooring are priced per m²; grouts, adhesives, silicones and
+        // trims are not. Adds is_sold_per_sqm / unit_label to the payload so the
+        // trade views can drop the "/ sqm" suffix where it does not apply.
+        // Trade-side only — the retail storefront and admin never see this.
+        return $this->units->decorate($product);
     }
 }

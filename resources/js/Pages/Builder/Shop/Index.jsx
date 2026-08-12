@@ -18,6 +18,10 @@ function TradeProductCard({ product }) {
     const trade = parseFloat(product.price ?? 0);
     const saving = retail > trade ? Math.round(((retail - trade) / retail) * 100) : 0;
 
+    // Tiles and flooring only — see TradeUnitResolver. '' for everything else,
+    // so a bag of grout no longer advertises itself as priced per square metre.
+    const perUnit = product.is_sold_per_sqm === true ? ` / ${product.unit_label ?? 'sqm'}` : '';
+
     const addToCart = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -66,14 +70,14 @@ function TradeProductCard({ product }) {
 
                 <div className="mt-3 flex items-baseline gap-2">
                     <span className="text-lg font-bold text-slate-900">{money(trade)}</span>
-                    <span className="text-[11px] text-gray-400">/ sqm</span>
+                    {perUnit ? <span className="text-[11px] text-gray-400">{perUnit.trim()}</span> : null}
                     {retail > trade ? (
                         <span className="text-xs text-gray-400 line-through">{money(retail)}</span>
                     ) : null}
                 </div>
                 {retail > trade ? (
                     <div className="mt-0.5 text-[11px] font-semibold text-green-700">
-                        You save {money(retail - trade)} / sqm
+                        You save {money(retail - trade)}{perUnit}
                     </div>
                 ) : null}
 

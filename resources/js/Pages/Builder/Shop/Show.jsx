@@ -16,6 +16,13 @@ export default function BuilderProductShow({ product, relatedProducts = [] }) {
     const trade = parseFloat(product.price ?? 0);
     const savingPct = retail > trade ? Math.round(((retail - trade) / retail) * 100) : 0;
 
+    // Only tiles and flooring are priced by the square metre. TradeUnitResolver
+    // decides on the server; anything else drops the unit rather than swapping
+    // in different wording. `perUnit` is the " / sqm" suffix, or '' when absent.
+    const perSqm = product.is_sold_per_sqm === true;
+    const unitLabel = product.unit_label ?? 'sqm';
+    const perUnit = perSqm ? ` / ${unitLabel}` : '';
+
     const images = useMemo(() => {
         const fromMedia = (product.media ?? [])
             .filter((m) => m.type === 'image')
@@ -127,13 +134,13 @@ export default function BuilderProductShow({ product, relatedProducts = [] }) {
                             </div>
                             <div className="mt-1 flex items-baseline gap-3">
                                 <span className="text-3xl font-bold text-slate-900">{money(trade)}</span>
-                                <span className="text-sm text-gray-500">/ sqm</span>
+                                {perUnit ? <span className="text-sm text-gray-500">/ {unitLabel}</span> : null}
                             </div>
                             {retail > trade ? (
                                 <div className="mt-1.5 text-sm text-gray-600">
                                     Retail <span className="line-through">{money(retail)}</span>
                                     <span className="ml-2 font-semibold text-green-700">
-                                        You save {money(retail - trade)} / sqm ({savingPct}%)
+                                        You save {money(retail - trade)}{perUnit} ({savingPct}%)
                                     </span>
                                 </div>
                             ) : null}
@@ -142,13 +149,16 @@ export default function BuilderProductShow({ product, relatedProducts = [] }) {
                         {/* ── Quantity + actions ── */}
                         <div className="mt-6">
                             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                Quantity (sqm)
+                                {perSqm ? 'Quantity (sqm)' : 'Quantity'}
                             </label>
                             <div className="flex items-center gap-3">
                                 <input
                                     type="number"
-                                    min="0.01"
-                                    step="0.01"
+                                    // Area is ordered in decimals; everything else
+                                    // ships in whole units, so do not offer 0.01
+                                    // of a bag of grout.
+                                    min={perSqm ? '0.01' : '1'}
+                                    step={perSqm ? '0.01' : '1'}
                                     value={quantity}
                                     onChange={(e) => setQuantity(e.target.value)}
                                     className="w-32 rounded border-gray-300 text-sm focus:border-slate-900 focus:ring-slate-900"
