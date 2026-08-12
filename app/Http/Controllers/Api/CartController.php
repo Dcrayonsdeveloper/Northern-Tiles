@@ -8,6 +8,7 @@ use App\Domain\Cart\Services\PricingService;
 use App\Domain\Cart\Services\UpsellService;
 use App\Domain\Marketing\Models\Coupon;
 use App\Domain\Marketing\Services\CouponService;
+use App\Http\Controllers\Concerns\HasCartChannel;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,8 @@ use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
+    use HasCartChannel;
+
     public function __construct(
         protected CartService $cartService,
         protected PricingService $pricingService,
@@ -28,7 +31,7 @@ class CartController extends Controller
         $sessionId = $request->session()->getId();
 
         return response()->json([
-            'count' => $this->cartService->getCount($userId, $sessionId),
+            'count' => $this->cartService->getCount($userId, $sessionId, $this->channel()),
         ]);
     }
 
@@ -40,7 +43,7 @@ class CartController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
 
         if (!$cart) {
             return response()->json([
@@ -139,7 +142,7 @@ class CartController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getOrCreate($userId, $sessionId);
+        $cart = $this->cartService->getOrCreate($userId, $sessionId, $this->channel());
 
         try {
             $item = $this->cartService->addItem(
@@ -206,7 +209,7 @@ class CartController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
 
         if (!$cart) {
             return response()->json(['error' => 'Cart not found'], 404);
@@ -265,7 +268,7 @@ class CartController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
 
         if (!$cart) {
             return response()->json(['error' => 'Cart not found'], 404);
@@ -303,7 +306,7 @@ class CartController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getCart($userId, $sessionId);
+        $cart = $this->cartService->getCart($userId, $sessionId, $this->channel());
 
         if ($cart) {
             $this->upsellService->clearCache($cart);
@@ -339,7 +342,7 @@ class CartController extends Controller
         $userId = $request->user()?->id;
         $sessionId = $request->session()->getId();
 
-        $cart = $this->cartService->getOrCreate($userId, $sessionId);
+        $cart = $this->cartService->getOrCreate($userId, $sessionId, $this->channel());
 
         $this->cartService->addItem(
             $cart,
@@ -359,7 +362,17 @@ class CartController extends Controller
 
         return response()->json([
             'success' => true,
-            'redirect' => '/checkout',
+            'redirect' => $this->checkoutRedirect(),
         ]);
+    }
+
+    /**
+     * Where Buy Now sends the browser once the item lands in the cart.
+     * Overridden by the builder-side controller so trade Buy Now doesn't
+     * dump the customer onto the retail checkout with an empty retail cart.
+     */
+    protected function checkoutRedirect(): string
+    {
+        return '/checkout';
     }
 }

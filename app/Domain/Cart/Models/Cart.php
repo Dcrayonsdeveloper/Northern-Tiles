@@ -12,12 +12,22 @@ use Illuminate\Support\Str;
 
 class Cart extends Model
 {
+    /**
+     * A cart is uniquely identified by (user_id or session_id) AND channel.
+     * channel is one of self::CHANNEL_* — retail = public storefront, trade =
+     * builder portal. A logged-in builder can hold one of each simultaneously.
+     */
+    public const CHANNEL_RETAIL = 'retail';
+    public const CHANNEL_TRADE = 'trade';
+    public const CHANNELS = [self::CHANNEL_RETAIL, self::CHANNEL_TRADE];
+
     protected $fillable = [
         'user_id',
         'session_id',
         'email',
         'customer_id',
         'vendor_id',
+        'channel',
         'currency',
         'coupon_id',
         'discount_amount',
@@ -68,10 +78,23 @@ class Cart extends Model
         return $query->where('expires_at', '<=', now());
     }
 
-    public static function getOrCreate(?int $userId, ?string $sessionId): self
+    /**
+     * Fetch or create the active cart for this identity ON THE GIVEN CHANNEL.
+     * Every branch is scoped by $channel so a retail lookup never returns a
+     * trade cart and vice versa — critical because the same user_id can now
+     * own two live rows.
+     */
+    public static function getOrCreate(?int $userId, ?string $sessionId, string $channel = self::CHANNEL_RETAIL): self
     {
+        if (!in_array($channel, self::CHANNELS, true)) {
+            throw new \InvalidArgumentException("Unknown cart channel: {$channel}");
+        }
+
         if ($userId) {
-            $cart = static::where('user_id', $userId)->active()->first();
+            $cart = static::where('user_id', $userId)
+                ->where('channel', $channel)
+                ->active()
+                ->first();
             if ($cart) {
                 return $cart;
             }
@@ -80,6 +103,7 @@ class Cart extends Model
         if ($sessionId) {
             $cart = static::where('session_id', $sessionId)
                 ->whereNull('user_id')
+                ->where('channel', $channel)
                 ->active()
                 ->first();
             if ($cart) {
@@ -93,6 +117,7 @@ class Cart extends Model
         return static::create([
             'user_id' => $userId,
             'session_id' => $sessionId,
+            'channel' => $channel,
             'currency' => 'AUD',
             'expires_at' => now()->addDays(30),
         ]);

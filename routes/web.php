@@ -73,6 +73,22 @@ Route::prefix('api/cart')->name('api.cart.')->group(function () {
     Route::delete('/', [\App\Http\Controllers\Api\CartController::class, 'clear'])->name('clear');
 });
 
+// Trade cart JSON API — mirrors /api/cart/* but scoped to the builder channel.
+// Gated by BuilderMiddleware so only approved builders (and admins) can hit it.
+Route::middleware([BuilderMiddleware::class])
+    ->prefix('api/builder/cart')
+    ->name('api.builder.cart.')
+    ->group(function () {
+        Route::get('count', [\App\Http\Controllers\Api\BuilderCartController::class, 'count'])->name('count');
+        Route::get('/', [\App\Http\Controllers\Api\BuilderCartController::class, 'index'])->name('index');
+        Route::post('add', [\App\Http\Controllers\Api\BuilderCartController::class, 'add'])->name('add')->middleware(EnsureUserIsActive::class);
+        Route::post('buy-now', [\App\Http\Controllers\Api\BuilderCartController::class, 'buyNow'])->name('buy-now')->middleware(EnsureUserIsActive::class);
+        // Wildcard item routes last, exactly like the retail block.
+        Route::put('{item}', [\App\Http\Controllers\Api\BuilderCartController::class, 'update'])->name('update');
+        Route::delete('{item}', [\App\Http\Controllers\Api\BuilderCartController::class, 'remove'])->name('remove');
+        Route::delete('/', [\App\Http\Controllers\Api\BuilderCartController::class, 'clear'])->name('clear');
+    });
+
 // Live product search (JSON) — rate limited: 20 rpm guests / 60 rpm auth / 5 per 10 s burst
 Route::get('api/search', [\App\Http\Controllers\Api\SearchController::class, 'search'])
     ->middleware('throttle:search')
@@ -115,6 +131,9 @@ Route::get('/privacy-policy', [PublicPageController::class, 'show'])
 Route::get('/terms-of-service', [PublicPageController::class, 'show'])
     ->defaults('slug', 'terms-of-service')
     ->name('terms-of-service');
+Route::get('/cookie-policy', [PublicPageController::class, 'show'])
+    ->defaults('slug', 'cookie-policy')
+    ->name('cookie-policy');
 // Footer "Resources" links to these two; without a route they were plain 404s.
 Route::get('/faq', [PublicPageController::class, 'show'])
     ->defaults('slug', 'faq')
@@ -221,6 +240,26 @@ Route::middleware([BuilderMiddleware::class])
         Route::get('/shop/{category}', [BuilderShopController::class, 'index'])->name('shop.category');
         Route::get('/shop/{category}/{subcategory}', [BuilderShopController::class, 'index'])->name('shop.subcategory');
         Route::get('/products/{product}', [BuilderShopController::class, 'show'])->name('products.show');
+
+        // Trade cart — separate from /cart so a builder's retail cart and
+        // trade cart never share state.
+        Route::get('/cart', [\App\Http\Controllers\Builder\BuilderCartController::class, 'index'])->name('cart.index');
+        Route::post('/cart', [\App\Http\Controllers\Builder\BuilderCartController::class, 'store'])
+            ->middleware(EnsureUserIsActive::class)
+            ->name('cart.store');
+        Route::patch('/cart/{item}', [\App\Http\Controllers\Builder\BuilderCartController::class, 'update'])->name('cart.update');
+        Route::delete('/cart/{item}', [\App\Http\Controllers\Builder\BuilderCartController::class, 'destroy'])->name('cart.destroy');
+
+        // Trade checkout — same CheckoutService::processCheckout behind it,
+        // same (single) payment gateway, only the presentation and the trade
+        // payment-method allow-list differ.
+        Route::get('/checkout', [\App\Http\Controllers\Builder\BuilderCheckoutController::class, 'create'])->name('checkout.index');
+        Route::post('/checkout', [\App\Http\Controllers\Builder\BuilderCheckoutController::class, 'store'])
+            ->middleware(EnsureUserIsActive::class)
+            ->name('checkout.store');
+        Route::get('/checkout/success/{order}', [\App\Http\Controllers\Builder\BuilderCheckoutController::class, 'success'])
+            ->middleware('throttle:20,1')
+            ->name('checkout.success');
     });
 
 Route::middleware(['auth', 'verified', SellerMiddleware::class])

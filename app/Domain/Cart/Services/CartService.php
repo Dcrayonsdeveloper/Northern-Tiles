@@ -10,20 +10,24 @@ use App\Models\Product;
 
 class CartService
 {
-    public function getOrCreate(?int $userId, ?string $sessionId): Cart
+    public function getOrCreate(?int $userId, ?string $sessionId, string $channel = Cart::CHANNEL_RETAIL): Cart
     {
-        return Cart::getOrCreate($userId, $sessionId);
+        return Cart::getOrCreate($userId, $sessionId, $channel);
     }
 
-    public function getCart(?int $userId, ?string $sessionId): ?Cart
+    public function getCart(?int $userId, ?string $sessionId, string $channel = Cart::CHANNEL_RETAIL): ?Cart
     {
         if ($userId) {
-            return Cart::where('user_id', $userId)->active()->first();
+            return Cart::where('user_id', $userId)
+                ->where('channel', $channel)
+                ->active()
+                ->first();
         }
 
         if ($sessionId) {
             return Cart::where('session_id', $sessionId)
                 ->whereNull('user_id')
+                ->where('channel', $channel)
                 ->active()
                 ->first();
         }
@@ -36,14 +40,26 @@ class CartService
         $product = Product::findOrFail($productId);
         $variant = $variantId ? ProductVariant::findOrFail($variantId) : null;
 
+        // Samples are a retail-only concept — never on a trade cart.
+        if ($cart->channel === Cart::CHANNEL_TRADE) {
+            $isSample = false;
+        }
+
         // Samples are always free — shipping covers the cost
         $retail = $variant ? $variant->price : $product->price;
-        // Trade accounts pay the admin-set builder price for catalogued
-        // products; everyone else pays retail. Resolved server-side here so
-        // the charged price never depends on what the page displayed.
+        // Pricing decision runs against the CART'S CHANNEL, not the user's
+        // role. A builder's retail cart charges retail; only lines added on
+        // a trade cart resolve to the builder price. This is what stops a
+        // builder browsing the public storefront from silently paying trade
+        // rates there.
         $price = $isSample
             ? 0
-            : app(BuilderPricingService::class)->effectivePrice($product, (float) $retail, $cart->user);
+            : app(BuilderPricingService::class)->effectivePrice(
+                $product,
+                (float) $retail,
+                $cart->user,
+                $cart->channel
+            );
 
         // Zero-price products are display-only and cannot be purchased
         if (!$isSample && (float) $price <= 0) {
@@ -108,9 +124,9 @@ class CartService
         $cart->clear();
     }
 
-    public function getCount(?int $userId, ?string $sessionId): int
+    public function getCount(?int $userId, ?string $sessionId, string $channel = Cart::CHANNEL_RETAIL): int
     {
-        $cart = $this->getCart($userId, $sessionId);
+        $cart = $this->getCart($userId, $sessionId, $channel);
         if (!$cart) {
             return 0;
         }
@@ -131,10 +147,17 @@ class CartService
         }
     }
 
+    /**
+     * Guests are ALWAYS on the retail channel (no BuilderMiddleware access
+     * without login), so this merges a guest retail cart into the user's
+     * retail cart. Trade carts are never touched here — they are login-only
+     * by construction.
+     */
     public function mergeGuestCart(int $userId, string $sessionId): void
     {
         $guestCart = Cart::where('session_id', $sessionId)
             ->whereNull('user_id')
+            ->where('channel', Cart::CHANNEL_RETAIL)
             ->active()
             ->first();
 
@@ -142,18 +165,27 @@ class CartService
             return;
         }
 
-        $userCart = Cart::where('user_id', $userId)->active()->first();
+        $userCart = Cart::where('user_id', $userId)
+            ->where('channel', Cart::CHANNEL_RETAIL)
+            ->active()
+            ->first();
 
         if (!$userCart) {
             $guestCart->update(['user_id' => $userId, 'session_id' => null]);
             return;
         }
 
+        // The dedupe key MUST match addItem's — product_id + variant_id +
+        // is_sample + options_json — otherwise a merged sample becomes a
+        // chargeable line and a colour/finish selection silently vanishes.
         foreach ($guestCart->items as $guestItem) {
+            $normalizedOptions = $guestItem->options_json ?: null;
             $existingItem = $userCart->items()
                 ->where('product_id', $guestItem->product_id)
                 ->where('variant_id', $guestItem->variant_id)
-                ->first();
+                ->where('is_sample', (bool) $guestItem->is_sample)
+                ->get()
+                ->first(fn ($it) => ($it->options_json ?: null) == $normalizedOptions);
 
             if ($existingItem) {
                 $existingItem->incrementQuantity($guestItem->quantity);
@@ -164,6 +196,7 @@ class CartService
                     'quantity' => $guestItem->quantity,
                     'price' => $guestItem->price,
                     'options_json' => $guestItem->options_json,
+                    'is_sample' => (bool) $guestItem->is_sample,
                 ]);
             }
         }

@@ -80,12 +80,33 @@ class HandleInertiaRequests extends Middleware
             'builderCategories' => fn () => $request->is('builder', 'builder/*')
                 ? app(\App\Domain\Builder\Services\BuilderNavigationService::class)->categories()
                 : [],
-            'cart' => fn () => [
-                'count' => app(CartService::class)->getCount(
-                    $request->user()?->id,
-                    $request->session()->getId()
-                ),
-            ],
+            // Cart badges: retail_count and trade_count are computed separately
+            // so a builder viewing /shop sees only retail items, and viewing
+            // /builder sees only trade items. `count` is kept for backwards
+            // compatibility — it always matches the count of whichever surface
+            // the current request is on, so JSX still reading cart.count keeps
+            // showing the right number.
+            'cart' => function () use ($request) {
+                $svc = app(CartService::class);
+                $uid = $request->user()?->id;
+                $sid = $request->session()->getId();
+                $user = $request->user();
+                $isBuilderSurface = $request->is('builder', 'builder/*');
+
+                $retailCount = $svc->getCount($uid, $sid, \App\Domain\Cart\Models\Cart::CHANNEL_RETAIL);
+
+                // Trade cart never exists for guests (no /builder access without
+                // login), so skip that query entirely for anonymous requests.
+                $tradeCount = ($user && ($user->isBuilder() || $user->is_admin))
+                    ? $svc->getCount($uid, $sid, \App\Domain\Cart\Models\Cart::CHANNEL_TRADE)
+                    : 0;
+
+                return [
+                    'retail_count' => $retailCount,
+                    'trade_count' => $tradeCount,
+                    'count' => $isBuilderSurface ? $tradeCount : $retailCount,
+                ];
+            },
             'flash' => [
                 'success'     => fn () => $request->session()->get('success'),
                 'error'       => fn () => $request->session()->get('error'),

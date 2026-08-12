@@ -97,10 +97,18 @@ class CartItem extends Model
             return $retail;
         }
 
-        // Re-resolve through builder pricing, otherwise syncPrice() would quietly
-        // reset a trade account's line back to retail on the next cart refresh.
+        // Re-resolve through builder pricing, scoped to the CART'S CHANNEL:
+        // a builder's retail cart must stay at retail on syncPrice(), and a
+        // trade cart must stay at trade. Without the channel arg syncPrice
+        // would silently flip a retail line to trade whenever the cart owner
+        // qualifies for builder pricing.
         return app(\App\Domain\Builder\Services\BuilderPricingService::class)
-            ->effectivePrice($this->product, $retail, $this->cart?->user);
+            ->effectivePrice(
+                $this->product,
+                $retail,
+                $this->cart?->user,
+                $this->cart?->channel ?? Cart::CHANNEL_RETAIL
+            );
     }
 
     public function syncPrice(): void
