@@ -156,8 +156,13 @@ class Cart extends Model
 
     public function getItemCount(): int
     {
-        // quantity is decimal:2 (m²); ceil for the cart-badge integer count.
-        return (int) ceil((float) $this->items->sum('quantity'));
+        // Number of distinct LINE ITEMS in the cart — what the header badge
+        // should show. Do NOT sum the `quantity` column: quantity is stored
+        // as decimal m² (e.g. one tile line at 1.10 m²), and ceil(1.10) = 2
+        // made the badge display "2" for a single product line, which is
+        // both misleading and inconsistent with how retail carts behave
+        // everywhere else on the web (one product = one badge tick).
+        return (int) $this->items->count();
     }
 
     public function isEmpty(): bool
