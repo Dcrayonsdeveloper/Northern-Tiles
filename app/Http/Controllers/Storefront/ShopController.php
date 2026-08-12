@@ -144,9 +144,13 @@ class ShopController extends Controller
 
         // Resolve primary image URL per product using the eager-loaded media,
         // then strip the relation so it isn't serialised to the frontend payload.
+        // Only overwrite image_url if the local media file actually exists —
+        // dead product_media rows pointing at unsynced storage paths would
+        // otherwise replace a valid CDN url in image_url with a 403 local
+        // path, leaving the listing card blank.
         $products->getCollection()->transform(function ($product) {
             $primary = $product->media->first();
-            if ($primary) {
+            if ($primary && \Illuminate\Support\Facades\Storage::disk('public')->exists($primary->path)) {
                 $product->image_url = $primary->url;
             }
             $product->unsetRelation('media');
