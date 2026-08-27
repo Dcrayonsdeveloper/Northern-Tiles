@@ -1118,12 +1118,17 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                     </span>
                                 </button>
 
-                                <p className="mt-1.5 text-center text-[11px] text-gray-500">
-                                    Need a larger sample?{' '}
-                                    <Link href={route('pages.contact')} className="font-semibold text-brand hover:underline">
-                                        Visit our showroom
-                                    </Link>
-                                </p>
+                                <Link
+                                    href={route('pages.contact')}
+                                    className="group mt-2 block w-full rounded-lg border-2 border-brand px-8 py-1.5 text-center transition hover:bg-brand"
+                                >
+                                    <span className="block text-sm font-bold uppercase tracking-wide leading-tight text-brand group-hover:text-white">
+                                        Visit Our Showroom
+                                    </span>
+                                    <span className="block text-[10px] font-normal normal-case tracking-normal leading-tight text-gray-500 group-hover:text-white/80">
+                                        See full-size tiles &amp; larger samples in person
+                                    </span>
+                                </Link>
                             </div>
 
                             {/* Product Specifications */}
