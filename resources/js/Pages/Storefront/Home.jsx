@@ -130,7 +130,7 @@ function TrendingProducts({ products = [] }) {
                                 <div key={p.id} className="group flex-shrink-0 w-[220px] sm:w-[240px] rounded-none border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
                                     <Link href={route('products.show', p.slug)} className="block">
                                         <div className="relative aspect-square overflow-hidden bg-gray-50">
-                                            <ProductImage src={p.image_url} alt={p.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500" style={{ transform: 'scale(2.8)', transformOrigin: 'center' }} loading="lazy" />
+                                            <ProductImage src={p.image_url} alt={p.name} className="absolute inset-0 h-full w-full object-contain transition-transform duration-500" loading="lazy" />
                                             {disc > 0 && (
                                                 <div className="absolute left-0 top-3">
                                                     <span className="rounded-r-full bg-brand px-3 py-1 text-[11px] font-bold text-white shadow-sm">{disc}% off</span>

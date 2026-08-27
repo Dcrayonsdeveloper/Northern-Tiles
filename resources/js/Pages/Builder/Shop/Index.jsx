@@ -50,8 +50,7 @@ function TradeProductCard({ product }) {
                     <ProductImage
                         src={product.image_url}
                         alt={product.name}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500"
-                        style={{ transform: 'scale(2.8)', transformOrigin: 'center' }}
+                        className="absolute inset-0 h-full w-full object-contain transition-transform duration-500"
                     />
                     {saving > 0 && (
                         <div className="absolute left-2 top-2 rounded-md bg-amber-500 px-2 py-1 text-[11px] font-bold text-slate-900">

@@ -402,8 +402,7 @@ export default function BuilderProductShow({ product, relatedProducts = [], fami
                                             <ProductImage
                                                 src={p.image_url}
                                                 alt={p.name}
-                                                className="absolute inset-0 h-full w-full object-cover"
-                                                style={{ transform: 'scale(2.8)', transformOrigin: 'center' }}
+                                                className="absolute inset-0 h-full w-full object-contain"
                                             />
                                         </div>
                                         <div className="p-3">
