@@ -15,12 +15,78 @@ function StatCard({ label, value, hint }) {
     );
 }
 
-/* The hero artwork: navy field with a gold arc and fanned tile slabs.
-   Used as a background image so the copy sits over the flat left-hand side of
-   the artwork. bg-navy stays underneath as the base colour, so if the file is
-   missing or still loading the hero degrades to plain navy with the text
-   perfectly readable, rather than to a broken image. */
-const HERO_BANNER = '/images/builder/hero-banner.png';
+/* Hero artwork: four tile slabs standing in a fan behind a thin gold arc.
+   Drawn rather than shipped as a photo, so the portal has its artwork with no
+   binary asset to manage. If a real banner is dropped at
+   public/images/builder/hero-banner.png the controller passes it through and it
+   replaces this automatically — see heroBanner below. */
+function TileStackArt({ className = '' }) {
+    return (
+        <svg className={className} viewBox="0 0 520 420" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMax meet">
+            <defs>
+                {/* Front faces */}
+                <linearGradient id="hbMarble" x1="0" y1="0" x2="0.7" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" /><stop offset="55%" stopColor="#f4f5f7" /><stop offset="100%" stopColor="#dfe2e6" />
+                </linearGradient>
+                <linearGradient id="hbConcrete" x1="0" y1="0" x2="0.7" y2="1">
+                    <stop offset="0%" stopColor="#8d8781" /><stop offset="60%" stopColor="#7a746e" /><stop offset="100%" stopColor="#615c57" />
+                </linearGradient>
+                <linearGradient id="hbBeige" x1="0" y1="0" x2="0.7" y2="1">
+                    <stop offset="0%" stopColor="#e6ded1" /><stop offset="60%" stopColor="#d8cfc0" /><stop offset="100%" stopColor="#c2b8a8" />
+                </linearGradient>
+                <linearGradient id="hbGrey" x1="0" y1="0" x2="0.7" y2="1">
+                    <stop offset="0%" stopColor="#e9ebee" /><stop offset="60%" stopColor="#d6d9dd" /><stop offset="100%" stopColor="#bcc0c5" />
+                </linearGradient>
+                {/* Cut edges catch the light, which is what reads as thickness */}
+                <linearGradient id="hbEdge" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" /><stop offset="100%" stopColor="#cdd1d6" />
+                </linearGradient>
+                <clipPath id="hbMarbleClip">
+                    <rect x="150" y="196" width="118" height="188" rx="2" />
+                </clipPath>
+            </defs>
+
+            {/* Gold arc, behind everything */}
+            <path d="M 152 356 A 150 150 0 0 1 452 356" stroke="#c9a961" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+
+            {/* Back to front, so the nearest slab overlaps the ones behind it */}
+
+            {/* 4 — light grey, furthest back */}
+            <g>
+                <rect x="392" y="176" width="74" height="208" rx="2" fill="url(#hbGrey)" />
+                <rect x="384" y="176" width="9" height="208" rx="1" fill="url(#hbEdge)" />
+                <rect x="384" y="176" width="82" height="4" rx="1" fill="#ffffff" opacity="0.85" />
+            </g>
+
+            {/* 3 — beige */}
+            <g>
+                <rect x="322" y="160" width="82" height="224" rx="2" fill="url(#hbBeige)" />
+                <rect x="313" y="160" width="10" height="224" rx="1" fill="url(#hbEdge)" />
+                <rect x="313" y="160" width="91" height="4" rx="1" fill="#ffffff" opacity="0.8" />
+            </g>
+
+            {/* 2 — concrete */}
+            <g>
+                <rect x="246" y="184" width="86" height="200" rx="2" fill="url(#hbConcrete)" />
+                <rect x="236" y="184" width="11" height="200" rx="1" fill="url(#hbEdge)" />
+                <rect x="236" y="184" width="96" height="4" rx="1" fill="#ffffff" opacity="0.7" />
+            </g>
+
+            {/* 1 — white marble, nearest */}
+            <g>
+                <rect x="150" y="196" width="118" height="188" rx="2" fill="url(#hbMarble)" />
+                <g clipPath="url(#hbMarbleClip)" stroke="#b9c0c9" fill="none" strokeLinecap="round">
+                    <path d="M158 268 C 186 250, 200 292, 232 272 S 262 300, 276 288" strokeWidth="2.1" opacity="0.75" />
+                    <path d="M152 316 C 178 306, 196 330, 224 318 S 254 336, 272 328" strokeWidth="1.5" opacity="0.5" />
+                    <path d="M170 226 C 190 218, 206 238, 232 230" strokeWidth="1.2" opacity="0.4" />
+                    <path d="M198 352 C 218 344, 236 360, 258 352" strokeWidth="1.1" opacity="0.35" />
+                </g>
+                <rect x="140" y="196" width="11" height="188" rx="1" fill="url(#hbEdge)" />
+                <rect x="140" y="196" width="128" height="4" rx="1" fill="#ffffff" opacity="0.9" />
+            </g>
+        </svg>
+    );
+}
 
 const STATUS_STYLES = {
     pending: 'bg-amber-100 text-amber-800',
@@ -30,7 +96,7 @@ const STATUS_STYLES = {
     cancelled: 'bg-red-100 text-red-800',
 };
 
-export default function BuilderDashboard({ featuredProducts = [], recentOrders = [], stats, company }) {
+export default function BuilderDashboard({ featuredProducts = [], recentOrders = [], stats, company, heroBanner = null }) {
     const { auth } = usePage().props;
     const firstName = auth?.user?.name?.split(' ')[0] ?? 'there';
 
@@ -38,10 +104,7 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
         <BuilderLayout title="Trade Dashboard">
             <Container className="py-8">
                 {/* ── Welcome ── */}
-                <div
-                    className="relative overflow-hidden rounded-lg bg-navy bg-cover bg-right bg-no-repeat px-6 py-10 text-white sm:px-10"
-                    style={{ backgroundImage: `url(${HERO_BANNER})` }}
-                >
+                <div className="relative overflow-hidden rounded-lg bg-navy px-6 py-10 text-white sm:px-10">
                     <div className="relative z-10 max-w-2xl lg:min-h-[220px]">
                         <div className="flex items-center gap-3">
                             <span className="text-[11px] font-bold uppercase tracking-[2px] text-gold">
@@ -65,6 +128,21 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
                             Browse the trade catalogue →
                         </Link>
                     </div>
+
+                    {/* Ornament only — hidden below lg where it would crowd the copy.
+                        A real banner saved to public/images/builder/hero-banner.png
+                        is passed through by the controller and wins; until then the
+                        drawn version renders, so the hero is never empty. */}
+                    {heroBanner ? (
+                        <img
+                            src={heroBanner}
+                            alt=""
+                            aria-hidden="true"
+                            className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-auto object-cover object-right lg:block"
+                        />
+                    ) : (
+                        <TileStackArt className="pointer-events-none absolute -bottom-10 right-4 hidden h-[125%] w-[420px] lg:block" />
+                    )}
                 </div>
 
                 {/* ── Stats ── */}

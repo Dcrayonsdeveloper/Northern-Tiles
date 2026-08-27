@@ -16,6 +16,9 @@ use Inertia\Response;
  */
 class BuilderDashboardController extends Controller
 {
+    /** Optional hero photo; the dashboard draws its own artwork when absent. */
+    private const HERO_BANNER = 'images/builder/hero-banner.png';
+
     public function __invoke(Request $request): Response
     {
         $user = $request->user();
@@ -67,6 +70,13 @@ class BuilderDashboardController extends Controller
                     ->sum('total'),
             ],
             'company' => $user->builder_company,
+            // A real banner dropped at public/images/builder/hero-banner.png
+            // replaces the drawn artwork with no code change. Checked here
+            // rather than in the view so a missing file renders the fallback
+            // instead of a broken <img>.
+            'heroBanner' => file_exists(public_path(self::HERO_BANNER))
+                ? asset(self::HERO_BANNER)
+                : null,
         ]);
     }
 }
