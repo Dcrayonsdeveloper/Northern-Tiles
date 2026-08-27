@@ -29,8 +29,7 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, sho
                     <ProductImage
                         src={product.image_url}
                         alt={product.name}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500"
-                        style={{ transform: 'scale(2.8)', transformOrigin: 'center' }}
+                        className="absolute inset-0 h-full w-full object-contain transition-transform duration-500"
                         loading="lazy"
                     />
 
