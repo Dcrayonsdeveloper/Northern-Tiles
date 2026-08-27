@@ -72,13 +72,13 @@ function AccountMenu({ user }) {
             <button
                 type="button"
                 onClick={() => setOpen((o) => !o)}
-                className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-white/10"
+                className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white py-1 pl-1 pr-2 transition-colors hover:bg-gray-50"
             >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-slate-900">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gold text-[11px] font-bold text-navy-dark">
                     {getInitials(user.name)}
                 </span>
-                <span className="hidden text-sm font-medium text-white sm:block">{firstName}</span>
-                <ChevronDown className={`h-3.5 w-3.5 text-white/70 transition-transform ${open ? 'rotate-180' : ''}`} />
+                <span className="hidden text-sm font-semibold text-navy-dark sm:block">{firstName}</span>
+                <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {open && (
@@ -181,11 +181,11 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
     return (
         <>
             {/* ── Trade bar: the constant reminder that these are not retail prices ── */}
-            <div className="bg-amber-500 text-slate-900">
+            <div className="bg-gold text-navy-dark">
                 <Container>
                     <div className="flex h-9 items-center justify-between text-[12px] font-semibold">
                         <div className="flex items-center gap-2">
-                            <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                            <span className="rounded bg-navy-dark px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold-light">
                                 Trade
                             </span>
                             <span className="hidden sm:inline">
@@ -200,20 +200,20 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                 </Container>
             </div>
 
-            <header className="sticky top-0 z-40 bg-slate-900 shadow-lg">
+            <header className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
                 <Container>
                     <div className="flex h-16 items-center gap-4">
                         <button
                             type="button"
                             onClick={() => setMobileOpen((o) => !o)}
-                            className="rounded p-2 text-white/80 hover:bg-white/10 lg:hidden"
+                            className="rounded p-2 text-navy hover:bg-gray-100 lg:hidden"
                             aria-label="Toggle menu"
                         >
                             <MenuIcon className="h-6 w-6" />
                         </button>
 
                         <Link href={route('builder.dashboard')} className="flex shrink-0 items-center gap-2">
-                            <ApplicationLogo className="h-9 w-auto brightness-0 invert" />
+                            <ApplicationLogo className="h-9 w-auto" />
                         </Link>
 
                         <form onSubmit={submitSearch} className="relative hidden flex-1 md:block">
@@ -222,9 +222,9 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search the trade catalogue…"
-                                className="w-full rounded-full border-0 bg-white/10 py-2 pl-4 pr-10 text-sm text-white placeholder-white/50 focus:bg-white/15 focus:ring-2 focus:ring-amber-500"
+                                className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-4 pr-10 text-sm text-navy-dark placeholder-gray-400 focus:border-gold focus:bg-white focus:ring-2 focus:ring-gold/40"
                             />
-                            <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white" aria-label="Search">
+                            <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-navy" aria-label="Search">
                                 <SearchIcon className="h-4 w-4" />
                             </button>
                         </form>
@@ -233,12 +233,12 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                             <button
                                 type="button"
                                 onClick={() => setCartOpen(true)}
-                                className="relative rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                                className="relative rounded-full p-2 text-navy transition-colors hover:bg-gray-100"
                                 aria-label="Open cart"
                             >
                                 <CartIcon className="h-6 w-6" />
                                 {cartCount > 0 && (
-                                    <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-slate-900">
+                                    <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-navy-dark">
                                         {cartCount}
                                     </span>
                                 )}
@@ -249,15 +249,15 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                     </div>
 
                     {/* ── Category nav ── */}
-                    <nav className="hidden border-t border-white/10 lg:block">
+                    <nav className="hidden border-t border-gray-100 lg:block">
                         <ul className="flex items-center gap-1 overflow-x-auto py-1">
                             <li>
                                 <Link
                                     href={route('builder.shop.index')}
-                                    className={`block whitespace-nowrap rounded px-3 py-2 text-[13px] font-semibold uppercase tracking-wide transition-colors ${
+                                    className={`block whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] font-semibold uppercase tracking-wide transition-colors ${
                                         isActive('/builder/shop') && !url.includes('category=')
-                                            ? 'text-amber-400'
-                                            : 'text-white/80 hover:bg-white/10 hover:text-white'
+                                            ? 'border-gold text-navy'
+                                            : 'border-transparent text-navy/70 hover:border-gold/40 hover:text-navy'
                                     }`}
                                 >
                                     All Products
@@ -267,7 +267,7 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                                 <li key={cat.id}>
                                     <Link
                                         href={`/builder/shop?category=${cat.slug}`}
-                                        className="block whitespace-nowrap rounded px-3 py-2 text-[13px] font-semibold uppercase tracking-wide text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                                        className="block whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 text-[13px] font-semibold uppercase tracking-wide text-navy/70 transition-colors hover:border-gold/40 hover:text-navy"
                                     >
                                         {cat.name}
                                     </Link>
@@ -279,7 +279,7 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
 
                 {/* ── Mobile drawer ── */}
                 {mobileOpen && (
-                    <div className="border-t border-white/10 bg-slate-900 lg:hidden">
+                    <div className="border-t border-gray-100 bg-white lg:hidden">
                         <Container>
                             <form onSubmit={submitSearch} className="relative py-3 md:hidden">
                                 <input
@@ -287,9 +287,9 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                     placeholder="Search the trade catalogue…"
-                                    className="w-full rounded-full border-0 bg-white/10 py-2 pl-4 pr-10 text-sm text-white placeholder-white/50 focus:ring-2 focus:ring-amber-500"
+                                    className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-4 pr-10 text-sm text-navy-dark placeholder-gray-400 focus:border-gold focus:ring-2 focus:ring-gold/40"
                                 />
-                                <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60" aria-label="Search">
+                                <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" aria-label="Search">
                                     <SearchIcon className="h-4 w-4" />
                                 </button>
                             </form>
@@ -298,7 +298,7 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                                     <Link
                                         href={route('builder.shop.index')}
                                         onClick={() => setMobileOpen(false)}
-                                        className="block rounded px-2 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
+                                        className="block rounded px-2 py-2.5 text-sm font-semibold text-navy-dark hover:bg-gray-50"
                                     >
                                         All Products
                                     </Link>
@@ -308,7 +308,7 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                                         <Link
                                             href={`/builder/shop?category=${cat.slug}`}
                                             onClick={() => setMobileOpen(false)}
-                                            className="block rounded px-2 py-2.5 text-sm text-white/80 hover:bg-white/10"
+                                            className="block rounded px-2 py-2.5 text-sm text-navy/80 hover:bg-gray-50"
                                         >
                                             {cat.name}
                                         </Link>

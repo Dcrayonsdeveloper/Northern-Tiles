@@ -7,11 +7,40 @@ const money = (v) => `$${parseFloat(v || 0).toFixed(2)}`;
 
 function StatCard({ label, value, hint }) {
     return (
-        <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</div>
-            <div className="mt-1.5 text-2xl font-bold text-slate-900">{value}</div>
+        <div className="rounded-lg border border-gray-200 border-l-4 border-l-gold bg-white p-5 shadow-sm">
+            <div className="text-[11px] font-semibold uppercase tracking-[1.5px] text-gray-500">{label}</div>
+            <div className="mt-1.5 font-heading text-3xl font-bold text-navy">{value}</div>
             {hint ? <div className="mt-0.5 text-xs text-gray-500">{hint}</div> : null}
         </div>
+    );
+}
+
+/* Decorative tile stack for the hero - a gold arc behind four fanned slabs.
+   Drawn rather than photographed so it cannot 404 or shift the layout, and
+   purely ornamental, hence aria-hidden. */
+function TileStackArt({ className = '' }) {
+    return (
+        <svg className={className} viewBox="0 0 260 200" fill="none" aria-hidden="true">
+            <defs>
+                <linearGradient id="tsA" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#f4f1ea" /><stop offset="100%" stopColor="#cfc7b8" />
+                </linearGradient>
+                <linearGradient id="tsB" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#8f9296" /><stop offset="100%" stopColor="#5d6165" />
+                </linearGradient>
+                <linearGradient id="tsC" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#ffffff" /><stop offset="100%" stopColor="#d8dade" />
+                </linearGradient>
+                <linearGradient id="tsD" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#7d8590" /><stop offset="100%" stopColor="#4a5158" />
+                </linearGradient>
+            </defs>
+            <path d="M40 170 A95 95 0 0 1 230 170" stroke="#c9a961" strokeWidth="2" fill="none" opacity="0.85" />
+            <rect x="58" y="72" width="42" height="104" rx="4" fill="url(#tsA)" transform="rotate(-6 79 124)" />
+            <rect x="102" y="58" width="42" height="118" rx="4" fill="url(#tsB)" transform="rotate(-2 123 117)" />
+            <rect x="146" y="52" width="42" height="124" rx="4" fill="url(#tsC)" transform="rotate(2 167 114)" />
+            <rect x="190" y="66" width="42" height="110" rx="4" fill="url(#tsD)" transform="rotate(6 211 121)" />
+        </svg>
     );
 }
 
@@ -31,23 +60,33 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
         <BuilderLayout title="Trade Dashboard">
             <Container className="py-8">
                 {/* ── Welcome ── */}
-                <div className="rounded-lg bg-slate-900 px-6 py-8 text-white">
-                    <div className="text-[11px] font-bold uppercase tracking-widest text-amber-400">
-                        Builder &amp; Contractor Portal
+                <div className="relative overflow-hidden rounded-lg bg-navy px-6 py-10 text-white sm:px-10">
+                    <div className="relative z-10 max-w-2xl">
+                        <div className="flex items-center gap-3">
+                            <span className="text-[11px] font-bold uppercase tracking-[2px] text-gold">
+                                Builder &amp; Contractor Portal
+                            </span>
+                            <span className="hidden h-px w-16 bg-gold/50 sm:block" />
+                        </div>
+                        <h1 className="mt-3 font-heading text-4xl font-bold leading-tight">
+                            Welcome back, {firstName}
+                        </h1>
+                        <p className="mt-3 text-sm leading-relaxed text-white/75">
+                            {company
+                                ? `${company} — your account is set up with trade pricing. `
+                                : 'Your account is set up with trade pricing. '}
+                            Everything in this catalogue is charged at your rate, in the cart and at checkout.
+                        </p>
+                        <Link
+                            href={route('builder.shop.index')}
+                            className="mt-6 inline-block rounded bg-gold px-6 py-3 text-sm font-semibold text-navy-dark transition hover:bg-gold-light"
+                        >
+                            Browse the trade catalogue →
+                        </Link>
                     </div>
-                    <h1 className="mt-1.5 text-2xl font-bold">Welcome back, {firstName}</h1>
-                    <p className="mt-1.5 max-w-2xl text-sm text-white/70">
-                        {company
-                            ? `${company} — your account is set up with trade pricing. `
-                            : 'Your account is set up with trade pricing. '}
-                        Everything in this catalogue is charged at your rate, in the cart and at checkout.
-                    </p>
-                    <Link
-                        href={route('builder.shop.index')}
-                        className="mt-5 inline-block rounded bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-amber-400"
-                    >
-                        Browse the trade catalogue →
-                    </Link>
+
+                    {/* Ornament only - hidden on small screens where it would crowd the copy. */}
+                    <TileStackArt className="pointer-events-none absolute -right-4 bottom-0 hidden h-full w-[300px] lg:block" />
                 </div>
 
                 {/* ── Stats ── */}
@@ -60,9 +99,10 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
                 {/* ── Featured ── */}
                 {featuredProducts.length > 0 && (
                     <div className="mt-10">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-slate-900">From your catalogue</h2>
-                            <Link href={route('builder.shop.index')} className="text-sm font-semibold text-brand hover:underline">
+                        <div className="mb-4 flex items-center gap-4">
+                            <h2 className="font-heading text-2xl font-bold text-navy">From your catalogue</h2>
+                            <span className="hidden h-px flex-1 bg-gold/40 sm:block" />
+                            <Link href={route('builder.shop.index')} className="shrink-0 text-sm font-semibold text-navy hover:text-gold-dark">
                                 View all →
                             </Link>
                         </div>
@@ -80,8 +120,7 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
                                             <ProductImage
                                                 src={p.image_url}
                                                 alt={p.name}
-                                                className="absolute inset-0 h-full w-full object-cover"
-                                                style={{ transform: 'scale(2.8)', transformOrigin: 'center' }}
+                                                className="absolute inset-0 h-full w-full object-contain"
                                             />
                                         </div>
                                         <div className="p-3">
@@ -105,8 +144,9 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
                 {/* ── Recent orders ── */}
                 <div className="mt-10">
                     <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-slate-900">Recent orders</h2>
-                        <Link href={route('orders.index')} className="text-sm font-semibold text-brand hover:underline">
+                        <h2 className="font-heading text-2xl font-bold text-navy">Recent orders</h2>
+                        <span className="hidden h-px flex-1 bg-gold/40 sm:block" />
+                        <Link href={route('orders.index')} className="shrink-0 text-sm font-semibold text-navy hover:text-gold-dark">
                             All orders →
                         </Link>
                     </div>
