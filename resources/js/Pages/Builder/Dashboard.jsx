@@ -15,34 +15,12 @@ function StatCard({ label, value, hint }) {
     );
 }
 
-/* Decorative tile stack for the hero - a gold arc behind four fanned slabs.
-   Drawn rather than photographed so it cannot 404 or shift the layout, and
-   purely ornamental, hence aria-hidden. */
-function TileStackArt({ className = '' }) {
-    return (
-        <svg className={className} viewBox="0 0 260 200" fill="none" aria-hidden="true">
-            <defs>
-                <linearGradient id="tsA" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#f4f1ea" /><stop offset="100%" stopColor="#cfc7b8" />
-                </linearGradient>
-                <linearGradient id="tsB" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#8f9296" /><stop offset="100%" stopColor="#5d6165" />
-                </linearGradient>
-                <linearGradient id="tsC" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#ffffff" /><stop offset="100%" stopColor="#d8dade" />
-                </linearGradient>
-                <linearGradient id="tsD" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#7d8590" /><stop offset="100%" stopColor="#4a5158" />
-                </linearGradient>
-            </defs>
-            <path d="M40 170 A95 95 0 0 1 230 170" stroke="#c9a961" strokeWidth="2" fill="none" opacity="0.85" />
-            <rect x="58" y="72" width="42" height="104" rx="4" fill="url(#tsA)" transform="rotate(-6 79 124)" />
-            <rect x="102" y="58" width="42" height="118" rx="4" fill="url(#tsB)" transform="rotate(-2 123 117)" />
-            <rect x="146" y="52" width="42" height="124" rx="4" fill="url(#tsC)" transform="rotate(2 167 114)" />
-            <rect x="190" y="66" width="42" height="110" rx="4" fill="url(#tsD)" transform="rotate(6 211 121)" />
-        </svg>
-    );
-}
+/* The hero artwork: navy field with a gold arc and fanned tile slabs.
+   Used as a background image so the copy sits over the flat left-hand side of
+   the artwork. bg-navy stays underneath as the base colour, so if the file is
+   missing or still loading the hero degrades to plain navy with the text
+   perfectly readable, rather than to a broken image. */
+const HERO_BANNER = '/images/builder/hero-banner.png';
 
 const STATUS_STYLES = {
     pending: 'bg-amber-100 text-amber-800',
@@ -60,8 +38,11 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
         <BuilderLayout title="Trade Dashboard">
             <Container className="py-8">
                 {/* ── Welcome ── */}
-                <div className="relative overflow-hidden rounded-lg bg-navy px-6 py-10 text-white sm:px-10">
-                    <div className="relative z-10 max-w-2xl">
+                <div
+                    className="relative overflow-hidden rounded-lg bg-navy bg-cover bg-right bg-no-repeat px-6 py-10 text-white sm:px-10"
+                    style={{ backgroundImage: `url(${HERO_BANNER})` }}
+                >
+                    <div className="relative z-10 max-w-2xl lg:min-h-[220px]">
                         <div className="flex items-center gap-3">
                             <span className="text-[11px] font-bold uppercase tracking-[2px] text-gold">
                                 Builder &amp; Contractor Portal
@@ -84,9 +65,6 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
                             Browse the trade catalogue →
                         </Link>
                     </div>
-
-                    {/* Ornament only - hidden on small screens where it would crowd the copy. */}
-                    <TileStackArt className="pointer-events-none absolute -right-4 bottom-0 hidden h-full w-[300px] lg:block" />
                 </div>
 
                 {/* ── Stats ── */}
