@@ -1123,10 +1123,10 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                     className="group mt-2 block w-full rounded-lg border-2 border-brand px-8 py-1.5 text-center transition hover:bg-brand"
                                 >
                                     <span className="block text-sm font-bold uppercase tracking-wide leading-tight text-brand group-hover:text-white">
-                                        Visit Our Showroom
+                                        Get a Big Sample
                                     </span>
                                     <span className="block text-[10px] font-normal normal-case tracking-normal leading-tight text-gray-500 group-hover:text-white/80">
-                                        See full-size tiles &amp; larger samples in person
+                                        Full-size tiles · Visit our showroom
                                     </span>
                                 </Link>
                             </div>
