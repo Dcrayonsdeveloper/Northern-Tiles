@@ -35,8 +35,11 @@ export default {
                     dark: '#a8863f',
                 },
                 navy: {
-                    DEFAULT: '#14396e',
-                    dark: '#0e2a52',
+                    // Sampled from the hero banner artwork so the card behind the
+                    // photo is the identical navy — otherwise the image's left
+                    // edge shows as a seam against a lighter card.
+                    DEFAULT: '#093163',
+                    dark: '#061f42',
                 },
                 dark: '#222222',
                 muted: '#555555',
