@@ -4,7 +4,7 @@ namespace App\Domain\Builder\Http\Controllers\Builder;
 
 use App\Domain\Builder\Models\BuilderProduct;
 use App\Domain\Builder\Services\BuilderNavigationService;
-use App\Domain\Builder\Services\TradeUnitResolver;
+use App\Domain\Catalog\Services\ProductUnitResolver;
 use App\Domain\Catalog\Models\Attribute;
 use App\Domain\Catalog\Support\ProductFamily;
 use App\Http\Controllers\Controller;
@@ -25,7 +25,7 @@ class BuilderShopController extends Controller
     /** Attribute facets accepted as comma-separated query params (?color=white,grey). */
     private const ATTRIBUTE_FILTERS = ['color', 'space', 'size', 'material', 'finish', 'style'];
 
-    public function __construct(private TradeUnitResolver $units) {}
+    public function __construct(private ProductUnitResolver $units) {}
 
     public function index(Request $request, ?string $category = null, ?string $subcategory = null): Response
     {
@@ -201,7 +201,7 @@ class BuilderShopController extends Controller
         if ($relatedIds->isNotEmpty()) {
             $relatedProducts = Product::whereIn('id', $relatedIds)
                 ->with(['builderListing', 'category:id,name,slug'])
-                // category_id and sqm_per_box are needed by TradeUnitResolver;
+                // category_id and sqm_per_box are needed by ProductUnitResolver;
                 // without them every related card falls back to "not per m²".
                 ->get(['id', 'category_id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description', 'sqm_per_box'])
                 ->map(fn (Product $p) => $this->decorateWithBuilderPrice($p))

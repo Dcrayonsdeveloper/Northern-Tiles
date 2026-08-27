@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Storefront;
 
 use App\Domain\Catalog\Models\Attribute;
+use App\Domain\Catalog\Services\ProductUnitResolver;
 use App\Domain\Catalog\Support\ProductFamily;
 use App\Domain\Marketing\Models\Coupon;
 use App\Http\Controllers\Controller;
@@ -148,13 +149,18 @@ class ShopController extends Controller
         // dead product_media rows pointing at unsynced storage paths would
         // otherwise replace a valid CDN url in image_url with a 403 local
         // path, leaving the listing card blank.
-        $products->getCollection()->transform(function ($product) {
+        $units = app(ProductUnitResolver::class);
+
+        $products->getCollection()->transform(function ($product) use ($units) {
             $primary = $product->media->first();
             if ($primary && \Illuminate\Support\Facades\Storage::disk('public')->exists($primary->path)) {
                 $product->image_url = $primary->url;
             }
             $product->unsetRelation('media');
-            return $product;
+
+            // "/ sqm" was hardcoded in the views, so a quad or a bag of grout
+            // was priced by area. The resolver decides per product.
+            return $units->decorate($product);
         });
 
         $categories = Category::query()
@@ -178,6 +184,7 @@ class ShopController extends Controller
         abort_unless($product->is_active, 404);
 
         $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media', 'variantFamily']);
+        app(ProductUnitResolver::class)->decorate($product);
 
         // Same-range products (e.g. every ARGILE tile) presented as a variant
         // selector. Null when the product isn't in a family, the family is off,
