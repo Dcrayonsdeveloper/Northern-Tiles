@@ -43,14 +43,6 @@ function CardIcon({ className }) {
     );
 }
 
-function InvoiceIcon({ className }) {
-    return (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-    );
-}
-
 export default function Index({
     items = [],
     totals = {},
@@ -63,20 +55,6 @@ export default function Index({
     const isInactive = !!auth?.user && auth.user.is_active === false;
 
     const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
-
-    // Trade-only: append Invoice (Net-30) to whatever the server returned.
-    // If it's already there (server-side extension) don't duplicate it.
-    const tradePaymentMethods = (() => {
-        const list = [...paymentMethods];
-        if (!list.find((m) => m.id === 'invoice')) {
-            list.push({
-                id: 'invoice',
-                name: 'Invoice (Net-30)',
-                description: 'Invoiced to your trade account, payable within 30 days',
-            });
-        }
-        return list;
-    })();
 
     const { data, setData, post, processing, errors } = useForm({
         contact: {
@@ -91,7 +69,7 @@ export default function Index({
             city: '',
             state: '',
             postal_code: '',
-            country: 'Australia',
+            country: '',
             phone: user?.phone || '',
         },
         billing_address: {
@@ -101,18 +79,13 @@ export default function Index({
             city: '',
             state: '',
             postal_code: '',
-            country: 'Australia',
+            country: '',
         },
         billing_same_as_shipping: true,
         shipping_method: shippingMethods[0]?.id || 'standard',
-        payment_method: 'invoice',
+        payment_method: 'cod',
         notes: '',
         marketing_opt_in: false,
-        // Trade-only fields — validated on the server and (until the orders
-        // migration lands) prepended into order.notes so dispatch/invoicing
-        // still get them today.
-        po_number: '',
-        deliver_to_site: false,
     });
 
     const updateContact = (field, value) => {
@@ -223,37 +196,14 @@ export default function Index({
                                                     className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="text-xs font-medium text-gray-600">
-                                                    Purchase Order #
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={data.po_number}
-                                                    onChange={(e) => setData('po_number', e.target.value)}
-                                                    placeholder="PO-2026-01234"
-                                                    className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                                                />
-                                            </div>
                                         </div>
                                     </div>
 
                                     {/* Shipping Address */}
                                     <div className="rounded-lg border bg-white p-6 shadow-sm">
-                                        <div className="flex items-center justify-between">
-                                            <h2 className="text-lg font-semibold text-gray-900">
-                                                Shipping Address
-                                            </h2>
-                                            <label className="flex items-center gap-2 text-xs text-gray-600">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={data.deliver_to_site}
-                                                    onChange={(e) => setData('deliver_to_site', e.target.checked)}
-                                                    className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
-                                                />
-                                                Deliver to build site
-                                            </label>
-                                        </div>
+                                        <h2 className="text-lg font-semibold text-gray-900">
+                                            Shipping Address
+                                        </h2>
 
                                         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             <div className="sm:col-span-2">
@@ -348,14 +298,16 @@ export default function Index({
                                                 <label className="text-xs font-medium text-gray-600">
                                                     Country *
                                                 </label>
-                                                <select
+                                                <input
+                                                    type="text"
                                                     value={data.shipping_address.country}
                                                     onChange={(e) => updateShippingAddress('country', e.target.value)}
                                                     className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                                     required
-                                                >
-                                                    <option value="Australia">Australia</option>
-                                                </select>
+                                                />
+                                                {errors['shipping_address.country'] && (
+                                                    <p className="mt-1 text-xs text-red-600">{errors['shipping_address.country']}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -409,7 +361,7 @@ export default function Index({
                                         </h2>
 
                                         <div className="mt-4 space-y-3">
-                                            {tradePaymentMethods.map((method) => (
+                                            {paymentMethods.map((method) => (
                                                 <label
                                                     key={method.id}
                                                     className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors ${
@@ -429,7 +381,6 @@ export default function Index({
                                                     <div className="flex items-center gap-3">
                                                         {method.id === 'cod' && <CashIcon className="h-6 w-6 text-gray-500" />}
                                                         {method.id === 'card' && <CardIcon className="h-6 w-6 text-gray-500" />}
-                                                        {method.id === 'invoice' && <InvoiceIcon className="h-6 w-6 text-gray-500" />}
                                                         {method.id === 'upi' && (
                                                             <span className="text-xs font-bold text-gray-500">UPI</span>
                                                         )}

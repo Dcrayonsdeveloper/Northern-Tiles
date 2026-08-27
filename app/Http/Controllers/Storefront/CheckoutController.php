@@ -108,24 +108,6 @@ class CheckoutController extends Controller
             $this->checkoutService->validateCheckoutData($request->all(), $isGuest, $this->channel())
         );
 
-        // Trade-only fields on the trade checkout page: prepend to notes so
-        // dispatch/invoicing still get them today (proper columns to follow
-        // in a separate migration). Retail POSTs simply won't have them.
-        $notes = $validated['notes'] ?? null;
-        if ($this->channel() === \App\Domain\Cart\Models\Cart::CHANNEL_TRADE) {
-            $tradePrefixes = [];
-            if (! empty($validated['po_number'])) {
-                $tradePrefixes[] = 'PO: ' . $validated['po_number'];
-            }
-            if ($request->boolean('deliver_to_site')) {
-                $tradePrefixes[] = 'Deliver to build site: YES';
-            }
-            if ($tradePrefixes) {
-                $prefix = implode(' · ', $tradePrefixes);
-                $notes = $notes ? $prefix . "\n\n" . $notes : $prefix;
-            }
-        }
-
         // Prepare checkout data
         $checkoutData = [
             'contact' => [
@@ -140,7 +122,7 @@ class CheckoutController extends Controller
                 : ($validated['billing_address'] ?? $validated['shipping_address']),
             'shipping_method' => $validated['shipping_method'],
             'payment_method' => $validated['payment_method'],
-            'notes' => $notes,
+            'notes' => $validated['notes'] ?? null,
         ];
 
         try {

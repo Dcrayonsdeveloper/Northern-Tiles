@@ -132,18 +132,12 @@ class CheckoutService
     }
 
     /**
-     * Validate checkout data.
-     *
-     * $channel gates which payment methods are accepted. Trade cart checkouts
-     * can additionally choose 'invoice' (net-30) — retail POSTs cannot smuggle
-     * that in because a retail cart submits with $channel = 'retail'.
+     * Validate checkout data. $channel is kept in the signature for future
+     * per-channel gates (e.g. reintroducing invoice / net-30 for trade), but
+     * today retail and trade accept the same payment methods and same fields.
      */
     public function validateCheckoutData(array $data, bool $isGuest, string $channel = 'retail'): array
     {
-        $paymentMethods = $channel === \App\Domain\Cart\Models\Cart::CHANNEL_TRADE
-            ? 'cod,upi,card,invoice'
-            : 'cod,upi,card';
-
         $rules = [
             'contact.email' => 'required|email|max:255',
             'contact.phone' => 'nullable|string|max:20',
@@ -157,14 +151,9 @@ class CheckoutService
             'shipping_address.country' => 'required|string|max:100',
             'shipping_address.phone' => 'nullable|string|max:20',
             'shipping_method' => 'required|string|in:standard,express',
-            'payment_method' => 'required|string|in:' . $paymentMethods,
+            'payment_method' => 'required|string|in:cod,upi,card',
             'billing_same_as_shipping' => 'boolean',
             'notes' => 'nullable|string|max:500',
-            // Trade-only: PO number and site-vs-address delivery flag. Retail
-            // POSTs may still send them (they'll be ignored), but the trade
-            // page collects them so the order write can pick them up.
-            'po_number' => 'nullable|string|max:100',
-            'deliver_to_site' => 'nullable|boolean',
         ];
 
         // If billing is different from shipping
