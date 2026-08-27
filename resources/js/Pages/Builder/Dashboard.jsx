@@ -96,7 +96,7 @@ const STATUS_STYLES = {
     cancelled: 'bg-red-100 text-red-800',
 };
 
-export default function BuilderDashboard({ featuredProducts = [], recentOrders = [], stats, company, heroBanner = null }) {
+export default function BuilderDashboard({ featuredProducts = [], recentOrders = [], stats, company, heroBanner = null, heroBannerEdge = null }) {
     const { auth } = usePage().props;
     const firstName = auth?.user?.name?.split(' ')[0] ?? 'there';
 
@@ -104,7 +104,16 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
         <BuilderLayout title="Trade Dashboard">
             <Container className="py-8">
                 {/* ── Welcome ── */}
-                <div className="relative overflow-hidden rounded-lg bg-navy px-6 py-10 text-white sm:px-10">
+                <div
+                    className="relative overflow-hidden rounded-lg bg-navy px-6 py-10 text-white sm:px-10"
+                    style={heroBannerEdge ? {
+                        // Stretched to the box, so the card carries the artwork's
+                        // exact gradient and the join is invisible at every height.
+                        backgroundImage: `url(${heroBannerEdge})`,
+                        backgroundSize: '100% 100%',
+                        backgroundRepeat: 'no-repeat',
+                    } : undefined}
+                >
                     <div className="relative z-10 max-w-2xl lg:min-h-[220px]">
                         <div className="flex items-center gap-3">
                             <span className="text-[11px] font-bold uppercase tracking-[2px] text-gold">

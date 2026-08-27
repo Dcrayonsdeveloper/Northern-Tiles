@@ -19,6 +19,15 @@ class BuilderDashboardController extends Controller
     /** Optional hero photo; the dashboard draws its own artwork when absent. */
     private const HERO_BANNER = 'images/builder/hero-banner.png';
 
+    /**
+     * A 6px slice of the banner's left edge. Stretched across the hero it
+     * reproduces the artwork's own vertical gradient, so the card and the
+     * image are the same colour at every height. A single flat navy could
+     * only ever match at one height, which is what showed as a vertical band
+     * down the middle of the hero.
+     */
+    private const HERO_BANNER_EDGE = 'images/builder/hero-banner-edge.png';
+
     public function __invoke(Request $request): Response
     {
         $user = $request->user();
@@ -76,6 +85,9 @@ class BuilderDashboardController extends Controller
             // instead of a broken <img>.
             'heroBanner' => file_exists(public_path(self::HERO_BANNER))
                 ? asset(self::HERO_BANNER)
+                : null,
+            'heroBannerEdge' => file_exists(public_path(self::HERO_BANNER_EDGE))
+                ? asset(self::HERO_BANNER_EDGE)
                 : null,
         ]);
     }
