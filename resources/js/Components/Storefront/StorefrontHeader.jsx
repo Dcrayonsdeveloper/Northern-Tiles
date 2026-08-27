@@ -632,7 +632,7 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
                                 action in an otherwise informational strip. */}
                             <Link
                                 href="/builder"
-                                className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-900 transition-colors hover:bg-amber-400"
+                                className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-brand-dark transition-colors hover:bg-gray-100"
                             >
                                 <HardHatIcon className="h-3.5 w-3.5" />
                                 <span className="hidden sm:inline">Trade Portal</span>
