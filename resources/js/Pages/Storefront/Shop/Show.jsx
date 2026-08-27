@@ -949,7 +949,9 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 {hasDiscount && <span className="inline-block rounded bg-brand/10 px-2 py-0.5 text-[12px] font-bold text-brand mb-2">-{discountPercent}% Limited Deal</span>}
                                 <div className="flex items-baseline gap-3">
                                     <span className="text-3xl font-bold text-gray-900">${parseFloat(product.price || 0).toFixed(2)}</span>
-                                    <span className="text-sm text-gray-500">/ sqm</span>
+                                    {product.unit_label ? (
+                                        <span className="text-sm text-gray-500">/ {product.unit_label}</span>
+                                    ) : null}
                                     {hasDiscount && (
                                         <span className="text-lg text-gray-400 line-through">${parseFloat(product.compare_at_price || 0).toFixed(2)}</span>
                                     )}

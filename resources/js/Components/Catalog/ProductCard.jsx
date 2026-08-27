@@ -101,7 +101,9 @@ export default function ProductCard({ product, isFavorite, onToggleFavorite, sho
                         <span className="text-[16px] font-bold text-gray-900">
                             ${parseFloat(product.price || 0).toFixed(2)}
                         </span>
-                        <span className="text-[11px] text-gray-400">/ sqm</span>
+                        {product.unit_label ? (
+                            <span className="text-[11px] text-gray-400">/ {product.unit_label}</span>
+                        ) : null}
                         {hasDiscount && (
                             <span className="text-[13px] text-gray-400 line-through">
                                 ${parseFloat(product.compare_at_price || 0).toFixed(2)}
