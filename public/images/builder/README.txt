@@ -1,16 +1,18 @@
 hero-banner.png
 ---------------
 The Builder & Contractor Portal hero artwork: navy field, gold arc, fanned tile
-slabs at the right.
+slabs at the right. Installed - the dashboard is using it.
 
-Save the banner here as exactly:
+To replace it, overwrite this file at the same path and filename. Nothing else
+needs changing.
 
-    public/images/builder/hero-banner.png
-
-The dashboard uses it as the hero background (bg-cover bg-right), with the copy
-over the flat left-hand side. bg-navy sits underneath, so until this file exists
-the hero renders as plain navy with the text still readable - it does not break.
-
-Wide artwork works best; the source used was roughly 2.5:1. If you save a .jpg
-or .webp instead, update HERO_BANNER in
-resources/js/Pages/Builder/Dashboard.jsx to match the extension.
+Notes:
+  - Wide artwork works best. This one is 1983x793 (2.5:1).
+  - Its background navy is #093163, which is also the Tailwind `navy` colour the
+    hero card uses. If you swap in artwork with a different background, sample
+    its navy and update `navy.DEFAULT` in tailwind.config.js to match, or the
+    image's edge will show as a seam against the card.
+  - A different extension (.jpg/.webp) needs HERO_BANNER updating in
+    app/Domain/Builder/Http/Controllers/Builder/BuilderDashboardController.php
+  - If this file is deleted the dashboard falls back to drawn SVG artwork, so
+    the hero is never empty.
