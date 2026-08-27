@@ -138,7 +138,7 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
                             src={heroBanner}
                             alt=""
                             aria-hidden="true"
-                            className="pointer-events-none absolute inset-0 hidden h-full w-full object-cover object-right lg:block"
+                            className="pointer-events-none absolute inset-0 hidden h-full w-full object-contain object-right lg:block"
                         />
                     ) : (
                         <TileStackArt className="pointer-events-none absolute -bottom-10 right-4 hidden h-[125%] w-[420px] lg:block" />
