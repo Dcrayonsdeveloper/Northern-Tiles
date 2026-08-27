@@ -1117,6 +1117,13 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                         Free samples · Max 5 per order · Flat $9.99 shipping
                                     </span>
                                 </button>
+
+                                <p className="mt-1.5 text-center text-[11px] text-gray-500">
+                                    Need a larger sample?{' '}
+                                    <Link href={route('pages.contact')} className="font-semibold text-brand hover:underline">
+                                        Visit our showroom
+                                    </Link>
+                                </p>
                             </div>
 
                             {/* Product Specifications */}
@@ -1278,6 +1285,16 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 <div className="flex items-start gap-3">
                                     <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[12px] font-bold">$</div>
                                     <p>Order 1 sample or all 5 — shipping is always <strong className="text-gray-900">$9.99 flat</strong>.</p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[12px] font-bold">◇</div>
+                                    <p>
+                                        <strong className="text-gray-900">Want a bigger sample?</strong> Posted samples are
+                                        small offcuts. To see a full tile,{' '}
+                                        <Link href={route('pages.contact')} className="font-semibold text-brand hover:underline" onClick={() => setShowSampleModal(false)}>
+                                            visit our showroom
+                                        </Link>.
+                                    </p>
                                 </div>
                             </div>
 
