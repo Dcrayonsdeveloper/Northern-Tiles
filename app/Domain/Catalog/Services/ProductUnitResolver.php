@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Builder\Services;
+namespace App\Domain\Catalog\Services;
 
 use App\Models\Product;
 
@@ -12,10 +12,8 @@ use App\Models\Product;
  * adhesives, grouts, silicones, spacers, levelling clips and trims are sold per
  * unit.
  *
- * This lives in the Builder domain and is called only from the trade
- * controllers. It reads existing columns and derives an answer — it does not
- * add or modify any product data, and the retail storefront and admin are
- * untouched by it.
+ * Used by both storefronts. It reads existing columns and derives an answer —
+ * it does not add or modify any product data.
  *
  * Two signals, because neither alone is sufficient:
  *
@@ -27,7 +25,7 @@ use App\Models\Product;
  *    slug list, so a newly added "porcelain-600x600" is classified correctly
  *    without a code change.
  */
-class TradeUnitResolver
+class ProductUnitResolver
 {
     /** Category-slug fragments that mean "surface material, sold by area". */
     private const AREA_KEYWORDS = [
@@ -49,21 +47,42 @@ class TradeUnitResolver
     ];
 
     /**
+     * Of the non-area products, the ones genuinely counted in pieces — quads,
+     * scotia, trims, spacers, clips. These print "/ pcs".
+     *
+     * Deliberately narrower than NEVER_AREA: a 20kg bag of grout is also not
+     * sold by area, but "per piece" would be wrong for it, so it keeps no unit
+     * at all rather than being given a misleading one.
+     */
+    private const PIECE_CATEGORIES = [
+        'quad', 'quads', 'scotia', 'trims', 'trim',
+        'spacers', 'tile-crosses',
+        'levelling-clips', 'levelling-system', 'levelling-systems',
+    ];
+
+    /**
      * True when the product should be priced and ordered per square metre.
      */
     public function isSoldPerSquareMetre(Product $product): bool
     {
+        // Conclusive, and checked FIRST: a per-box area only exists on boxed
+        // tiles and flooring.
+        //
+        // Order matters. This used to run after the NEVER_AREA veto, which
+        // meant a genuine 600x600 tile carrying an accessory category as a
+        // SECONDARY tag was read as an accessory — ULTRA80 WHITE GLOSS 600x600
+        // has sqm_per_box 1.44 but is also tagged 'quad', and lost its "/ sqm".
+        // Eleven tiles were affected. A real per-box area outranks a tag.
+        if ((float) $product->sqm_per_box > 0) {
+            return true;
+        }
+
         $slugs = $this->categorySlugs($product);
 
         foreach ($slugs as $slug) {
             if (in_array($slug, self::NEVER_AREA, true)) {
                 return false;
             }
-        }
-
-        // Conclusive: a per-box area only exists on boxed tiles and flooring.
-        if ((float) $product->sqm_per_box > 0) {
-            return true;
         }
 
         foreach ($slugs as $slug) {
@@ -78,13 +97,26 @@ class TradeUnitResolver
     }
 
     /**
-     * "sqm" for tiles and flooring, null for everything else. The trade views
-     * print the unit only when it is present, so a null simply drops the
-     * suffix rather than substituting some other wording.
+     * "sqm" for tiles and flooring, "pcs" for counted items such as quads and
+     * scotia, null for everything else.
+     *
+     * The views print the unit only when it is present, so a null drops the
+     * suffix rather than substituting some other wording — which is what a bag
+     * of grout should do, since neither "sqm" nor "pcs" describes it.
      */
     public function unitLabel(Product $product): ?string
     {
-        return $this->isSoldPerSquareMetre($product) ? 'sqm' : null;
+        if ($this->isSoldPerSquareMetre($product)) {
+            return 'sqm';
+        }
+
+        foreach ($this->categorySlugs($product) as $slug) {
+            if (in_array($slug, self::PIECE_CATEGORIES, true)) {
+                return 'pcs';
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -93,10 +125,8 @@ class TradeUnitResolver
      */
     public function decorate(Product $product): Product
     {
-        $perSqm = $this->isSoldPerSquareMetre($product);
-
-        $product->setAttribute('is_sold_per_sqm', $perSqm);
-        $product->setAttribute('unit_label', $perSqm ? 'sqm' : null);
+        $product->setAttribute('is_sold_per_sqm', $this->isSoldPerSquareMetre($product));
+        $product->setAttribute('unit_label', $this->unitLabel($product));
 
         return $product;
     }
