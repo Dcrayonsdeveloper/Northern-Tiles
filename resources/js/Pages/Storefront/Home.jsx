@@ -392,7 +392,7 @@ function OurShowroom() {
                             Visit our extensive showroom at 19/324 Settlement Road, Thomastown VIC 3074. Browse thousands of tile, timber, hybrid flooring, and stone samples. Our experienced team is available to provide expert advice for your residential or commercial project.
                         </p>
                         <div className="mt-6 space-y-2 text-[13px] text-[#4a4a4a]">
-                            <p><span className="font-semibold text-[#333]">Hours:</span> Mon–Fri 9:00 AM – 5:00 PM | Sat 9:00 AM – 1:00 PM</p>
+                            <p><span className="font-semibold text-[#333]">Hours:</span> Mon–Thurs 9:00 AM – 5:00 PM | Fri 9:00 AM – 4:00 PM | Sat 9:00 AM – 1:00 PM</p>
                             <p><span className="font-semibold text-[#333]">Phone:</span> (03) 9464 6623</p>
                         </div>
                         <Link href="/contact" className="mt-8 inline-block border-2 border-brand px-8 py-3 text-[12px] font-semibold uppercase tracking-[1.5px] text-brand transition hover:bg-brand hover:text-white">
@@ -872,7 +872,7 @@ function useCountUp(end, duration = 2000, start = 0) {
 
 function StatsSection() {
     const stats = [
-        { value: 15, suffix: '+', label: 'Years Experience', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+        { value: 10, suffix: '+', label: 'Years Experience', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
         { value: 5000, suffix: '+', label: 'Happy Customers', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
         { value: 450, suffix: '+', label: 'Products Available', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
         { value: 98, suffix: '%', label: 'Customer Satisfaction', icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },

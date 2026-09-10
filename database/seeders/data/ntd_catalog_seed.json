@@ -24,7 +24,21 @@
       { "name": "Waterproofing", "slug": "waterproofing", "parent": "trade-supplies" },
       { "name": "Adhesives & Grouts", "slug": "adhesives-grouts", "parent": "trade-supplies" },
 
-      { "name": "Builders Range", "slug": "builders-range", "parent": null }
+      { "name": "Builders Range", "slug": "builders-range", "parent": null },
+      { "name": "Hybrid Flooring", "slug": "builders-hybrid-flooring", "parent": "builders-range" },
+      { "name": "Subway Tiles", "slug": "builders-subway-tiles", "parent": "builders-range" },
+      { "name": "Indoor Tiles", "slug": "builders-indoor-tiles", "parent": "builders-range" },
+      { "name": "Outdoor Tiles", "slug": "builders-outdoor-tiles", "parent": "builders-range" },
+      { "name": "Engineered Flooring", "slug": "builders-engineered-flooring", "parent": "builders-range" },
+      { "name": "Clearance/Specials", "slug": "clearance-specials", "parent": null },
+      { "name": "Hybrid Flooring", "slug": "clearance-hybrid-flooring", "parent": "clearance-specials" },
+      { "name": "Subway Tiles", "slug": "clearance-subway-tiles", "parent": "clearance-specials" },
+      { "name": "Indoor Tiles", "slug": "clearance-indoor-tiles", "parent": "clearance-specials" },
+      { "name": "Outdoor Tiles", "slug": "clearance-outdoor-tiles", "parent": "clearance-specials" },
+      { "name": "Engineered Flooring", "slug": "clearance-engineered-flooring", "parent": "clearance-specials" },
+      { "name": "Tiles", "slug": "tiles", "parent": null },
+      { "name": "Decorative Tiles", "slug": "decorative-tiles", "parent": "tiles" },
+      { "name": "Mosaic", "slug": "mosaic", "parent": "tiles" }
     ],
     "tags": [
       "porcelain", "timber", "hybrid", "waterproof", "indoor", "outdoor",

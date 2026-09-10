@@ -59,7 +59,7 @@ export default function About() {
                                     Melbourne Based
                                 </div>
                                 <div className="mt-1 text-sm text-gray-600">
-                                    Visit our Thomastown warehouse Mon–Fri 9–5, Sat 9–1
+                                    Visit our Thomastown warehouse Mon–Thurs 9–5, Fri 9–4, Sat 9–1
                                 </div>
                             </div>
                         </div>

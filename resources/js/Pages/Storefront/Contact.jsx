@@ -138,7 +138,8 @@ export default function Contact() {
                                 <div className="flex items-start gap-3">
                                     <svg className="h-5 w-5 text-brand flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     <div>
-                                        <div>Mon–Fri 9:00 AM – 5:00 PM</div>
+                                        <div>Mon–Thurs 9:00 AM – 5:00 PM</div>
+                                        <div>Fri 9:00 AM – 4:00 PM</div>
                                         <div>Sat 9:00 AM – 1:00 PM</div>
                                     </div>
                                 </div>
