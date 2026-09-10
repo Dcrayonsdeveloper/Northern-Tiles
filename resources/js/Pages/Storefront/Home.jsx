@@ -749,7 +749,7 @@ function ProudCustomers() {
                             <p className="text-[13px] text-[#555]">Watch, explore, and shop instantly</p>
                         </div>
                     </div>
-                    <a href="https://www.instagram.com/northerntiledistributors/?hl=en" target="_blank" rel="noreferrer noopener" className="hidden sm:inline-flex items-center gap-1.5 text-[14px] font-medium text-[#333] hover:text-brand transition-colors">
+                    <a href="https://www.instagram.com/northerntiledistributors/" target="_blank" rel="noreferrer noopener" className="hidden sm:inline-flex items-center gap-1.5 text-[14px] font-medium text-[#333] hover:text-brand transition-colors">
                         View All
                         <CR c="h-4 w-4" />
                     </a>
@@ -805,7 +805,7 @@ function ProudCustomers() {
                 {/* Follow CTA */}
                 <div className="mt-8 flex justify-center">
                     <a
-                        href="https://www.instagram.com/northerntiledistributors/?hl=en"
+                        href="https://www.instagram.com/northerntiledistributors/"
                         target="_blank"
                         rel="noreferrer noopener"
                         className="inline-flex items-center gap-2.5 rounded-full px-7 py-3 text-[14px] font-semibold text-white shadow-md transition-transform duration-300 hover:scale-105 hover:shadow-lg"

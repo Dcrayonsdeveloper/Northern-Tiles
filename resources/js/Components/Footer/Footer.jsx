@@ -90,7 +90,7 @@ export default function Footer({ minimal = false }) {
     const hours = brand.hours || { weekday: 'Mon–Fri 9am – 5pm', saturday: 'Sat 9am – 1pm' };
 
     const facebookUrl = social.facebook || 'https://www.facebook.com/ntiled/';
-    const instagramUrl = social.instagram || 'https://www.instagram.com/northern.tile.distributors/';
+    const instagramUrl = social.instagram || 'https://www.instagram.com/northerntiledistributors/';
     const tiktokUrl = social.tiktok || 'https://www.tiktok.com/@ntiled';
 
     const year = new Date().getFullYear();
