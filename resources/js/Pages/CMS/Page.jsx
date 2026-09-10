@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import DOMPurify from 'dompurify';
 import PublicLayout from '@/Layouts/PublicLayout';
@@ -92,6 +93,175 @@ const IconCheck = () => (
     </svg>
 );
 
+const IconQuestion = () => (
+    <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+    </svg>
+);
+const IconChevron = () => (
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+);
+
+// ─── FAQ Page Template ──────────────────────────────────────
+
+// The FAQ body is authored as flat HTML: <h2> opens a category, <h3> opens a
+// question, and everything following it belongs to that answer. Walk the nodes
+// once and fold that into groups the accordion can render. A trailing <h2> with
+// no <h3> beneath it ("Still stuck?") becomes the closing help panel.
+function parseFaq(html) {
+    if (!html || typeof window === 'undefined') return [];
+
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const groups = [];
+    let group = null;
+
+    for (const node of Array.from(doc.body.children)) {
+        const tag = node.tagName.toLowerCase();
+
+        if (tag === 'h2') {
+            group = { title: node.textContent.trim(), items: [], intro: '' };
+            groups.push(group);
+            continue;
+        }
+        if (!group) continue;
+
+        if (tag === 'h3') {
+            group.items.push({ question: node.textContent.trim(), answer: '' });
+            continue;
+        }
+
+        const last = group.items[group.items.length - 1];
+        if (last) last.answer += node.outerHTML;
+        else group.intro += node.outerHTML;
+    }
+
+    return groups.filter((g) => g.items.length > 0 || g.intro);
+}
+
+const ANSWER_PROSE =
+    '[&_a]:font-medium [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-2 ' +
+    '[&_p]:mt-0 [&_p~p]:mt-3 [&_strong]:font-semibold [&_strong]:text-gray-900';
+
+function FaqItem({ item, id, isOpen, onToggle }) {
+    return (
+        <div className={`overflow-hidden rounded-xl border bg-white transition-colors ${isOpen ? 'border-brand/40' : 'border-gray-200 hover:border-gray-300'}`}>
+            <h3>
+                <button
+                    type="button"
+                    id={`${id}-button`}
+                    onClick={onToggle}
+                    aria-expanded={isOpen}
+                    aria-controls={`${id}-panel`}
+                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+                >
+                    <span className={`text-[15px] font-medium transition-colors ${isOpen ? 'text-brand' : 'text-gray-900'}`}>
+                        {item.question}
+                    </span>
+                    <span className={`flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-brand' : 'text-gray-400'}`}>
+                        <IconChevron />
+                    </span>
+                </button>
+            </h3>
+
+            {/* grid-rows 0fr -> 1fr animates to the answer's natural height,
+                which a fixed max-height cannot do without clipping. */}
+            <div
+                id={`${id}-panel`}
+                role="region"
+                aria-labelledby={`${id}-button`}
+                className={`grid transition-all duration-300 ease-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+            >
+                <div className="overflow-hidden">
+                    <div
+                        className={`px-5 pb-5 text-[14px] leading-[1.75] text-gray-600 ${ANSWER_PROSE}`}
+                        dangerouslySetInnerHTML={{ __html: item.answer }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function FaqTemplate({ page }) {
+    const groups = useMemo(() => parseFaq(sanitize(page.content)), [page.content]);
+    const [open, setOpen] = useState(() => new Set());
+
+    const toggle = (key) =>
+        setOpen((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+
+    // Nothing parseable (empty page, or an editor replaced the heading
+    // structure) - fall back to ordinary rendering rather than a blank page.
+    if (groups.length === 0) return <GenericTemplate page={page} />;
+
+    const sections = groups.filter((g) => g.items.length > 0);
+    const closing = groups.find((g) => g.items.length === 0 && g.intro);
+
+    return (
+        <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+            <nav className="mb-8 text-sm">
+                <ol className="flex items-center gap-2 text-gray-500">
+                    <li><Link href="/" className="hover:text-brand">Home</Link></li>
+                    <li>/</li>
+                    <li className="text-gray-900">{page.title}</li>
+                </ol>
+            </nav>
+
+            <header className="text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand/10 text-brand">
+                    <IconQuestion />
+                </div>
+                <h1 className="mt-5 font-heading text-[32px] font-bold text-gray-900 sm:text-[38px]">
+                    {page.title}
+                </h1>
+                <p className="mx-auto mt-3 max-w-xl text-[15px] text-gray-500">
+                    {page.subtitle || 'Find answers to common questions about ordering, delivery and trade accounts.'}
+                </p>
+            </header>
+
+            <div className="mt-12 space-y-10">
+                {sections.map((group, gi) => (
+                    <section key={group.title}>
+                        <h2 className="mb-4 text-[12px] font-semibold uppercase tracking-[1.5px] text-gray-400">
+                            {group.title}
+                        </h2>
+                        <div className="space-y-3">
+                            {group.items.map((item, ii) => {
+                                const key = `${gi}-${ii}`;
+                                return (
+                                    <FaqItem
+                                        key={key}
+                                        id={`faq-${key}`}
+                                        item={item}
+                                        isOpen={open.has(key)}
+                                        onToggle={() => toggle(key)}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </section>
+                ))}
+            </div>
+
+            {closing && (
+                <div className="mt-12 rounded-xl border border-gray-200 bg-gray-50 px-6 py-8 text-center">
+                    <h2 className="font-heading text-lg font-semibold text-gray-900">{closing.title}</h2>
+                    <div
+                        className={`mt-2 text-[14px] leading-[1.75] text-gray-600 ${ANSWER_PROSE}`}
+                        dangerouslySetInnerHTML={{ __html: closing.intro }}
+                    />
+                </div>
+            )}
+        </article>
+    );
+}
+
 // ─── About Page Template ─────────────────────────────────────────────────────
 
 function AboutTemplate({ page }) {
@@ -107,7 +277,7 @@ function AboutTemplate({ page }) {
     ];
 
     const stats = [
-        { value: '20+', label: 'Years Experience' },
+        { value: '10+', label: 'Years Experience' },
         { value: '5,000+', label: 'Products In Stock' },
         { value: '50+', label: 'Premium Brands' },
         { value: '10,000+', label: 'Trade Customers' },
@@ -284,7 +454,7 @@ function AboutTemplate({ page }) {
                             </div>
                             {/* Floating badge */}
                             <div className="absolute -bottom-5 -right-5 rounded-2xl bg-white px-5 py-4 shadow-xl">
-                                <div className="font-heading text-3xl font-bold text-brand">20+</div>
+                                <div className="font-heading text-3xl font-bold text-brand">10+</div>
                                 <div className="text-xs font-medium text-gray-500">Years in Business</div>
                             </div>
                         </div>
@@ -428,7 +598,8 @@ function AboutTemplate({ page }) {
                                     <div>
                                         <div className="text-sm font-semibold text-gray-900">Trading Hours</div>
                                         <div className="mt-1 space-y-0.5 text-sm text-gray-500">
-                                            <div className="flex justify-between gap-8"><span>Monday – Friday</span><span className="font-medium text-gray-700">9:00am – 5:00pm</span></div>
+                                            <div className="flex justify-between gap-8"><span>Monday – Thursday</span><span className="font-medium text-gray-700">9:00am – 5:00pm</span></div>
+                                            <div className="flex justify-between gap-8"><span>Friday</span><span className="font-medium text-gray-700">9:00am – 4:00pm</span></div>
                                             <div className="flex justify-between gap-8"><span>Saturday</span><span className="font-medium text-gray-700">9:00am – 1:00pm</span></div>
                                             <div className="flex justify-between gap-8"><span>Sunday</span><span className="font-medium text-gray-700">Closed</span></div>
                                         </div>
@@ -564,6 +735,7 @@ function GenericTemplate({ page }) {
 
 export default function Page({ page, seoMeta, pageSchema }) {
     const isAbout = page.template === 'about';
+    const isFaq = page.template === 'faq' || page.slug === 'faq';
 
     return (
         <PublicLayout>
@@ -573,6 +745,8 @@ export default function Page({ page, seoMeta, pageSchema }) {
 
             {isAbout ? (
                 <AboutTemplate page={page} />
+            ) : isFaq ? (
+                <FaqTemplate page={page} />
             ) : (
                 <GenericTemplate page={page} />
             )}

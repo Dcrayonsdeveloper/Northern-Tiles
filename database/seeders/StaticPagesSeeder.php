@@ -294,7 +294,8 @@ HTML;
 <h2>Click &amp; collect</h2>
 <p>Collection from 19/324 Settlement Road, Thomastown VIC 3074 is free. We will let you know when your order is picked and ready. Please bring your order number and photo ID.</p>
 <ul>
-<li>Monday to Friday: 9:00am &ndash; 5:00pm</li>
+<li>Monday to Thursday: 9:00am &ndash; 5:00pm</li>
+<li>Friday: 9:00am &ndash; 4:00pm</li>
 <li>Saturday: 9:00am &ndash; 1:00pm</li>
 <li>Sunday: closed</li>
 </ul>
@@ -391,7 +392,7 @@ HTML;
 <p>Major credit and debit cards through our secure online checkout. Approved trade accounts may have agreed payment terms.</p>
 
 <h3>Can I visit the showroom?</h3>
-<p>Yes. We are at 19/324 Settlement Road, Thomastown VIC 3074, open Mon&ndash;Fri 9:00am&ndash;5:00pm and Sat 9:00am&ndash;1:00pm.</p>
+<p>Yes. We are at 19/324 Settlement Road, Thomastown VIC 3074, open Mon&ndash;Thurs 9:00am&ndash;5:00pm, Fri 9:00am&ndash;4:00pm and Sat 9:00am&ndash;1:00pm.</p>
 
 <h2>Still stuck?</h2>
 <p>Call (03) 9464 6623, email <a href="mailto:info@ntiled.com.au">info@ntiled.com.au</a>, or use our <a href="/contact">contact form</a>.</p>

@@ -87,7 +87,7 @@ export default function Footer({ minimal = false }) {
     const address = brand.address || '19/324 Settlement Road, Thomastown VIC 3074';
     const email = brand.email || 'info@ntiled.com.au';
     const phone = brand.phone || '(03) 9464 6623';
-    const hours = brand.hours || { weekday: 'Mon–Fri 9am – 5pm', saturday: 'Sat 9am – 1pm' };
+    const hours = brand.hours || { weekday: '9am – 5pm', friday: '9am – 4pm', saturday: '9am – 1pm' };
 
     const facebookUrl = social.facebook || 'https://www.facebook.com/ntiled/';
     const instagramUrl = social.instagram || 'https://www.instagram.com/northerntiledistributors/';
@@ -215,12 +215,31 @@ export default function Footer({ minimal = false }) {
                             <h3 className="mb-4 border-b-2 border-brand pb-2 text-[14px] font-semibold uppercase tracking-[1px] text-white">
                                 Visit Us
                             </h3>
-                            <div className="space-y-2 text-[13px] text-[#aaa]">
-                                <p>{address}</p>
-                                <p className="mt-3">
-                                    {hours.weekday || 'Mon–Fri 9am – 5pm'}
-                                </p>
-                                <p>{hours.saturday || 'Sat 9am – 1pm'}</p>
+                            <div className="space-y-4 text-[13px] text-[#aaa]">
+                                <address className="not-italic leading-[1.7]">{address}</address>
+                                <div>
+                                    <p className="text-[12px] font-semibold uppercase tracking-[1px] text-white/80">
+                                        Opening Hours
+                                    </p>
+                                    <dl className="mt-2 space-y-1">
+                                        <div className="flex justify-between gap-4">
+                                            <dt>Mon – Thurs</dt>
+                                            <dd className="text-white/90">{hours.weekday || '9am – 5pm'}</dd>
+                                        </div>
+                                        <div className="flex justify-between gap-4">
+                                            <dt>Friday</dt>
+                                            <dd className="text-white/90">{hours.friday || '9am – 4pm'}</dd>
+                                        </div>
+                                        <div className="flex justify-between gap-4">
+                                            <dt>Saturday</dt>
+                                            <dd className="text-white/90">{hours.saturday || '9am – 1pm'}</dd>
+                                        </div>
+                                        <div className="flex justify-between gap-4">
+                                            <dt>Sunday</dt>
+                                            <dd className="text-white/90">Closed</dd>
+                                        </div>
+                                    </dl>
+                                </div>
                             </div>
                         </div>
 
