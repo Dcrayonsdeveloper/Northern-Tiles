@@ -111,7 +111,11 @@ jobs:
           set -euo pipefail
           # NOTE: no `|| true` here. If tar fails we must not deploy a partial
           # archive over a working site.
-          tar -czf deploy.tar.gz \
+          # The archive is built OUTSIDE the tree being archived. Writing
+          # deploy.tar.gz into "." mutates the directory while tar is still
+          # reading it, and tar then exits 1 with "file changed as we read
+          # it" even though the file itself is excluded.
+          tar -czf "$RUNNER_TEMP/deploy.tar.gz" \
             --exclude='./.git' \
             --exclude='./.github' \
             --exclude='./node_modules' \
@@ -137,6 +141,7 @@ jobs:
             --exclude='./phpunit.xml' \
             --exclude='./deploy.tar.gz' \
             .
+          mv "$RUNNER_TEMP/deploy.tar.gz" deploy.tar.gz
           ls -la deploy.tar.gz
 
       - name: Confirm no secrets in package
