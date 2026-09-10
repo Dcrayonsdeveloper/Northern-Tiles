@@ -644,7 +644,7 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
                             <a href="https://www.facebook.com/ntiled/" target="_blank" rel="noreferrer noopener" aria-label="Facebook" className="hover:opacity-80 transition-opacity">
                                 <FacebookIcon className="h-4 w-4" />
                             </a>
-                            <a href="https://www.instagram.com/northern.tile.distributors/" target="_blank" rel="noreferrer noopener" aria-label="Instagram" className="hover:opacity-80 transition-opacity">
+                            <a href="https://www.instagram.com/northerntiledistributors/" target="_blank" rel="noreferrer noopener" aria-label="Instagram" className="hover:opacity-80 transition-opacity">
                                 <InstagramIcon className="h-4 w-4" />
                             </a>
                             <a href="https://www.tiktok.com/@ntiled" target="_blank" rel="noreferrer noopener" aria-label="TikTok" className="hover:opacity-80 transition-opacity">
