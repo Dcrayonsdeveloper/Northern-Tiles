@@ -46,6 +46,11 @@ cd "$APP_ROOT"
 [ -f "$EC2_KEY" ] || { echo "SSH key not found: $EC2_KEY" >&2; exit 1; }
 
 SHA="$(git rev-parse --short "$REF")"
+# The release directory name is built HERE, not on the server. Composing it
+# remotely means quoting a $(date ...) through two shells, and if the quoting
+# slips the substitution never runs and the literal string becomes the
+# directory name.
+RELEASE_DIR="$BASE/releases/$(date -u +%Y%m%d-%H%M%S)-$SHA"
 STAGE="$(mktemp -d)"
 PACKAGE="$STAGE/release.tar.gz"
 trap 'rm -rf "$STAGE"' EXIT
@@ -111,7 +116,7 @@ ssh_do "set -euo pipefail
 # ── 6. Stage beside the live release ─────────────────────────────────────────
 echo "==> 6/9  Staging release"
 ssh_do "set -euo pipefail
-        RELEASE='$BASE/releases/\$(date -u +%Y%m%d-%H%M%S)-$SHA'
+        RELEASE='$RELEASE_DIR'
         echo \"\$RELEASE\" > '$BASE/.next-release'
 
         mkdir -p \"\$RELEASE\"
@@ -163,6 +168,11 @@ ssh_do "set -euo pipefail
         mv -Tf '$BASE/current.tmp' '$BASE/current'
         echo \"    now live: \$(readlink -f '$BASE/current')\"
 
+        # NOT optional. php-fpm workers are long-lived and Laravel memoises the
+        # Vite manifest per worker, so workers started under the old release
+        # keep emitting the old asset hashes. Those files do not exist in the
+        # new release: every page returns 200 with a blank body. Skipping this
+        # took the site down once already.
         sudo systemctl reload php8.3-fpm
         sudo systemctl restart ntiled-queue"
 
@@ -173,10 +183,27 @@ ssh_do "set -euo pipefail
 echo "==> 9/9  Health check"
 ssh_do "set -euo pipefail
         sleep 5
-        CODE=\$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
-                 --resolve '$HEALTH_HOST:443:127.0.0.1' \
-                 'https://$HEALTH_HOST/up' || echo 000)
+        FETCH=\"curl -sS --max-time 30 --resolve $HEALTH_HOST:443:127.0.0.1\"
+
+        CODE=\$(\$FETCH -o /dev/null -w '%{http_code}' 'https://$HEALTH_HOST/up' || echo 000)
         echo \"    GET /up -> \$CODE\"
+
+        # A 200 on the HTML proves only that PHP answered. The page is React:
+        # if its bundle 404s the body renders empty and the status is still
+        # 200. So follow the page to an asset it actually references and fetch
+        # that too — this is the check that catches a stale Vite manifest.
+        if [ \"\$CODE\" = '200' ]; then
+          ASSET=\$(\$FETCH 'https://$HEALTH_HOST/' \
+                    | grep -oE '/build/assets/[A-Za-z0-9_-]+\.js' | head -1)
+          if [ -z \"\$ASSET\" ]; then
+            echo '    no asset referenced by / — treating as failure' >&2
+            CODE=000
+          else
+            ACODE=\$(\$FETCH -o /dev/null -w '%{http_code}' \"https://$HEALTH_HOST\$ASSET\" || echo 000)
+            echo \"    GET \$ASSET -> \$ACODE\"
+            [ \"\$ACODE\" = '200' ] || CODE=\$ACODE
+          fi
+        fi
 
         if [ \"\$CODE\" != '200' ]; then
           echo 'health check failed — rolling back' >&2
