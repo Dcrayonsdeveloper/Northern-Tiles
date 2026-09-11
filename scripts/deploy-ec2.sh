@@ -34,14 +34,28 @@
 set -euo pipefail
 
 REF="${1:-origin/main}"
-EC2_HOST="${EC2_HOST:-ubuntu@52.62.171.34}"
-EC2_KEY="${EC2_KEY:-Northern Tile Distributors.pem}"
-BASE="${EC2_BASE:-/var/www/ntiled}"
-HEALTH_HOST="${HEALTH_HOST:-besttiles.shop}"
 DRY_RUN="${DRY_RUN:-0}"
 
 APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$APP_ROOT"
+
+# Deploy target, in precedence order: environment > .env > the defaults below.
+# Only these four keys are read — `source`ing the whole .env would execute
+# application config whose values are not shell-safe.
+if [ -f .env ]; then
+    while IFS='=' read -r key value; do
+        value="${value%\"}"; value="${value#\"}"
+        case "$key" in
+            EC2_HOST|EC2_KEY|EC2_BASE|HEALTH_HOST)
+                [ -n "${!key:-}" ] || printf -v "$key" '%s' "$value" ;;
+        esac
+    done < <(grep -E '^(EC2_HOST|EC2_KEY|EC2_BASE|HEALTH_HOST)=' .env || true)
+fi
+
+EC2_HOST="${EC2_HOST:-ubuntu@52.62.171.34}"
+EC2_KEY="${EC2_KEY:-Northern Tile Distributors.pem}"
+BASE="${EC2_BASE:-/var/www/ntiled}"
+HEALTH_HOST="${HEALTH_HOST:-besttiles.shop}"
 
 [ -f "$EC2_KEY" ] || { echo "SSH key not found: $EC2_KEY" >&2; exit 1; }
 
