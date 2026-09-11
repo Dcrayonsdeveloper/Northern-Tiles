@@ -217,6 +217,7 @@ function ChooseBy() {
         { name: 'Blue', hex: '#4a7c9b', q: 'blue' },
         { name: 'Green', hex: '#6b8e6b', q: 'green' },
         { name: 'Terracotta', hex: '#c75b39', q: 'terracotta' },
+        { name: 'Pink', hex: '#d49aa4', q: 'pink' },
         { name: 'Cream', hex: '#f0e6d2', q: 'cream' },
     ];
 
