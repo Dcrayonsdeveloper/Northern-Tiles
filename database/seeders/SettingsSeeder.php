@@ -261,7 +261,7 @@ class SettingsSeeder extends Seeder
         if (Setting::getValue('company.address') === null) {
             Setting::query()->updateOrCreate(
                 ['key' => 'company.address'],
-                ['group' => 'company', 'value_text' => '19/324 Settlement Road, Thomastown VIC 3074, Australia'],
+                ['group' => 'company', 'value_text' => '19/324 Settlement Road, Thomastown VIC 3074'],
             );
             Setting::forgetCache('company.address');
         }

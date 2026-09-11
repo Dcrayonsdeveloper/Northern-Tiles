@@ -66,7 +66,7 @@ class DictionarySeeder extends Seeder
             ['locale' => 'en', 'dkey' => 'footer.copyright', 'value_text' => 'All rights reserved.', 'group' => 'footer'],
 
             // Company Info
-            ['locale' => 'en', 'dkey' => 'company.address', 'value_text' => '123 Business Street, City, Country', 'group' => 'company'],
+            ['locale' => 'en', 'dkey' => 'company.address', 'value_text' => '19/324 Settlement Road, Thomastown VIC 3074', 'group' => 'company'],
 
             // Home Hero Slides
             ['locale' => 'en', 'dkey' => 'home.hero.slide1.h1', 'value_text' => 'Discover Premium Quality Products', 'group' => 'home'],
