@@ -1,4 +1,5 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import PasswordInput from '@/Components/PasswordInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Create() {
@@ -64,8 +65,8 @@ export default function Create() {
 
                     <div>
                         <label className="block text-xs font-medium text-gray-700">Password</label>
-                        <input
-                            type="password"
+                        <PasswordInput
+                            unstyled
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
                             className="mt-1 admin-input"
@@ -77,8 +78,8 @@ export default function Create() {
 
                     <div>
                         <label className="block text-xs font-medium text-gray-700">Confirm Password</label>
-                        <input
-                            type="password"
+                        <PasswordInput
+                            unstyled
                             value={data.password_confirmation}
                             onChange={(e) => setData('password_confirmation', e.target.value)}
                             className="mt-1 admin-input"

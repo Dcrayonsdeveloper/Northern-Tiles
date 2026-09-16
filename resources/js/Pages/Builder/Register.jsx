@@ -1,4 +1,5 @@
 import PublicLayout from '@/Layouts/PublicLayout';
+import PasswordInput from '@/Components/PasswordInput';
 import Container from '@/Components/Container';
 import { Head, Link, useForm } from '@inertiajs/react';
 
@@ -201,9 +202,9 @@ export default function BuilderRegister({ isLoggedIn = false, currentUser = null
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div>
                                         <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">Password *</label>
-                                        <input
+                                        <PasswordInput
+                                            unstyled
                                             id="password"
-                                            type="password"
                                             required
                                             autoComplete="new-password"
                                             value={data.password}
@@ -214,9 +215,9 @@ export default function BuilderRegister({ isLoggedIn = false, currentUser = null
                                     </div>
                                     <div>
                                         <label htmlFor="password_confirmation" className="mb-1 block text-sm font-medium text-gray-700">Confirm *</label>
-                                        <input
+                                        <PasswordInput
+                                            unstyled
                                             id="password_confirmation"
-                                            type="password"
                                             required
                                             autoComplete="new-password"
                                             value={data.password_confirmation}
