@@ -572,3 +572,32 @@ input[type="checkbox"] {
     }
 
 }
+
+// ── CMS body copy ────────────────────────────────────────────────────────────
+// Privacy, terms, cookies, shipping and returns all render the same HTML blob
+// through @tailwindcss/typography. These are the two things the plugin cannot
+// know about, and they sit outside @layer components on purpose: Tailwind
+// purges layered rules whose class it does not match, and these are compound
+// selectors against markup that only exists in the database.
+
+// The shipping rate table is wider than a phone. Scroll it inside its own box
+// rather than letting it push the whole page sideways.
+.cms-prose table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+}
+
+@media (min-width: 640px) {
+    .cms-prose table {
+        display: table;
+    }
+}
+
+// Ruled cells read as a rate card; prose only rules the header row.
+.cms-prose th,
+.cms-prose td {
+    border: 1px solid #e5e7eb;
+    padding: 0.6rem 0.75rem;
+    vertical-align: top;
+}

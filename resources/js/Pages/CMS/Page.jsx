@@ -716,7 +716,16 @@ function GenericTemplate({ page }) {
 
             {!hasSections && hasBodyContent && (
                 <div
-                    className="prose prose-lg max-w-none prose-headings:font-bold prose-a:text-brand prose-img:rounded-lg"
+                    className="cms-prose prose prose-lg max-w-none
+                        prose-headings:font-heading prose-headings:font-semibold prose-headings:text-[#222]
+                        prose-h2:mt-10 prose-h2:mb-3 prose-h2:text-[24px] prose-h2:tracking-tight
+                        prose-h3:mt-8 prose-h3:mb-2 prose-h3:text-[19px]
+                        prose-p:text-[15px] prose-p:leading-relaxed prose-p:text-gray-700
+                        prose-li:text-[15px] prose-li:text-gray-700 prose-li:my-1
+                        prose-strong:font-semibold prose-strong:text-gray-900
+                        prose-a:font-medium prose-a:text-brand hover:prose-a:text-brand/80
+                        prose-table:text-[14px] prose-th:bg-gray-50 prose-th:text-left
+                        prose-img:rounded-lg"
                     dangerouslySetInnerHTML={{ __html: sanitize(page.content) }}
                 />
             )}
