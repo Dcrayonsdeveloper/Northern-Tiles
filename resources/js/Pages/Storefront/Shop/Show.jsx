@@ -5,6 +5,7 @@ import { useRef, useState, useCallback } from 'react';
 import { StarRating } from '@/Components/Catalog/StarRating';
 import ProductImage from '@/Components/Catalog/ProductImage';
 import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
+import TrustpilotReviewLink from '@/Components/Storefront/TrustpilotReviewLink';
 import { colourHex } from '@/Support/colours';
 
 
@@ -1189,6 +1190,10 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                             templateId="53aa8912dec7e10d38f59f36"
                             height="140px"
                         />
+
+                        {/* Outside the widget's iframe, so it works whether the
+                            carousel renders reviews or collapses to a logo. */}
+                        <TrustpilotReviewLink className="mt-6" />
                     </Container>
                 </section>
             )}
