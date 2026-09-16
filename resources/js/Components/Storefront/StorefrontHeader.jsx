@@ -303,17 +303,6 @@ const DEFAULT_NAV = [
         url: '/shop?category=stone',
     },
     {
-        label: 'Builders Range',
-        url: '/shop?category=builders-range',
-        children: [
-            { label: 'Hybrid Flooring', url: '/shop?category=builders-hybrid-flooring' },
-            { label: 'Subway Tiles', url: '/shop?category=builders-subway-tiles' },
-            { label: 'Indoor Tiles', url: '/shop?category=builders-indoor-tiles' },
-            { label: 'Outdoor Tiles', url: '/shop?category=builders-outdoor-tiles' },
-            { label: 'Engineered Flooring', url: '/shop?category=builders-engineered-flooring' },
-        ],
-    },
-    {
         label: 'Clearance/Specials',
         url: '/shop?category=clearance-specials',
         children: [
