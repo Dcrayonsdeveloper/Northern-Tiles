@@ -126,7 +126,14 @@ class ImportSheetProductsCommand extends Command
         }
 
         // ── Collect existing SKUs to avoid N+1 duplicate checks ───────────────
-        $existingSkus  = ProductVariant::pluck('sku')->flip()->toArray();
+        // Check both tables: some products carry a SKU without a matching
+        // variant row, and those would otherwise be re-imported as duplicates.
+        $existingSkus = ProductVariant::pluck('sku')
+            ->merge(Product::pluck('sku'))
+            ->filter()
+            ->unique()
+            ->flip()
+            ->toArray();
         $categoryCache = [];
 
         DB::beginTransaction();

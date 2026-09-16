@@ -73,7 +73,7 @@ SECURE_COOKIE_V="$(env_get SESSION_SECURE_COOKIE)"
 echo ""
 echo "[2] File permissions"
 
-ENV_PERMS="$(stat -c '%a' .env 2>/dev/null || stat -f '%Lp' .env 2>/dev/null || echo '?')"
+ENV_PERMS="$(stat -L -c '%a' .env 2>/dev/null || stat -L -f '%Lp' .env 2>/dev/null || echo '?')"
 case "$ENV_PERMS" in
     600|640|660) ok ".env permissions $ENV_PERMS" ;;
     ?) warn "could not stat .env permissions" ;;
@@ -192,15 +192,30 @@ echo "[8] Production caches"
 
 # --- 9. Background processing ------------------------------------------------
 echo ""
+# A scheduler/queue entry may live in the invoking user's crontab, in
+# /etc/cron.d (how the AWS setup installs it), or in root's crontab. Checking
+# only `crontab -l` reports a false FAIL on a correctly configured server.
+#
+# Collect first, match second. Piping straight into `grep -q` is a race: grep
+# exits on the first match, the upstream commands take SIGPIPE, and `pipefail`
+# (set at the top of this script) turns that into rc=141 — an intermittent
+# false FAIL, which is worse than no check at all. A here-string has no
+# upstream process to kill.
+cron_has() {
+    local all
+    all="$( { crontab -l; sudo -n crontab -l; cat /etc/cron.d/*; } 2>/dev/null )"
+    grep -qE "$1" <<< "$all"
+}
+
 echo "[9] Scheduler and queue"
 
-if crontab -l 2>/dev/null | grep -q "schedule:run"; then
+if cron_has "schedule:run"; then
     ok "schedule:run cron entry found"
 else
     bad "No schedule:run cron entry — abandoned-cart emails and reindexing will never run"
 fi
 
-if crontab -l 2>/dev/null | grep -qE "queue:work|queue:listen"; then
+if cron_has "queue:work|queue:listen"; then
     ok "queue worker cron entry found"
 elif pgrep -f "artisan queue:work" >/dev/null 2>&1; then
     ok "queue worker process running"
