@@ -97,7 +97,7 @@ function GtmNoscript({ gtmId }) {
 
 export default function PublicLayout({ children }) {
     const page = usePage();
-    const { auth, cart, flash, ui, site, menus, tracking, organizationJsonLd } = page.props;
+    const { auth, cart, flash, ui, site, menus, categoryNav, tracking, organizationJsonLd } = page.props;
     const user = auth?.user;
 
     // Prefer retail_count (post cart-split); fall back to legacy `count`
@@ -156,7 +156,7 @@ export default function PublicLayout({ children }) {
 
             <GtmNoscript gtmId={tracking?.gtm_id} />
 
-            <StorefrontHeader user={user} cartCount={cartCount} topBar={topBar} menus={menus} />
+            <StorefrontHeader user={user} cartCount={cartCount} topBar={topBar} menus={menus} categoryNav={categoryNav} />
 
             {(success || error) && (
                 <Container className="pt-4">

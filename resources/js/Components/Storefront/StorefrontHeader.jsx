@@ -572,7 +572,7 @@ function NavDropdown({ item }) {
 }
 
 /* ── Main header ───────────────────────────────────────────────────── */
-export default function StorefrontHeader({ user, cartCount: initialCartCount = 0, topBar, menus }) {
+export default function StorefrontHeader({ user, cartCount: initialCartCount = 0, topBar, menus, categoryNav }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [cartSidebarOpen, setCartSidebarOpen] = useState(false);
     const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -606,7 +606,19 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
         };
     }, []);
 
-    const navItems = (menus?.header_main ?? []).length > 0 ? menus.header_main : DEFAULT_NAV;
+    // Source of truth, in order of preference:
+    //   1. categoryNav — the live category tree, roots across the bar and their
+    //      children in the dropdown. A category added in admin shows up here
+    //      with no deploy.
+    //   2. a header menu built in admin, if one has been populated.
+    //   3. DEFAULT_NAV, the hardcoded fallback, for a catalogue with no
+    //      categories at all.
+    // Contact Us is appended rather than stored as a category: it is a page,
+    // not a part of the catalogue.
+    const navItems = (categoryNav ?? []).length > 0
+        ? [...categoryNav, { label: 'Contact Us', url: '/contact' }]
+        : ((menus?.header_main ?? []).length > 0 ? menus.header_main : DEFAULT_NAV);
+
     const mobileItems = (menus?.mobile ?? []).length > 0 ? menus.mobile : navItems;
 
     return (
