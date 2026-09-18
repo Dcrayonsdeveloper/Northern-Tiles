@@ -545,23 +545,35 @@ class ProductController extends Controller
     /**
      * Build category tree for select.
      */
+    /**
+     * Sub-categories only, for the product form's category picker.
+     *
+     * Roots are excluded deliberately. Products live in the leaves — /shop
+     * matches one slug exactly, so a product filed on a root appears in no
+     * listing at all, and offering roots in the picker invites exactly that.
+     *
+     * Each is labelled "Parent > Child" because the child names are not unique
+     * on their own: "Hybrid Flooring" sits under both Builder Range and
+     * Clearance/Specials, and "Tiles" is a child of Tiles. Sorting by parent
+     * then by the category's own sort order keeps siblings together, which a
+     * flat alphabetical list did not.
+     */
     protected function buildCategoryTree($categories): array
     {
-        $result = [];
-
-        foreach ($categories as $category) {
-            $depth = $category->getDepth();
-            $prefix = str_repeat('— ', $depth);
-
-            $result[] = [
+        return $categories
+            ->filter(fn ($category) => $category->parent_id !== null && $category->parent)
+            ->sortBy([
+                fn ($a, $b) => strcmp($a->parent->name, $b->parent->name),
+                fn ($a, $b) => ($a->sort <=> $b->sort) ?: strcmp($a->name, $b->name),
+            ])
+            ->map(fn ($category) => [
                 'id' => $category->id,
-                'name' => $prefix . $category->name,
+                'name' => $category->parent->name . ' > ' . $category->name,
                 'slug' => $category->slug,
                 'parent_id' => $category->parent_id,
-                'depth' => $depth,
-            ];
-        }
-
-        return $result;
+                'depth' => 1,
+            ])
+            ->values()
+            ->all();
     }
 }
