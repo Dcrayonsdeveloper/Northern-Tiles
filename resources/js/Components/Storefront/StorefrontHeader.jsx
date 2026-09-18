@@ -546,10 +546,22 @@ function NavDropdown({ item }) {
 
     return (
         <div className="relative" onMouseEnter={enter} onMouseLeave={leave}>
-            <Link href={item.url} className={`relative flex items-center gap-1 px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] transition-colors font-sans after:absolute after:inset-x-3 after:bottom-1.5 after:h-[2px] after:origin-left after:bg-amber-400 after:transition-transform ${open ? 'text-amber-300 after:scale-x-100' : 'text-white hover:text-amber-300 after:scale-x-0 hover:after:scale-x-100'}`}>
+            {/* A root with children opens its menu and goes nowhere itself.
+                /shop?category= matches one slug exactly, so a root page lists
+                nothing — every product lives in a child. Following the parent
+                landed on an empty "No products found", and on a touch device,
+                where there is no hover, tapping was the ONLY outcome. A button
+                makes the dropdown reachable by tap and by keyboard. */}
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                aria-expanded={open}
+                aria-haspopup="true"
+                className={`relative flex items-center gap-1 px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] transition-colors font-sans after:absolute after:inset-x-3 after:bottom-1.5 after:h-[2px] after:origin-left after:bg-amber-400 after:transition-transform ${open ? 'text-amber-300 after:scale-x-100' : 'text-white hover:text-amber-300 after:scale-x-0 hover:after:scale-x-100'}`}
+            >
                 {item.label}
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-            </Link>
+            </button>
 
             {open && (
                 <div className="absolute left-0 top-full z-50 pt-1">
