@@ -1,10 +1,11 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function Create() {
+export default function Create({ parents = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         slug: '',
+        parent_id: '',
     });
 
     const submit = (e) => {
@@ -36,6 +37,27 @@ export default function Create() {
                             className="mt-1 admin-input"
                         />
                         {errors.name ? <div className="mt-1 text-[12px] text-red-600">{errors.name}</div> : null}
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700">Parent category</label>
+                        <select
+                            value={data.parent_id}
+                            onChange={(e) => setData('parent_id', e.target.value)}
+                            className="mt-1 admin-select w-full"
+                        >
+                            <option value="">None — make this a root category</option>
+                            {parents.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.parent_id ? <div className="mt-1 text-[12px] text-red-600">{errors.parent_id}</div> : null}
+                        <div className="mt-1 text-[12px] text-gray-500">
+                            Roots appear in the navigation bar; anything under one appears in its dropdown.
+                            Products should be filed in a sub-category, not a root.
+                        </div>
                     </div>
 
                     <div>

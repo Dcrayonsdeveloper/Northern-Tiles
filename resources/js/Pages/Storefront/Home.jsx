@@ -384,8 +384,12 @@ function OurShowroom() {
         <section className="py-20 bg-[#f7f7f5]">
             <Container>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    {/* The real Thomastown showroom, replacing an Unsplash stock
+                        photo of an unrelated building. The shot is portrait and
+                        the block is 4:3, so it is centre-cropped onto the
+                        display wall — the part worth showing. */}
                     <div className="aspect-[4/3] bg-[#e8e6e2] rounded-lg overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop&q=80" alt="Northern Tile Distributors showroom" className="h-full w-full object-cover" loading="lazy" />
+                        <img src="/images/showroom.jpg" alt="Tile display wall inside the Northern Tile Distributors showroom in Thomastown" className="h-full w-full object-cover object-center" loading="lazy" />
                     </div>
                     <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[3px] text-brand mb-3">Visit Us</p>
