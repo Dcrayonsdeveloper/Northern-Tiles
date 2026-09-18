@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Domain\Catalog\Support\ProductNameMatcher;
 use App\Models\Product;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -22,11 +23,12 @@ use Illuminate\Support\Facades\DB;
 class DeleteFlaggedProductsCommand extends Command
 {
     protected $signature = 'products:delete-flagged
-                            {file : Path to a file of slugs, one per line}
+                            {file : Path to a file of slugs (or names, with --by=name), one per line}
+                            {--by=slug : Match the file against product "slug" or "name"}
                             {--dry-run : Report what would go without deleting}
                             {--backup=/tmp : Directory for the pre-delete JSON backup}';
 
-    protected $description = 'Delete the products listed in a slug file (permanent)';
+    protected $description = 'Delete the products listed in a slug or name file (permanent)';
 
     public function handle(): int
     {
@@ -38,25 +40,57 @@ class DeleteFlaggedProductsCommand extends Command
             return self::FAILURE;
         }
 
-        $slugs = collect(preg_split('/\R/', (string) file_get_contents($file)))
+        $lines = collect(preg_split('/\R/', (string) file_get_contents($file)))
             ->map(fn ($s) => trim($s))
             ->filter()
             ->unique()
             ->values();
 
-        $this->info("{$slugs->count()} slug(s) in the list.");
+        $byName = $this->option('by') === 'name';
 
-        $products = Product::whereIn('slug', $slugs)->get(['id', 'name', 'slug', 'sku', 'price']);
-        $found = $products->pluck('slug');
-        $missing = $slugs->diff($found);
+        $this->info("{$lines->count()} " . ($byName ? 'name' : 'slug') . '(s) in the list.');
 
-        $this->info("matched in the catalogue : {$products->count()}");
+        if ($byName) {
+            // Same matcher the assign command uses, so "this product" means the
+            // same thing whether it is being filed or removed.
+            $result = (new ProductNameMatcher())->resolve($lines);
 
-        if ($missing->isNotEmpty()) {
-            $this->warn("not found (already gone, or the slug differs) : {$missing->count()}");
+            $products = Product::whereIn('id', $result['ids'])->get(['id', 'name', 'slug', 'sku', 'price']);
 
-            foreach ($missing->take(10) as $m) {
-                $this->line("  ? {$m}");
+            $this->info('matched in the catalogue : ' . $products->count()
+                . "  (exact {$result['tiers']['exact']}, prefix {$result['tiers']['prefix']}, tokens {$result['tiers']['tokens']})");
+
+            if ($result['ambiguous']) {
+                $this->warn('ambiguous — NOT deleted : ' . count($result['ambiguous']));
+
+                foreach ($result['ambiguous'] as $a) {
+                    $this->line("  ~ {$a}");
+                }
+            }
+
+            if ($result['unmatched']) {
+                $this->warn('not in the catalogue : ' . count($result['unmatched']));
+
+                foreach (array_slice($result['unmatched'], 0, 15) as $u) {
+                    $this->line("  ? {$u}");
+                }
+
+                if (count($result['unmatched']) > 15) {
+                    $this->line('  … ' . (count($result['unmatched']) - 15) . ' more');
+                }
+            }
+        } else {
+            $products = Product::whereIn('slug', $lines)->get(['id', 'name', 'slug', 'sku', 'price']);
+            $missing = $lines->diff($products->pluck('slug'));
+
+            $this->info("matched in the catalogue : {$products->count()}");
+
+            if ($missing->isNotEmpty()) {
+                $this->warn("not found (already gone, or the slug differs) : {$missing->count()}");
+
+                foreach ($missing->take(10) as $m) {
+                    $this->line("  ? {$m}");
+                }
             }
         }
 
