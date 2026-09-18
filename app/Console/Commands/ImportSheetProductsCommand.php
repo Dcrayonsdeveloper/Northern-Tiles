@@ -216,8 +216,24 @@ class ImportSheetProductsCommand extends Command
             $row = str_getcsv($rawLine);
 
             // ── Detect header row ─────────────────────────────────────────────
-            $firstCell = strtolower(trim($row[0] ?? ''));
-            if ($firstCell === 'code (sku)' || $firstCell === 'code') {
+            // Any cell, not just the first. The hybrid tab opens with an
+            // unlabelled grouping column holding the thickness ("7mm"), which
+            // pushes "Code (sku)" into column B — so a first-cell-only check
+            // never found the header, every row fell through as data with no
+            // column map, and the tab silently imported nothing. That is why
+            // the entire hybrid range was missing from the catalogue.
+            $isHeader = false;
+
+            foreach ($row as $cell) {
+                $c = strtolower(trim((string) $cell));
+
+                if ($c === 'code (sku)' || $c === 'code') {
+                    $isHeader = true;
+                    break;
+                }
+            }
+
+            if ($isHeader) {
                 $colMap = $this->buildColMap($row);
                 continue;
             }
