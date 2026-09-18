@@ -15,6 +15,7 @@ class ImportSheetProductsCommand extends Command
     protected $signature = 'ntd:import-sheet
                             {--url=  : Single CSV export URL (omit to import all 4 default NTD tabs)}
                             {--category= : Force a category name for every row (overrides sheet value; used with --url)}
+                            {--allow-missing-size : Import rows whose Size cell is empty, rather than skipping them}
                             {--dry-run : Preview changes without saving to the database}';
 
     protected $description = 'Import products from NTD Google Sheets (all tabs, SKU dedup, attribute tagging, skip report).';
@@ -259,7 +260,12 @@ class ImportSheetProductsCommand extends Command
                 $this->addSkip('Missing/Invalid Price', $sku, $name, $lineNum + 1, $url);
                 continue;
             }
-            if ($size === '') {
+            // Size normally guards against half-filled rows, but some ranges
+            // genuinely have no single size — the ENZO mosaic sheets leave it
+            // blank for the shaped sheets (Arrow Head, Windmill). Opt in with
+            // --allow-missing-size rather than inventing a dimension, which
+            // would end up quoted to a customer as fact.
+            if ($size === '' && ! $this->option('allow-missing-size')) {
                 $this->addSkip('Missing Size', $sku, $name, $lineNum + 1, $url);
                 continue;
             }
