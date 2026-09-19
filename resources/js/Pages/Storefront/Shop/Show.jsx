@@ -6,7 +6,6 @@ import { StarRating } from '@/Components/Catalog/StarRating';
 import ProductImage from '@/Components/Catalog/ProductImage';
 import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
 import TrustpilotReviewLink from '@/Components/Storefront/TrustpilotReviewLink';
-import { colourHex } from '@/Support/colours';
 
 
 /* ── Spec icons (Heroicons outline 24 px) ───────────────────────── */
@@ -798,11 +797,19 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
     const [wishlisted, setWishlisted] = useState(false);
 
     // Selectable colour + finish parsed from the spec strings.
-    // "Black, Charcoal, Carbon" -> 3 colours; "Matt / Soft Touch" -> 2 finishes.
-    const colourOptions = String(product.specifications?.colour || product.specifications?.color || '')
-        .split(',').map((s) => s.trim()).filter(Boolean);
-    const finishOptions = String(product.specifications?.finish || '')
-        .split(/[/,]/).map((s) => s.trim()).filter(Boolean);
+    // "Black, Charcoal, Carbon", "Matt / Soft Touch" and "White + Cloud" all
+    // mean the same thing — a list. The sheets now write " + ", and splitting
+    // on commas alone turned "White + Cloud" into a single option labelled
+    // with both names.
+    const splitSpec = (value) => String(value ?? '')
+        .split(/\s*[+/,;]\s*/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+    const colourOptions = splitSpec(product.specifications?.colour || product.specifications?.color);
+    const finishOptions = splitSpec(product.specifications?.finish);
+    // Read-only: a slip rating describes the tile, it is not a choice.
+    const slipRatings = splitSpec(product.specifications?.slip_rating);
     const [selectedColour, setSelectedColour] = useState(colourOptions[0] ?? null);
     const [selectedFinish, setSelectedFinish] = useState(finishOptions[0] ?? null);
 
@@ -964,7 +971,7 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                             </div>
 
                             {/* Colour & Finish — customer selects one of each */}
-                            {(colourOptions.length > 0 || finishOptions.length > 0) && (
+                            {(colourOptions.length > 0 || finishOptions.length > 0 || slipRatings.length > 0) && (
                                 <div className="mt-4 space-y-4">
                                     {colourOptions.length > 0 && (
                                         <div>
@@ -976,29 +983,27 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                                     </span>
                                                 )}
                                             </p>
-                                            <div className="mt-2 flex flex-wrap gap-2.5">
+                                            {/* Named buttons, same as Finish. A swatch circle had to
+                                                guess a hex from the colour word and fell back to two
+                                                letters ("WH"), which told a shopper less than the word
+                                                itself — and a tile called "Cloud" has no single colour
+                                                to show anyway. */}
+                                            <div className="mt-2 flex flex-wrap gap-2">
                                                 {colourOptions.map((c) => {
-                                                    const hex = colourHex(c);
                                                     const isSel = c === selectedColour;
                                                     return (
                                                         <button
                                                             key={c}
                                                             type="button"
-                                                            title={c}
                                                             aria-pressed={isSel}
                                                             onClick={() => setSelectedColour(c)}
-                                                            className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                                                            className={`rounded-md border-2 px-4 py-1.5 text-[13px] font-bold uppercase tracking-wide transition ${
                                                                 isSel
-                                                                    ? 'border-transparent ring-2 ring-brand ring-offset-2'
-                                                                    : 'border-gray-300 hover:border-gray-500'
+                                                                    ? 'border-gray-900 bg-white text-gray-900'
+                                                                    : 'border-gray-200 text-gray-500 hover:border-gray-400'
                                                             }`}
-                                                            style={hex ? { backgroundColor: hex } : undefined}
                                                         >
-                                                            {!hex && (
-                                                                <span className="text-[10px] font-bold text-gray-500">
-                                                                    {c.slice(0, 2).toUpperCase()}
-                                                                </span>
-                                                            )}
+                                                            {c}
                                                         </button>
                                                     );
                                                 })}
@@ -1028,6 +1033,25 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                                         </button>
                                                     );
                                                 })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {slipRatings.length > 0 && (
+                                        <div>
+                                            <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">Slip Rating</p>
+                                            {/* Deliberately not buttons: this is a property of the
+                                                tile, not something to choose, and a clickable chip
+                                                would imply it changes what is added to the cart. */}
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {slipRatings.map((r) => (
+                                                    <span
+                                                        key={r}
+                                                        className="rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-1.5 text-[13px] font-bold uppercase tracking-wide text-gray-700"
+                                                    >
+                                                        {r}
+                                                    </span>
+                                                ))}
                                             </div>
                                         </div>
                                     )}
