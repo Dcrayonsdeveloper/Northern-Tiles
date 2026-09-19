@@ -68,7 +68,11 @@ function HeroSlider({ heroSlider }) {
     useEffect(() => { if (n <= 1) return; const t = setInterval(() => setI(p => (p + 1) % n), 6000); return () => clearInterval(t); }, [n]);
 
     return (
-        <section className="relative w-full overflow-hidden bg-[#f0efed]" style={{ height: '80vh', minHeight: '480px', maxHeight: '900px' }}>
+        // Half the viewport on a phone, the full 80vh from the sm breakpoint
+        // up. Height moved out of an inline style because a style attribute
+        // cannot carry a media query, and 80vh on a phone pushed everything
+        // below the banner off the first screen.
+        <section className="relative w-full overflow-hidden bg-[#f0efed] h-[50vh] min-h-[300px] sm:h-[80vh] sm:min-h-[480px] max-h-[900px]">
             {slides.map((s, idx) => (
                 <div key={idx} className={`transition-opacity duration-700 ${idx === i ? 'opacity-100 z-10' : 'opacity-0 z-0'}`} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
                     <img src={s.image_url} alt={s.image_alt_key || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading={idx === 0 ? 'eager' : 'lazy'} />
