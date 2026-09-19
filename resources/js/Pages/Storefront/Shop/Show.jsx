@@ -808,17 +808,19 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
 
     const colourOptions = splitSpec(product.specifications?.colour || product.specifications?.color);
     const finishOptions = splitSpec(product.specifications?.finish);
-    // Read-only: a slip rating describes the tile, it is not a choice.
-    const slipRatings = splitSpec(product.specifications?.slip_rating);
-    const [selectedColour, setSelectedColour] = useState(colourOptions[0] ?? null);
-    const [selectedFinish, setSelectedFinish] = useState(finishOptions[0] ?? null);
-
-    // The customer's colour/finish choice, sent with every add-to-cart so it
-    // travels through to the cart, checkout and the order.
+    // Read-only display strings. Re-joined with " + " so a value stored with
+    // commas still reads the same way as one stored by the spec sync.
+    const slipRating = splitSpec(product.specifications?.slip_rating).join(' + ');
+    const colourText = colourOptions.join(' + ');
+    const finishText = finishOptions.join(' + ');
+    // Colour and finish still travel with every add-to-cart so the order
+    // records what was bought — but the whole value now, not a "selection".
+    // Sending just the first of "White + Cloud" would have recorded a white
+    // tile for an order of a white-and-cloud one.
     const cartOptions = () => {
         const o = {};
-        if (selectedColour) o.colour = selectedColour;
-        if (selectedFinish) o.finish = selectedFinish;
+        if (colourText) o.colour = colourText;
+        if (finishText) o.finish = finishText;
         return o;
     };
 
@@ -970,92 +972,34 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 <p className="mt-1 text-[12px] text-gray-500">Inclusive of all taxes · Total calculated in cart</p>
                             </div>
 
-                            {/* Colour & Finish — customer selects one of each */}
-                            {(colourOptions.length > 0 || finishOptions.length > 0 || slipRatings.length > 0) && (
-                                <div className="mt-4 space-y-4">
-                                    {colourOptions.length > 0 && (
-                                        <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">
-                                                Colour
-                                                {selectedColour && (
-                                                    <span className="ml-2 font-semibold normal-case tracking-normal text-gray-800">
-                                                        {selectedColour}
-                                                    </span>
-                                                )}
-                                            </p>
-                                            {/* Named buttons, same as Finish. A swatch circle had to
-                                                guess a hex from the colour word and fell back to two
-                                                letters ("WH"), which told a shopper less than the word
-                                                itself — and a tile called "Cloud" has no single colour
-                                                to show anyway. */}
-                                            <div className="mt-2 flex flex-wrap gap-2">
-                                                {colourOptions.map((c) => {
-                                                    const isSel = c === selectedColour;
-                                                    return (
-                                                        <button
-                                                            key={c}
-                                                            type="button"
-                                                            aria-pressed={isSel}
-                                                            onClick={() => setSelectedColour(c)}
-                                                            className={`rounded-md border-2 px-4 py-1.5 text-[13px] font-bold uppercase tracking-wide transition ${
-                                                                isSel
-                                                                    ? 'border-gray-900 bg-white text-gray-900'
-                                                                    : 'border-gray-200 text-gray-500 hover:border-gray-400'
-                                                            }`}
-                                                        >
-                                                            {c}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
+                            {/* Slip rating, colour and finish as plain lines.
+                                These describe the tile rather than offering a
+                                choice — the values come from one spec string per
+                                field, not from separate buyable variants — so
+                                buttons implied a selection that changed nothing
+                                about what was added to the cart. Rows with no
+                                value stay hidden, as everywhere else. */}
+                            {(slipRating || colourText || finishText) && (
+                                <dl className="mt-4 space-y-1.5 text-[14px]">
+                                    {slipRating && (
+                                        <div className="flex gap-2">
+                                            <dt className="text-gray-500">Slip Rating :</dt>
+                                            <dd className="font-medium text-gray-900">{slipRating}</dd>
                                         </div>
                                     )}
-
-                                    {finishOptions.length > 0 && (
-                                        <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">Finish</p>
-                                            <div className="mt-2 flex flex-wrap gap-2">
-                                                {finishOptions.map((f) => {
-                                                    const isSel = f === selectedFinish;
-                                                    return (
-                                                        <button
-                                                            key={f}
-                                                            type="button"
-                                                            aria-pressed={isSel}
-                                                            onClick={() => setSelectedFinish(f)}
-                                                            className={`rounded-md border-2 px-4 py-1.5 text-[13px] font-bold uppercase tracking-wide transition ${
-                                                                isSel
-                                                                    ? 'border-gray-900 bg-white text-gray-900'
-                                                                    : 'border-gray-200 text-gray-500 hover:border-gray-400'
-                                                            }`}
-                                                        >
-                                                            {f}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
+                                    {colourText && (
+                                        <div className="flex gap-2">
+                                            <dt className="text-gray-500">Colour :</dt>
+                                            <dd className="font-medium text-gray-900">{colourText}</dd>
                                         </div>
                                     )}
-
-                                    {slipRatings.length > 0 && (
-                                        <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">Slip Rating</p>
-                                            {/* Deliberately not buttons: this is a property of the
-                                                tile, not something to choose, and a clickable chip
-                                                would imply it changes what is added to the cart. */}
-                                            <div className="mt-2 flex flex-wrap gap-2">
-                                                {slipRatings.map((r) => (
-                                                    <span
-                                                        key={r}
-                                                        className="rounded-md border-2 border-gray-200 bg-gray-50 px-4 py-1.5 text-[13px] font-bold uppercase tracking-wide text-gray-700"
-                                                    >
-                                                        {r}
-                                                    </span>
-                                                ))}
-                                            </div>
+                                    {finishText && (
+                                        <div className="flex gap-2">
+                                            <dt className="text-gray-500">Finish :</dt>
+                                            <dd className="font-medium text-gray-900">{finishText}</dd>
                                         </div>
                                     )}
-                                </div>
+                                </dl>
                             )}
 
                             {/* Variant family (same range, different colour / size) */}
