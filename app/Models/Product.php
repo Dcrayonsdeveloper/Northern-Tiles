@@ -142,6 +142,36 @@ class Product extends Model
         return $this->hasOne(\App\Domain\Builder\Models\BuilderProduct::class);
     }
 
+    /** Per-account trade listings; a product may be offered to several accounts. */
+    public function builderAccountListings(): HasMany
+    {
+        return $this->hasMany(\App\Domain\Builder\Models\BuilderAccountProduct::class);
+    }
+
+    /**
+     * Products this trade account may see.
+     *
+     * An account with its own catalogue sees only that; everyone else sees the
+     * shared one. Kept as a scope so the portal's listing, its related-products
+     * query and the single-product page cannot drift apart — one of them
+     * forgetting the account gate would leak another builder's product list.
+     */
+    public function scopeBuilderVisibleTo($query, ?\App\Models\User $user)
+    {
+        $hasOwn = $user && \App\Domain\Builder\Models\BuilderAccountProduct::live()
+            ->forAccount($user)
+            ->exists();
+
+        if ($hasOwn) {
+            return $query->whereHas(
+                'builderAccountListings',
+                fn ($q) => $q->where('user_id', $user->id)->where('is_active', true),
+            );
+        }
+
+        return $query->whereHas('builderListing', fn ($q) => $q->where('is_active', true));
+    }
+
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'seller_id');

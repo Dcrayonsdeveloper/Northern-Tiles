@@ -9,7 +9,7 @@ const money = (v) => `$${parseFloat(v || 0).toFixed(2)}`;
    Searches products not yet on the trade list, lets the admin set a price
    per row, then submits the whole selection in one request.
 ─────────────────────────────────────────────────────────────────────── */
-function AddProductsModal({ open, onClose, categories }) {
+function AddProductsModal({ open, onClose, categories, account }) {
     const [search, setSearch] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [results, setResults] = useState([]);
@@ -27,6 +27,8 @@ function AddProductsModal({ open, onClose, categories }) {
                 const params = new URLSearchParams();
                 if (search.trim()) params.set('q', search.trim());
                 if (categoryId) params.set('category_id', categoryId);
+                // Scopes "not already listed" to the account being edited.
+                if (account) params.set('account', account.id);
                 const res = await fetch(`${route('admin.builder.catalog.available')}?${params}`, {
                     headers: { Accept: 'application/json' },
                     credentials: 'same-origin',
@@ -89,11 +91,18 @@ function AddProductsModal({ open, onClose, categories }) {
     const submit = () => {
         const items = Object.entries(selected).map(([product_id, row]) => ({
             product_id: Number(product_id),
-            price: parseFloat(row.price) || 0,
+            // Blank price on an account list = inherit the shared price.
+            price: row.price === '' || row.price === undefined
+                ? (account ? null : 0)
+                : parseFloat(row.price),
         }));
         if (!items.length) return;
         setSaving(true);
-        router.post(route('admin.builder.catalog.store'), { items }, {
+        router.post(
+            account
+                ? route('admin.builder.catalog.account.store', account.id)
+                : route('admin.builder.catalog.store'),
+            { items }, {
             preserveScroll: true,
             onSuccess: () => onClose(),
             onFinish: () => setSaving(false),
@@ -225,16 +234,28 @@ function AddProductsModal({ open, onClose, categories }) {
 }
 
 /* ── Editable price row ────────────────────────────────────────────── */
-function PriceCell({ listing }) {
-    const [value, setValue] = useState(parseFloat(listing.price).toFixed(2));
+function PriceCell({ listing, account }) {
+    // A null price on an account row means "charge the shared catalogue price",
+    // so the field shows that inherited figure as a placeholder rather than
+    // pretending the account has its own.
+    const inherited = listing.inherits_price;
+    const [value, setValue] = useState(
+        listing.price === null || listing.price === undefined ? '' : parseFloat(listing.price).toFixed(2),
+    );
     const [dirty, setDirty] = useState(false);
     const [saving, setSaving] = useState(false);
 
     const save = () => {
         if (!dirty) return;
         setSaving(true);
-        router.put(route('admin.builder.catalog.update', listing.id), {
-            price: parseFloat(value) || 0,
+        router.put(
+            account
+                ? route('admin.builder.catalog.account.update', listing.id)
+                : route('admin.builder.catalog.update', listing.id),
+            {
+            // Blank means inherit; only meaningful on an account row, where the
+            // backend accepts null.
+            price: value === '' ? (account ? null : 0) : parseFloat(value),
             is_active: listing.is_active,
             sort: listing.sort,
             note: listing.note,
@@ -263,13 +284,29 @@ function PriceCell({ listing }) {
     );
 }
 
-export default function BuilderCatalogIndex({ listings, categories, filters, stats }) {
+export default function BuilderCatalogIndex({ listings, categories, filters, stats, accounts = [], account = null }) {
     const [addOpen, setAddOpen] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
     const [search, setSearch] = useState(filters?.q ?? '');
 
     const rows = listings?.data ?? [];
     const allChecked = rows.length > 0 && selectedIds.length === rows.length;
+
+    // Every write goes to a different table depending on whether an account is
+    // selected, so the endpoint is decided in one place rather than at each
+    // call site — a missed branch would edit the shared catalogue that every
+    // other builder sees.
+    const endpoints = account
+        ? {
+            update: (id) => route('admin.builder.catalog.account.update', id),
+            destroy: (id) => route('admin.builder.catalog.account.destroy', id),
+            bulk: () => route('admin.builder.catalog.account.bulk', account.id),
+        }
+        : {
+            update: (id) => route('admin.builder.catalog.update', id),
+            destroy: (id) => route('admin.builder.catalog.destroy', id),
+            bulk: () => route('admin.builder.catalog.bulk'),
+        };
 
     const applyFilter = (patch) => {
         router.get(route('admin.builder.catalog.index'), { ...filters, ...patch }, {
@@ -286,14 +323,14 @@ export default function BuilderCatalogIndex({ listings, categories, filters, sta
     const bulk = (action) => {
         if (!selectedIds.length) return;
         if (action === 'remove' && !confirm(`Remove ${selectedIds.length} product(s) from the builder catalogue?`)) return;
-        router.post(route('admin.builder.catalog.bulk'), { action, ids: selectedIds }, {
+        router.post(endpoints.bulk(), { action, ids: selectedIds }, {
             preserveScroll: true,
             onSuccess: () => setSelectedIds([]),
         });
     };
 
     const toggleActive = (listing) => {
-        router.put(route('admin.builder.catalog.update', listing.id), {
+        router.put(endpoints.update(listing.id), {
             price: listing.price,
             is_active: !listing.is_active,
             sort: listing.sort,
@@ -303,7 +340,7 @@ export default function BuilderCatalogIndex({ listings, categories, filters, sta
 
     const remove = (listing) => {
         if (!confirm(`Remove "${listing.product?.name}" from the builder catalogue?`)) return;
-        router.delete(route('admin.builder.catalog.destroy', listing.id), { preserveScroll: true });
+        router.delete(endpoints.destroy(listing.id), { preserveScroll: true });
     };
 
     return (
@@ -312,10 +349,40 @@ export default function BuilderCatalogIndex({ listings, categories, filters, sta
 
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-bold text-gray-900">Builder Catalogue</h1>
+                    <h1 className="text-xl font-bold text-gray-900">
+                        {account ? `Catalogue — ${account.company || account.name}` : 'Builder Catalogue'}
+                    </h1>
                     <p className="mt-1 text-sm text-gray-600">
-                        Products your trade accounts can buy, and the price they pay. Products not listed here are invisible in the builder portal.
+                        {account
+                            ? `Only ${account.name} sees this list, at these prices. While it has any products, the shared catalogue does not apply to them.`
+                            : 'Products your trade accounts can buy, and the price they pay. Products not listed here are invisible in the builder portal.'}
                     </p>
+
+                    {/* Which list is being edited. "All builders" is the shared
+                        catalogue; picking an account switches every action on
+                        this screen to that account's own list. */}
+                    <div className="mt-3 flex items-center gap-2">
+                        <label className="text-xs font-medium text-gray-500">Catalogue for</label>
+                        <select
+                            value={account?.id ?? ''}
+                            onChange={(e) => applyFilter({ account: e.target.value || null })}
+                            className="admin-select text-sm"
+                        >
+                            <option value="">All builders (shared catalogue)</option>
+                            {accounts.map((a) => (
+                                <option key={a.id} value={a.id}>
+                                    {(a.company || a.name)}{a.own_products > 0 ? ` — own list (${a.own_products})` : ' — uses shared'}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {account && stats?.total === 0 && (
+                        <p className="mt-2 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+                            This account has no products of its own yet, so it currently sees the shared catalogue.
+                            Adding one product here switches it to this list only.
+                        </p>
+                    )}
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="text-sm text-gray-600">
@@ -448,7 +515,7 @@ export default function BuilderCatalogIndex({ listings, categories, filters, sta
                                     <td className="px-4 py-3 text-gray-600">{listing.product?.category?.name ?? '—'}</td>
                                     <td className="px-4 py-3 text-right text-gray-500">{money(listing.retail_price)}</td>
                                     <td className="px-4 py-3">
-                                        <PriceCell listing={listing} />
+                                        <PriceCell listing={listing} account={account} />
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         <span className={`font-semibold ${listing.discount_percent > 0 ? 'text-green-700' : 'text-gray-400'}`}>
@@ -502,7 +569,7 @@ export default function BuilderCatalogIndex({ listings, categories, filters, sta
                 </div>
             )}
 
-            <AddProductsModal open={addOpen} onClose={() => setAddOpen(false)} categories={categories ?? []} />
+            <AddProductsModal open={addOpen} onClose={() => setAddOpen(false)} categories={categories ?? []} account={account} />
         </DashboardLayout>
     );
 }

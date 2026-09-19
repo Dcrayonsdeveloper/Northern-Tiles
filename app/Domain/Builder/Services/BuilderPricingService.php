@@ -2,6 +2,7 @@
 
 namespace App\Domain\Builder\Services;
 
+use App\Domain\Builder\Models\BuilderAccountProduct;
 use App\Domain\Builder\Models\BuilderProduct;
 use App\Models\Product;
 use App\Models\User;
@@ -16,8 +17,11 @@ use Illuminate\Support\Facades\Auth;
  */
 class BuilderPricingService
 {
-    /** Per-request memo of product_id => builder price, so a listing page hits the DB once. */
+    /** Per-request memo of "account:product" => builder price, so a listing page hits the DB once. */
     private array $priceMemo = [];
+
+    /** Per-request memo of account id => product ids in its own catalogue, or null when it has none. */
+    private array $accountCatalogueMemo = [];
 
     /**
      * Is this account entitled to trade pricing?
@@ -48,16 +52,83 @@ class BuilderPricingService
      * to charge money must gate on isBuilder() as well; effectivePrice() does
      * both and is the safer entry point.
      */
-    public function builderPrice(Product|int $product): ?float
+    public function builderPrice(Product|int $product, ?User $user = null): ?float
     {
         $productId = $product instanceof Product ? $product->id : (int) $product;
+        $user = $user ?? Auth::user();
+        $key = ($user?->id ?? 0) . ':' . $productId;
 
-        if (! array_key_exists($productId, $this->priceMemo)) {
-            $entry = BuilderProduct::live()->where('product_id', $productId)->first();
-            $this->priceMemo[$productId] = $entry ? (float) $entry->price : null;
+        if (array_key_exists($key, $this->priceMemo)) {
+            return $this->priceMemo[$key];
         }
 
-        return $this->priceMemo[$productId];
+        $ownCatalogue = $this->accountCatalogueIds($user);
+
+        if ($ownCatalogue !== null) {
+            // This account has its own list, so the shared catalogue does not
+            // apply: a product missing from the list is simply not for sale to
+            // them, whatever the shared catalogue says.
+            if (! array_key_exists($productId, $ownCatalogue)) {
+                return $this->priceMemo[$key] = null;
+            }
+
+            // A null price on the row means "at the shared price". If the
+            // product is not in the shared catalogue either, there is no trade
+            // price to give and the caller falls back to retail.
+            $own = $ownCatalogue[$productId];
+
+            return $this->priceMemo[$key] = $own ?? $this->sharedPrice($productId);
+        }
+
+        return $this->priceMemo[$key] = $this->sharedPrice($productId);
+    }
+
+    /**
+     * Product ids in this account's own catalogue as [product_id => price|null],
+     * or null when the account has no catalogue of its own and therefore uses
+     * the shared one.
+     *
+     * @return array<int, float|null>|null
+     */
+    public function accountCatalogueIds(?User $user = null): ?array
+    {
+        $user = $user ?? Auth::user();
+
+        if (! $user) {
+            return null;
+        }
+
+        if (array_key_exists($user->id, $this->accountCatalogueMemo)) {
+            return $this->accountCatalogueMemo[$user->id];
+        }
+
+        $rows = BuilderAccountProduct::live()
+            ->forAccount($user)
+            ->pluck('price', 'product_id');
+
+        // No rows at all means "not configured", which is different from "an
+        // empty catalogue": the account falls back to the shared list rather
+        // than seeing nothing.
+        if ($rows->isEmpty()) {
+            return $this->accountCatalogueMemo[$user->id] = null;
+        }
+
+        return $this->accountCatalogueMemo[$user->id] = $rows
+            ->map(fn ($price) => $price === null ? null : (float) $price)
+            ->all();
+    }
+
+    /** The one shared catalogue price, memoised across accounts. */
+    private function sharedPrice(int $productId): ?float
+    {
+        $key = 'shared:' . $productId;
+
+        if (! array_key_exists($key, $this->priceMemo)) {
+            $entry = BuilderProduct::live()->where('product_id', $productId)->first();
+            $this->priceMemo[$key] = $entry ? (float) $entry->price : null;
+        }
+
+        return $this->priceMemo[$key];
     }
 
     /**
@@ -90,7 +161,7 @@ class BuilderPricingService
             return $fallback;
         }
 
-        return $this->builderPrice($product) ?? $fallback;
+        return $this->builderPrice($product, $user) ?? $fallback;
     }
 
     /**
@@ -107,7 +178,7 @@ class BuilderPricingService
             return [];
         }
 
-        return $this->priceMap($productIds);
+        return $this->priceMap($productIds, $user);
     }
 
     /**
@@ -117,7 +188,7 @@ class BuilderPricingService
      * @param  iterable<int>  $productIds
      * @return array<int, float>
      */
-    public function priceMap(iterable $productIds): array
+    public function priceMap(iterable $productIds, ?User $user = null): array
     {
         $ids = array_values(array_unique(array_map('intval', is_array($productIds) ? $productIds : iterator_to_array($productIds))));
 
@@ -125,16 +196,43 @@ class BuilderPricingService
             return [];
         }
 
-        $map = BuilderProduct::live()
+        $user = $user ?? Auth::user();
+
+        $shared = BuilderProduct::live()
             ->whereIn('product_id', $ids)
             ->pluck('price', 'product_id')
             ->map(fn ($price) => (float) $price)
             ->all();
 
-        // Memoise both hits and misses so later single lookups in the same
-        // request don't re-query for products we already know aren't listed.
         foreach ($ids as $id) {
-            $this->priceMemo[$id] = $map[$id] ?? null;
+            $this->priceMemo['shared:' . $id] = $shared[$id] ?? null;
+        }
+
+        $own = $this->accountCatalogueIds($user);
+        $accountKey = ($user?->id ?? 0) . ':';
+
+        if ($own === null) {
+            // Memoise both hits and misses so later single lookups in the same
+            // request don't re-query for products we already know aren't listed.
+            foreach ($ids as $id) {
+                $this->priceMemo[$accountKey . $id] = $shared[$id] ?? null;
+            }
+
+            return $shared;
+        }
+
+        $map = [];
+
+        foreach ($ids as $id) {
+            $price = array_key_exists($id, $own)
+                ? ($own[$id] ?? ($shared[$id] ?? null))
+                : null;
+
+            $this->priceMemo[$accountKey . $id] = $price;
+
+            if ($price !== null) {
+                $map[$id] = $price;
+            }
         }
 
         return $map;
