@@ -25,7 +25,10 @@ class BuilderShopController extends Controller
     /** Attribute facets accepted as comma-separated query params (?color=white,grey). */
     private const ATTRIBUTE_FILTERS = ['color', 'space', 'size', 'material', 'finish', 'style'];
 
-    public function __construct(private ProductUnitResolver $units) {}
+    public function __construct(
+        private ProductUnitResolver $units,
+        private BuilderPricingService $pricing,
+    ) {}
 
     public function index(Request $request, ?string $category = null, ?string $subcategory = null): Response
     {
@@ -61,8 +64,9 @@ class BuilderShopController extends Controller
 
         $products = Product::query()
             ->where('is_active', true)
-            // The catalogue gate: only products the admin put on the builder list.
-            ->whereHas('builderListing', fn ($q) => $q->where('is_active', true))
+            // The catalogue gate: this account's own list when it has one,
+            // otherwise the shared builder list.
+            ->builderVisibleTo($request->user())
             ->when($filters['q'], function ($query, $q) {
                 $terms = array_values(array_filter(
                     preg_split('/\s+/', $q, -1, PREG_SPLIT_NO_EMPTY),
@@ -100,23 +104,20 @@ class BuilderShopController extends Controller
                     });
                 }
             })
-            ->when($filters['sort'], function ($query, $sort) {
+            ->when($filters['sort'], function ($query, $sort) use ($request) {
+                // Sorting by trade price must sort by the price this account
+                // actually pays, not retail and not the shared price —
+                // otherwise the order on screen contradicts the prices printed
+                // next to it. For an account with its own catalogue that is its
+                // own price, falling back to the shared one where its row
+                // leaves the price blank.
+                $tradePrice = $this->tradePriceSubquery($request->user());
+
                 match ($sort) {
                     'newest' => $query->orderByDesc('products.created_at'),
                     'oldest' => $query->orderBy('products.created_at'),
-                    // Sorting by trade price must sort by the builder price, not
-                    // retail — otherwise the order on screen contradicts the
-                    // prices shown next to it.
-                    'price_asc' => $query->orderBy(
-                        \App\Domain\Builder\Models\BuilderProduct::select('price')
-                            ->whereColumn('builder_products.product_id', 'products.id')
-                            ->limit(1)
-                    ),
-                    'price_desc' => $query->orderByDesc(
-                        \App\Domain\Builder\Models\BuilderProduct::select('price')
-                            ->whereColumn('builder_products.product_id', 'products.id')
-                            ->limit(1)
-                    ),
+                    'price_asc' => $query->orderBy($tradePrice),
+                    'price_desc' => $query->orderByDesc($tradePrice),
                     'name_asc' => $query->orderBy('name'),
                     'name_desc' => $query->orderByDesc('name'),
                     default => $query->orderByDesc('products.id'),
@@ -146,7 +147,9 @@ class BuilderShopController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        $products->getCollection()->transform(function (Product $product) {
+        $viewer = $request->user();
+
+        $products->getCollection()->transform(function (Product $product) use ($viewer) {
             $primary = $product->media->first();
             // Only overwrite the DB image_url if the primary media file actually
             // exists on disk. Older imports left dead product_media rows that
@@ -160,7 +163,7 @@ class BuilderShopController extends Controller
             }
             $product->unsetRelation('media');
 
-            return $this->decorateWithBuilderPrice($product);
+            return $this->decorateWithBuilderPrice($product, $viewer);
         });
 
         // Same list the header uses — the sidebar and the nav must not disagree
@@ -177,21 +180,27 @@ class BuilderShopController extends Controller
         ]);
     }
 
-    public function show(Product $product): Response
+    public function show(Request $request, Product $product): Response
     {
         abort_unless($product->is_active, 404);
 
-        // Not on the trade list = does not exist as far as the portal is concerned.
-        $listing = $product->builderListing()->where('is_active', true)->first();
-        abort_unless($listing !== null, 404);
+        // Not on this account's trade list = does not exist as far as the
+        // portal is concerned. Checked through the same scope the listing uses,
+        // so a product hidden from the grid cannot be reached by typing its URL.
+        $visible = Product::query()
+            ->whereKey($product->id)
+            ->builderVisibleTo($request->user())
+            ->exists();
+
+        abort_unless($visible, 404);
 
         $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media', 'variantFamily']);
-        $this->decorateWithBuilderPrice($product);
+        $this->decorateWithBuilderPrice($product, $request->user());
 
         $relatedIds = Product::query()
             ->where('is_active', true)
             ->where('id', '!=', $product->id)
-            ->whereHas('builderListing', fn ($q) => $q->where('is_active', true))
+            ->builderVisibleTo($request->user())
             ->when($product->category_id, fn ($q) => $q->where('category_id', $product->category_id))
             ->pluck('id')
             ->shuffle()
@@ -204,7 +213,7 @@ class BuilderShopController extends Controller
                 // category_id and sqm_per_box are needed by ProductUnitResolver;
                 // without them every related card falls back to "not per m²".
                 ->get(['id', 'category_id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description', 'sqm_per_box'])
-                ->map(fn (Product $p) => $this->decorateWithBuilderPrice($p))
+                ->map(fn (Product $p) => $this->decorateWithBuilderPrice($p, $request->user()))
                 ->shuffle()
                 ->values();
         }
@@ -265,14 +274,46 @@ class BuilderShopController extends Controller
      * `retail_price`, so every existing price-rendering component shows trade
      * pricing without modification and the saving can still be displayed.
      */
-    private function decorateWithBuilderPrice(Product $product): Product
+    /**
+     * Sub-select yielding the trade price for each product row, for ORDER BY.
+     *
+     * An account with its own catalogue sorts by its own price, falling back to
+     * the shared price where its row leaves the price blank; everyone else
+     * sorts by the shared price.
+     */
+    private function tradePriceSubquery(?\App\Models\User $user)
     {
-        $listing = $product->relationLoaded('builderListing')
-            ? $product->getRelation('builderListing')
-            : $product->builderListing()->first();
+        $hasOwn = $user && \App\Domain\Builder\Models\BuilderAccountProduct::live()
+            ->forAccount($user)
+            ->exists();
 
+        if (! $hasOwn) {
+            return BuilderProduct::select('price')
+                ->whereColumn('builder_products.product_id', 'products.id')
+                ->limit(1);
+        }
+
+        return \App\Domain\Builder\Models\BuilderAccountProduct::query()
+            ->selectRaw(
+                'COALESCE(builder_account_products.price, ('
+                . 'SELECT bp.price FROM builder_products bp '
+                . 'WHERE bp.product_id = products.id AND bp.is_active = 1 LIMIT 1))'
+            )
+            ->whereColumn('builder_account_products.product_id', 'products.id')
+            ->where('builder_account_products.user_id', $user->id)
+            ->where('builder_account_products.is_active', true)
+            ->limit(1);
+    }
+
+    private function decorateWithBuilderPrice(Product $product, ?\App\Models\User $user = null): Product
+    {
         $retail = (float) $product->price;
-        $builderPrice = $listing ? (float) $listing->price : $retail;
+
+        // Through the pricing service, not the shared listing: an account with
+        // its own catalogue may pay a different price for the same product, and
+        // reading builder_products directly here would show them the shared one
+        // while checkout charged theirs.
+        $builderPrice = $this->pricing->builderPrice($product, $user) ?? $retail;
 
         $product->setAttribute('retail_price', $retail);
         $product->setAttribute('builder_price', $builderPrice);

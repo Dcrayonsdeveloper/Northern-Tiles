@@ -132,7 +132,6 @@ function MobileFeaturedContent({ item, onClose }) {
 // Mobile menu item
 function MobileMenuItem({ item, onClose, onNavigate }) {
     const hasChildren = item.children?.length > 0;
-    const thumbUrl = MOBILE_NAV_IMAGES[item.label] || null;
 
     if (hasChildren) {
         return (
@@ -142,8 +141,7 @@ function MobileMenuItem({ item, onClose, onNavigate }) {
                     onClick={() => onNavigate(item)}
                     className="mobile-menu__link mobile-menu__link--parent"
                 >
-                    {thumbUrl && <img src={thumbUrl} alt="" className="h-10 w-10 rounded-lg object-cover flex-shrink-0" loading="lazy" />}
-                    {item.icon && !thumbUrl && <span className={`mobile-menu__icon ${item.icon}`} />}
+                    {item.icon && <span className={`mobile-menu__icon ${item.icon}`} />}
                     <span className="mobile-menu__label">{item.label}</span>
                     <Badge text={item.badge_text} color={item.badge_color} />
                     <ChevronRightIcon className="mobile-menu__arrow" />
@@ -160,8 +158,7 @@ function MobileMenuItem({ item, onClose, onNavigate }) {
                 className="mobile-menu__link"
                 onClick={onClose}
             >
-                {thumbUrl && <img src={thumbUrl} alt="" className="h-10 w-10 rounded-lg object-cover flex-shrink-0" loading="lazy" />}
-                {item.icon && !thumbUrl && <span className={`mobile-menu__icon ${item.icon}`} />}
+                {item.icon && <span className={`mobile-menu__icon ${item.icon}`} />}
                 <span className="mobile-menu__label">{item.label}</span>
                 <Badge text={item.badge_text} color={item.badge_color} />
             </MenuLink>
@@ -172,15 +169,12 @@ function MobileMenuItem({ item, onClose, onNavigate }) {
     );
 }
 
-// Category images for mobile menu
-const MOBILE_NAV_IMAGES = {
-    'Tiles': 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=120&h=120&fit=crop&q=80',
-    'Flooring': 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=120&h=120&fit=crop&q=80',
-    'Timber': 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=120&h=120&fit=crop&q=80',
-    'Stone': 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=120&h=120&fit=crop&q=80',
-    'Trade Supplies': 'https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=120&h=120&fit=crop&q=80',
-    'Find a Store': 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=120&h=120&fit=crop&q=80',
-};
+// The per-item thumbnails that used to live here were Unsplash stock photos
+// keyed by menu label, so they only ever matched a few entries — Tiles, Timber
+// and Stone had one, everything else did not, and the keys for "Flooring",
+// "Trade Supplies" and "Find a Store" stopped matching anything once the
+// category tree was rebuilt. The Shop Collections banner at the top of the menu
+// stays; it is the one image the menu is meant to carry.
 
 // Main mobile menu component
 export default function MobileMenu({ open, onClose, navItems = [], user }) {

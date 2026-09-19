@@ -68,15 +68,22 @@ function HeroSlider({ heroSlider }) {
     useEffect(() => { if (n <= 1) return; const t = setInterval(() => setI(p => (p + 1) % n), 6000); return () => clearInterval(t); }, [n]);
 
     return (
-        <section className="relative w-full overflow-hidden bg-[#f0efed]" style={{ height: '80vh', minHeight: '480px', maxHeight: '900px' }}>
+        // Half the viewport on a phone, the full 80vh from the sm breakpoint
+        // up. Height moved out of an inline style because a style attribute
+        // cannot carry a media query, and 80vh on a phone pushed everything
+        // below the banner off the first screen.
+        <section className="relative w-full overflow-hidden bg-[#f0efed] h-[50vh] min-h-[300px] sm:h-[80vh] sm:min-h-[480px] max-h-[900px]">
             {slides.map((s, idx) => (
                 <div key={idx} className={`transition-opacity duration-700 ${idx === i ? 'opacity-100 z-10' : 'opacity-0 z-0'}`} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
                     <img src={s.image_url} alt={s.image_alt_key || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading={idx === 0 ? 'eager' : 'lazy'} />
                     {/* Overlay + text content */}
                     {(s.h1_key || s.p_key || s.cta_primary_label_key) && (
-                        <div className={`absolute inset-0 flex items-center ${s.align === 'center' ? 'justify-center text-center' : s.align === 'right' ? 'justify-end text-right' : 'justify-start text-left'}`}>
+                        // items-end: the copy sits along the bottom of the image
+                        // rather than floating in the middle of it, and the
+                        // bottom padding on the inner block clears the dots.
+                        <div className={`absolute inset-0 flex items-end ${s.align === 'center' ? 'justify-center text-center' : s.align === 'right' ? 'justify-end text-right' : 'justify-start text-left'}`}>
                             <div className={`${s.overlay_style === 'dark' ? 'bg-black/40' : s.overlay_style === 'light' ? 'bg-white/40' : ''} absolute inset-0`} />
-                            <div className="relative z-10 max-w-2xl px-8 sm:px-16">
+                            <div className="relative z-10 max-w-2xl px-8 pb-16 sm:px-16 sm:pb-20">
                                 {s.h1_key && <h2 className="text-3xl sm:text-5xl font-bold text-white drop-shadow-lg leading-tight font-heading">{s.h1_key}</h2>}
                                 {s.p_key && <p className="mt-4 text-base sm:text-lg text-white/90 drop-shadow">{s.p_key}</p>}
                                 <div className="mt-6 flex flex-wrap gap-3">
@@ -117,7 +124,7 @@ function TrendingProducts({ products = [] }) {
     };
 
     return (
-        <section className="py-16 bg-white">
+        <section className="py-10 sm:py-16 bg-white">
             <Container>
                 <div className="text-center mb-10">
                     <h2 className="text-[28px] font-light text-[#222] tracking-[2px] uppercase font-heading">Trending <span className="font-semibold">Products</span></h2>
@@ -172,7 +179,7 @@ function TrendingProducts({ products = [] }) {
    ═══════════════════════════════════════════════════════════════════════ */
 function TileVisualizer() {
     return (
-        <section className="py-20 bg-[#f7f7f5]">
+        <section className="py-12 sm:py-20 bg-[#f7f7f5]">
             <Container>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     <div>
@@ -268,7 +275,7 @@ function ChooseBy() {
     ];
 
     return (
-        <section className="py-16 bg-white">
+        <section className="py-10 sm:py-16 bg-white">
             <Container>
                 <div className="text-center mb-8">
                     <h2 className="text-[28px] font-light text-[#222] tracking-[2px] uppercase font-heading">Find Your <span className="font-semibold">Perfect Tile</span></h2>
@@ -381,7 +388,7 @@ function ChooseBy() {
    ═══════════════════════════════════════════════════════════════════════ */
 function OurShowroom() {
     return (
-        <section className="py-20 bg-[#f7f7f5]">
+        <section className="py-12 sm:py-20 bg-[#f7f7f5]">
             <Container>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     {/* The real Thomastown showroom, replacing an Unsplash stock
@@ -509,7 +516,7 @@ function OurServices() {
     ];
 
     return (
-        <section className="pt-16 pb-8 bg-white">
+        <section className="pt-10 sm:pt-16 pb-8 bg-white">
             {/* Inline keyframes for clock animation */}
             <style>{`@keyframes ticktock{0%,100%{transform:rotate(0deg)}50%{transform:rotate(20deg)}}`}</style>
             <Container>
@@ -549,7 +556,7 @@ function FeaturedCollections() {
     const { r, l, rr, ck, go } = useHS(380);
 
     return (
-        <section className="pt-10 pb-20 bg-[#f7f7f5]">
+        <section className="pt-8 sm:pt-10 pb-12 sm:pb-20 bg-[#f7f7f5]">
             <Container>
                 <div className="text-center mb-10">
                     <p className="text-[11px] font-semibold uppercase tracking-[3px] text-brand mb-2">Featured</p>
@@ -648,7 +655,7 @@ function ShopByCollection() {
     useEffect(() => { ck(); }, [ck]);
 
     return (
-        <section className="py-20 bg-white">
+        <section className="py-12 sm:py-20 bg-white">
             <Container>
                 <div className="mb-12 flex flex-col items-center text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
                     <div>
@@ -737,7 +744,7 @@ function ProudCustomers() {
     const reels = REELS;
 
     return (
-        <section className="py-16 bg-[#fafafa]">
+        <section className="py-10 sm:py-16 bg-[#fafafa]">
             <Container>
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
@@ -832,7 +839,7 @@ function ProudCustomers() {
 function BrandPartners() {
     const brands = ['Mapei', 'ARDEX', 'Soudal', 'SWARD', 'BALTIC STONE', 'TUNDRA', 'ENZO', 'Lauxes', 'Australian Tiling Adhesive (ATA)'];
     return (
-        <section className="py-12 bg-white border-t border-b border-gray-100">
+        <section className="py-8 sm:py-12 bg-white border-t border-b border-gray-100">
             <Container>
                 <div className="flex flex-wrap items-center justify-center gap-10">
                     {brands.map(b => <span key={b} className="text-[16px] font-bold text-[#595959] tracking-[2px] uppercase hover:text-brand transition-colors cursor-default">{b}</span>)}
@@ -885,7 +892,7 @@ function StatsSection() {
     ];
 
     return (
-        <section className="py-20 bg-[#222] text-white relative overflow-hidden">
+        <section className="py-12 sm:py-20 bg-[#222] text-white relative overflow-hidden">
             {/* Subtle pattern */}
             <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
             <Container>
@@ -951,7 +958,7 @@ function CustomerReviews() {
     }, [showTrustpilot]);
 
     return (
-        <section className="py-20 bg-[#f7f7f5]">
+        <section className="py-12 sm:py-20 bg-[#f7f7f5]">
             <Container>
                 <div className="mb-10">
                     <p className="text-[11px] font-semibold uppercase tracking-[3px] text-brand mb-2">Testimonials</p>

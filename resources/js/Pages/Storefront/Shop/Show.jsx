@@ -6,7 +6,6 @@ import { StarRating } from '@/Components/Catalog/StarRating';
 import ProductImage from '@/Components/Catalog/ProductImage';
 import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
 import TrustpilotReviewLink from '@/Components/Storefront/TrustpilotReviewLink';
-import { colourHex } from '@/Support/colours';
 
 
 /* ── Spec icons (Heroicons outline 24 px) ───────────────────────── */
@@ -798,20 +797,32 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
     const [wishlisted, setWishlisted] = useState(false);
 
     // Selectable colour + finish parsed from the spec strings.
-    // "Black, Charcoal, Carbon" -> 3 colours; "Matt / Soft Touch" -> 2 finishes.
-    const colourOptions = String(product.specifications?.colour || product.specifications?.color || '')
-        .split(',').map((s) => s.trim()).filter(Boolean);
-    const finishOptions = String(product.specifications?.finish || '')
-        .split(/[/,]/).map((s) => s.trim()).filter(Boolean);
-    const [selectedColour, setSelectedColour] = useState(colourOptions[0] ?? null);
-    const [selectedFinish, setSelectedFinish] = useState(finishOptions[0] ?? null);
+    // "Black, Charcoal, Carbon", "Matt / Soft Touch" and "White + Cloud" all
+    // mean the same thing — a list. The sheets now write " + ", and splitting
+    // on commas alone turned "White + Cloud" into a single option labelled
+    // with both names.
+    const splitSpec = (value) => String(value ?? '')
+        .split(/\s*[+/,;]\s*/)
+        .map((s) => s.trim())
+        .filter(Boolean);
 
-    // The customer's colour/finish choice, sent with every add-to-cart so it
-    // travels through to the cart, checkout and the order.
+    const colourOptions = splitSpec(product.specifications?.colour || product.specifications?.color);
+    const finishOptions = splitSpec(product.specifications?.finish);
+    // Slip rating is printed exactly as stored. "R11 / P5 (Maximum Slip
+    // Resistance)" is one rating expressed the way the standard writes it, not
+    // a list — splitting it turned the slash into a "+" and implied two
+    // separate ratings.
+    const slipRating = String(product.specifications?.slip_rating ?? '').trim();
+    const colourText = colourOptions.join(' + ');
+    const finishText = finishOptions.join(' + ');
+    // Colour and finish still travel with every add-to-cart so the order
+    // records what was bought — but the whole value now, not a "selection".
+    // Sending just the first of "White + Cloud" would have recorded a white
+    // tile for an order of a white-and-cloud one.
     const cartOptions = () => {
         const o = {};
-        if (selectedColour) o.colour = selectedColour;
-        if (selectedFinish) o.finish = selectedFinish;
+        if (colourText) o.colour = colourText;
+        if (finishText) o.finish = finishText;
         return o;
     };
 
@@ -963,75 +974,34 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 <p className="mt-1 text-[12px] text-gray-500">Inclusive of all taxes · Total calculated in cart</p>
                             </div>
 
-                            {/* Colour & Finish — customer selects one of each */}
-                            {(colourOptions.length > 0 || finishOptions.length > 0) && (
-                                <div className="mt-4 space-y-4">
-                                    {colourOptions.length > 0 && (
-                                        <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">
-                                                Colour
-                                                {selectedColour && (
-                                                    <span className="ml-2 font-semibold normal-case tracking-normal text-gray-800">
-                                                        {selectedColour}
-                                                    </span>
-                                                )}
-                                            </p>
-                                            <div className="mt-2 flex flex-wrap gap-2.5">
-                                                {colourOptions.map((c) => {
-                                                    const hex = colourHex(c);
-                                                    const isSel = c === selectedColour;
-                                                    return (
-                                                        <button
-                                                            key={c}
-                                                            type="button"
-                                                            title={c}
-                                                            aria-pressed={isSel}
-                                                            onClick={() => setSelectedColour(c)}
-                                                            className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
-                                                                isSel
-                                                                    ? 'border-transparent ring-2 ring-brand ring-offset-2'
-                                                                    : 'border-gray-300 hover:border-gray-500'
-                                                            }`}
-                                                            style={hex ? { backgroundColor: hex } : undefined}
-                                                        >
-                                                            {!hex && (
-                                                                <span className="text-[10px] font-bold text-gray-500">
-                                                                    {c.slice(0, 2).toUpperCase()}
-                                                                </span>
-                                                            )}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
+                            {/* Slip rating, colour and finish as plain lines.
+                                These describe the tile rather than offering a
+                                choice — the values come from one spec string per
+                                field, not from separate buyable variants — so
+                                buttons implied a selection that changed nothing
+                                about what was added to the cart. Rows with no
+                                value stay hidden, as everywhere else. */}
+                            {(slipRating || colourText || finishText) && (
+                                <dl className="mt-4 space-y-1.5 text-[14px]">
+                                    {slipRating && (
+                                        <div className="flex gap-2">
+                                            <dt className="text-gray-500">Slip Rating :</dt>
+                                            <dd className="font-medium text-gray-900">{slipRating}</dd>
                                         </div>
                                     )}
-
-                                    {finishOptions.length > 0 && (
-                                        <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-[2px] text-gray-400">Finish</p>
-                                            <div className="mt-2 flex flex-wrap gap-2">
-                                                {finishOptions.map((f) => {
-                                                    const isSel = f === selectedFinish;
-                                                    return (
-                                                        <button
-                                                            key={f}
-                                                            type="button"
-                                                            aria-pressed={isSel}
-                                                            onClick={() => setSelectedFinish(f)}
-                                                            className={`rounded-md border-2 px-4 py-1.5 text-[13px] font-bold uppercase tracking-wide transition ${
-                                                                isSel
-                                                                    ? 'border-gray-900 bg-white text-gray-900'
-                                                                    : 'border-gray-200 text-gray-500 hover:border-gray-400'
-                                                            }`}
-                                                        >
-                                                            {f}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
+                                    {colourText && (
+                                        <div className="flex gap-2">
+                                            <dt className="text-gray-500">Colour :</dt>
+                                            <dd className="font-medium text-gray-900">{colourText}</dd>
                                         </div>
                                     )}
-                                </div>
+                                    {finishText && (
+                                        <div className="flex gap-2">
+                                            <dt className="text-gray-500">Finish :</dt>
+                                            <dd className="font-medium text-gray-900">{finishText}</dd>
+                                        </div>
+                                    )}
+                                </dl>
                             )}
 
                             {/* Variant family (same range, different colour / size) */}

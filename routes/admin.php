@@ -45,6 +45,14 @@ Route::prefix('builder')->name('builder.')->group(function () {
     Route::put('catalog/{builderProduct}', [BuilderCatalogController::class, 'update'])->name('catalog.update');
     Route::delete('catalog/{builderProduct}', [BuilderCatalogController::class, 'destroy'])->name('catalog.destroy');
 
+    // One account's own catalogue. Separate endpoints because the ids in these
+    // requests address builder_account_products, and routing them through the
+    // shared ones would reprice the list every other builder sees.
+    Route::post('catalog/account/{account}', [BuilderCatalogController::class, 'storeForAccount'])->name('catalog.account.store');
+    Route::post('catalog/account/{account}/bulk', [BuilderCatalogController::class, 'bulkForAccount'])->name('catalog.account.bulk');
+    Route::put('catalog/account-item/{builderAccountProduct}', [BuilderCatalogController::class, 'updateForAccount'])->name('catalog.account.update');
+    Route::delete('catalog/account-item/{builderAccountProduct}', [BuilderCatalogController::class, 'destroyForAccount'])->name('catalog.account.destroy');
+
     // Accounts — who gets into the portal
     Route::get('accounts', [BuilderAccountController::class, 'index'])->name('accounts.index');
     Route::post('accounts', [BuilderAccountController::class, 'store'])->name('accounts.store');

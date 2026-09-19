@@ -104,10 +104,16 @@ export default function BuilderProductShow({ product, relatedProducts = [], fami
     // Selectable colour + finish parsed from the spec strings, exactly as the
     // retail page does it: "Black, Charcoal, Carbon" -> 3 colours;
     // "Matt / Soft Touch" -> 2 finishes.
-    const colourOptions = String(product.specifications?.colour || product.specifications?.color || '')
-        .split(',').map((s) => s.trim()).filter(Boolean);
-    const finishOptions = String(product.specifications?.finish || '')
-        .split(/[/,]/).map((s) => s.trim()).filter(Boolean);
+    // Same splitter as the retail page: the sheets now write " + " between
+    // values, and splitting on commas alone turned "White + Cloud" into one
+    // option labelled with both names.
+    const splitSpec = (value) => String(value ?? '')
+        .split(/\s*[+/,;]\s*/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+    const colourOptions = splitSpec(product.specifications?.colour || product.specifications?.color);
+    const finishOptions = splitSpec(product.specifications?.finish);
     const [selectedColour, setSelectedColour] = useState(colourOptions[0] ?? null);
     const [selectedFinish, setSelectedFinish] = useState(finishOptions[0] ?? null);
 
