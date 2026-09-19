@@ -808,9 +808,11 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
 
     const colourOptions = splitSpec(product.specifications?.colour || product.specifications?.color);
     const finishOptions = splitSpec(product.specifications?.finish);
-    // Read-only display strings. Re-joined with " + " so a value stored with
-    // commas still reads the same way as one stored by the spec sync.
-    const slipRating = splitSpec(product.specifications?.slip_rating).join(' + ');
+    // Slip rating is printed exactly as stored. "R11 / P5 (Maximum Slip
+    // Resistance)" is one rating expressed the way the standard writes it, not
+    // a list — splitting it turned the slash into a "+" and implied two
+    // separate ratings.
+    const slipRating = String(product.specifications?.slip_rating ?? '').trim();
     const colourText = colourOptions.join(' + ');
     const finishText = finishOptions.join(' + ');
     // Colour and finish still travel with every add-to-cart so the order
