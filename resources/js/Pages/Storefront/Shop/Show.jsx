@@ -40,6 +40,8 @@ const SPEC_FIELDS = [
     { key: 'Pricing',            icon: SI.tag      },
     { key: 'Country of Origin',  icon: SI.globe    },
     { key: 'Quantity Per Box',   icon: SI.box      },
+    { key: 'Slip Rating',        icon: SI.sliders  },
+    { key: 'Number of Faces',    icon: SI.resize   },
 ];
 
 // Standard flooring keys in display order
@@ -48,6 +50,7 @@ const SPEC_JSON_KEYS = [
     'size_nominal', 'thickness', 'core', 'underlay',
     'variation', 'application_space', 'pricing',
     'country_of_origin', 'quantity_per_box',
+    'slip_rating', 'number_of_faces',
 ];
 
 // Icon lookup for non-standard keys

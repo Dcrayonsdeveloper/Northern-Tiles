@@ -941,6 +941,8 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     { key: 'pricing',            label: 'Pricing' },
                                     { key: 'country_of_origin',  label: 'Country of Origin' },
                                     { key: 'quantity_per_box',   label: 'Quantity Per Box' },
+                                    { key: 'slip_rating',        label: 'Slip Rating' },
+                                    { key: 'number_of_faces',    label: 'Number of Faces' },
                                 ].map(({ key, label }) => (
                                     <div key={key} className={key === 'variation' || key === 'application_space' ? 'col-span-2' : ''}>
                                         {SPEC_LIST_FORMATS[key] ? (
