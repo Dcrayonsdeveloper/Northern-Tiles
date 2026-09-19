@@ -7,10 +7,115 @@ import SpecListInput from '@/Components/Admin/SpecListInput';
 import { COLOUR_NAMES, SPEC_LIST_FORMATS } from '@/Support/colours';
 
 // Media Upload Component
+/* ── Lifestyle image: upload or paste a URL ──────────────────────────
+   Deliberately not part of the Media gallery above. That gallery is the
+   tile close-ups; a room-set shot dropped in among them reads as a
+   mistake, and the storefront reads this one from its own column. */
+function LifestyleImageUploader({ product, value, onChange }) {
+    const inputRef = useRef(null);
+    const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const upload = async (file) => {
+        if (!file) return;
+        setUploading(true);
+        setError(null);
+
+        const body = new FormData();
+        body.append('file', file);
+
+        try {
+            const res = await fetch(route('admin.products.lifestyle.upload', product.id), {
+                method: 'POST',
+                body,
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content },
+            });
+
+            const result = await res.json().catch(() => ({}));
+
+            // The old uploader assumed success and showed nothing when the
+            // request failed. Surface the reason instead.
+            if (!res.ok || !result.success) {
+                setError(result.message || `Upload failed (${res.status})`);
+                return;
+            }
+
+            onChange(result.url);
+        } catch (e) {
+            setError('Upload failed — check the connection and try again.');
+        } finally {
+            setUploading(false);
+            if (inputRef.current) inputRef.current.value = '';
+        }
+    };
+
+    return (
+        <div>
+            <div className="flex items-start gap-3">
+                {value ? (
+                    <img
+                        src={value}
+                        alt="Lifestyle"
+                        className="h-24 w-32 rounded border border-gray-200 object-cover"
+                    />
+                ) : (
+                    <div className="flex h-24 w-32 items-center justify-center rounded border border-dashed border-gray-300 text-[11px] text-gray-400">
+                        No image
+                    </div>
+                )}
+
+                <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => inputRef.current?.click()}
+                            disabled={uploading}
+                            className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            {uploading ? 'Uploading…' : (value ? 'Replace image' : 'Upload image')}
+                        </button>
+
+                        {value && (
+                            <button
+                                type="button"
+                                onClick={() => onChange('')}
+                                className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                            >
+                                Remove
+                            </button>
+                        )}
+                    </div>
+
+                    <input
+                        ref={inputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => upload(e.target.files?.[0])}
+                    />
+
+                    <input
+                        value={value || ''}
+                        onChange={(e) => onChange(e.target.value)}
+                        className="admin-input mt-2 w-full"
+                        placeholder="https://example.com/lifestyle.jpg"
+                    />
+
+                    {error && <p className="mt-1 text-[12px] text-red-600">{error}</p>}
+                    <p className="mt-1 text-[11px] text-gray-400">
+                        An upload saves immediately. A pasted URL saves with the product.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function MediaUploader({ product, media = [], onUpdate }) {
     const fileInputRef = useRef(null);
     const [uploading, setUploading] = useState(false);
     const [dragOver, setDragOver] = useState(false);
+    const [error, setError] = useState(null);
 
     const handleUpload = async (files) => {
         if (!files?.length) return;
@@ -27,13 +132,25 @@ function MediaUploader({ product, media = [], onUpdate }) {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 },
             });
-            const result = await response.json();
-            if (result.success) {
-                onUpdate?.(result.media);
-                router.reload({ only: ['product'] });
+            const result = await response.json().catch(() => ({}));
+
+            // A failed upload used to leave the panel looking untouched: the
+            // response was assumed to be JSON and assumed to have succeeded,
+            // so a 500 or a validation error showed nothing at all.
+            if (!response.ok || !result.success) {
+                setError(
+                    result.message
+                    || (result.errors ? Object.values(result.errors).flat().join(' ') : null)
+                    || `Upload failed (${response.status})`
+                );
+                return;
             }
+
+            setError(null);
+            onUpdate?.(result.media);
+            router.reload({ only: ['product'] });
         } catch (error) {
-            console.error('Upload failed:', error);
+            setError('Upload failed — check the connection and try again.');
         } finally {
             setUploading(false);
         }
@@ -153,6 +270,8 @@ function MediaUploader({ product, media = [], onUpdate }) {
                     </>
                 )}
             </div>
+
+            {error && <p className="mt-2 text-[12px] text-red-600">{error}</p>}
         </div>
     );
 }
@@ -750,17 +869,16 @@ export default function Edit({ product, categories, vendors, popularTags, status
 
                         {/* Lifestyle Image */}
                         <div className="admin-card">
-                            <h3 className="text-xs font-semibold text-gray-900 mb-1">Lifestyle Image URL</h3>
-                            <p className="text-[10px] text-gray-400 mb-2">Optional external image URL shown in lifestyle/room-set contexts.</p>
-                            <input
+                            <h3 className="text-xs font-semibold text-gray-900 mb-1">Lifestyle Image</h3>
+                            <p className="text-[10px] text-gray-400 mb-2">
+                                The styled room-set shot. Upload a file, or paste a URL if it is hosted elsewhere.
+                            </p>
+
+                            <LifestyleImageUploader
+                                product={product}
                                 value={data.lifestyle_image_url}
-                                onChange={(e) => setData('lifestyle_image_url', e.target.value)}
-                                className="admin-input w-full"
-                                placeholder="https://example.com/lifestyle.jpg"
+                                onChange={(url) => setData('lifestyle_image_url', url)}
                             />
-                            {data.lifestyle_image_url && (
-                                <img src={data.lifestyle_image_url} alt="Lifestyle preview" className="mt-2 h-24 w-auto rounded object-cover border border-gray-200" />
-                            )}
                         </div>
 
                         {/* Pricing */}

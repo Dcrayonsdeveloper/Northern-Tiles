@@ -24,6 +24,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -234,6 +236,44 @@ class ProductController extends Controller
         $this->mediaService->deleteMedia($media);
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Upload the lifestyle (room-set) image.
+     *
+     * Kept out of product_media on purpose: that table is the gallery, and a
+     * lifestyle shot is a single styled photo the storefront reads from
+     * products.lifestyle_image_url. Adding it to the gallery would put a
+     * room-set photo in the middle of the tile close-ups.
+     *
+     * The field stays a URL as well, so an externally hosted image still
+     * works; this just means nobody has to host one themselves.
+     */
+    public function uploadLifestyleImage(Request $request, Product $product): JsonResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:10240'],
+        ]);
+
+        $old = $product->lifestyle_image_url;
+
+        $path = $request->file('file')->storeAs(
+            "products/{$product->id}/lifestyle",
+            Str::uuid() . '.' . $request->file('file')->getClientOriginalExtension(),
+            'public',
+        );
+
+        $url = '/storage/' . $path;
+
+        $product->forceFill(['lifestyle_image_url' => $url])->save();
+
+        // Only delete a file we own. An external URL, or one shared with
+        // another product, is left alone.
+        if ($old && str_starts_with($old, '/storage/products/' . $product->id . '/lifestyle/')) {
+            Storage::disk('public')->delete(ltrim(substr($old, strlen('/storage/')), '/'));
+        }
+
+        return response()->json(['success' => true, 'url' => $url]);
     }
 
     /**

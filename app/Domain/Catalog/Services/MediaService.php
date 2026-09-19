@@ -64,10 +64,13 @@ class MediaService
             'product_id' => $product->id,
             'type' => $type,
             'path' => $path,
-            'filename' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType(),
-            'size_bytes' => $file->getSize(),
-            'sort_order' => $this->getNextSortOrder($product, $type),
+            // Real column names. These were 'mime_type', 'size_bytes' and
+            // 'sort_order', none of which exist on product_media — Eloquent
+            // dropped them as unfillable and the insert then failed on
+            // `mime` being NOT NULL, so every admin upload 500'd.
+            'mime' => $file->getMimeType(),
+            'file_size_bytes' => $file->getSize(),
+            'sort' => $this->getNextSortOrder($product, $type),
             'is_primary' => $this->shouldBePrimary($product, $type),
         ];
 
@@ -127,7 +130,7 @@ class MediaService
     {
         return ProductMedia::where('product_id', $product->id)
             ->where('type', $type)
-            ->max('sort_order') + 1;
+            ->max('sort') + 1;
     }
 
     /**
@@ -184,7 +187,7 @@ class MediaService
         if ($wasPrimary) {
             $nextMedia = ProductMedia::where('product_id', $productId)
                 ->where('type', $type)
-                ->orderBy('sort_order')
+                ->orderBy('sort')
                 ->first();
 
             if ($nextMedia) {
@@ -222,7 +225,7 @@ class MediaService
             foreach ($mediaIds as $index => $id) {
                 ProductMedia::where('id', $id)
                     ->where('product_id', $product->id)
-                    ->update(['sort_order' => $index]);
+                    ->update(['sort' => $index]);
             }
         });
     }
@@ -271,7 +274,7 @@ class MediaService
     {
         $media = ProductMedia::where('product_id', $product->id)
             ->orderBy('type')
-            ->orderBy('sort_order')
+            ->orderBy('sort')
             ->get();
 
         return [
