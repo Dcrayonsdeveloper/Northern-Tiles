@@ -77,7 +77,7 @@ const TikTokIcon = () => (
 );
 
 export default function Footer({ minimal = false }) {
-    const { footerConfig } = usePage().props;
+    const { footerConfig, categoryNav } = usePage().props;
 
     const brand = footerConfig?.brand ?? {};
     const menus = footerConfig?.menus ?? {};
@@ -95,68 +95,53 @@ export default function Footer({ minimal = false }) {
 
     const year = new Date().getFullYear();
 
-    // Product link columns with fallbacks.
+    // Resources is pages, not catalogue, so it stays hand-written.
+    const resourcesColumn = {
+        heading: 'Resources',
+        links: menus.resources?.items || [
+            { label: 'About Us', href: '/about' },
+            { label: 'Contact', href: '/contact' },
+            { label: 'FAQ', href: '/faq' },
+            { label: 'Shipping Info', href: '/shipping' },
+            { label: 'Returns', href: '/returns' },
+            { label: 'Trade Portal', href: '/builder/register' },
+        ],
+    };
+
+    // Category columns come from the live tree, same source as the header nav.
     //
-    // These point at /shop?category=<slug> — the same shape the header nav uses,
-    // and the only one that resolves. The previous /tiles/…, /flooring/…,
-    // /stone/… and /trade-supplies/… paths matched no route at all, so every
-    // link in these five columns 404'd. Slugs below are real rows in the
-    // categories table; keep them in step if a category is renamed.
-    const productColumns = [
-        {
-            heading: 'Tiles',
-            links: menus.tiles?.items || [
-                { label: 'Porcelain', href: '/shop?category=porcelain' },
-                { label: 'Subway', href: '/shop?category=subway' },
-                { label: 'External Porcelain', href: '/shop?category=external-porcelain' },
-                { label: 'Italian Porcelain', href: '/shop?category=italian-porcelain' },
-                { label: 'Decorative Tile', href: '/shop?category=decorative-tile' },
-                { label: 'Terrazzo', href: '/shop?category=terrazzo' },
-            ],
-        },
-        {
-            heading: 'Flooring',
-            links: menus.flooring?.items || [
-                { label: 'Hybrid Flooring', href: '/shop?category=hybrid' },
-                { label: 'Timber Oak Range', href: '/shop?category=hybrid-timber-oak-range' },
-                { label: 'Engineered Oak', href: '/shop?category=engineered-oak' },
-                { label: 'Engineered Timber', href: '/shop?category=engineered-timber' },
-                { label: 'Herringbone', href: '/shop?category=hybrid-herringbone' },
-                { label: 'Quads / Scotia', href: '/shop?category=quad' },
-            ],
-        },
-        {
-            heading: 'Stone',
-            links: menus.stone?.items || [
-                { label: 'Natural Stone', href: '/shop?category=stone' },
-                { label: 'Marble', href: '/shop?category=marble' },
-                { label: 'Baltic Stone', href: '/shop?category=baltic-stone' },
-                { label: 'Tundra', href: '/shop?category=tundra' },
-            ],
-        },
-        {
-            heading: 'Trade Supplies',
-            links: menus.tradeSupplies?.items || [
-                { label: 'Mapei', href: '/shop?category=mapei' },
-                { label: 'ARDEX', href: '/shop?category=ardex' },
-                { label: 'Soudal', href: '/shop?category=soudal' },
-                { label: 'Durotech', href: '/shop?category=durotech' },
-                { label: 'Levelling Systems', href: '/shop?category=levelling-system' },
-                { label: 'Tiling & Waterproofing', href: '/shop?category=tiling-waterproofing' },
-            ],
-        },
-        {
-            heading: 'Resources',
-            links: menus.resources?.items || [
-                { label: 'About Us', href: '/about' },
-                { label: 'Contact', href: '/contact' },
-                { label: 'FAQ', href: '/faq' },
-                { label: 'Shipping Info', href: '/shipping' },
-                { label: 'Returns', href: '/returns' },
-                { label: 'Trade Portal', href: '/builder/register' },
-            ],
-        },
-    ];
+    // They used to be hardcoded, and the category rebuild left every link
+    // pointing at a slug that no longer exists — porcelain, italian-porcelain,
+    // marble, baltic-stone, mapei, durotech and the rest were all dead. Reading
+    // the tree means a renamed or added category can never strand the footer
+    // again.
+    //
+    // Four roots by request, in this order. Stone is a root too but has no
+    // children, so a column of it would be a heading with nothing under it.
+    const FOOTER_ROOTS = ['Hybrid', 'Timber', 'Tiles', 'Trade'];
+
+    const categoryColumns = FOOTER_ROOTS
+        .map((name) => (categoryNav ?? []).find((root) => root.label === name))
+        .filter((root) => root && root.children?.length > 0)
+        .map((root) => ({
+            heading: root.label,
+            links: root.children.map((child) => ({ label: child.label, href: child.url })),
+        }));
+
+    // Fallback only for a catalogue with no categories at all — otherwise the
+    // footer would silently lose its product links.
+    const productColumns = categoryColumns.length > 0
+        ? [...categoryColumns, resourcesColumn]
+        : [
+            {
+                heading: 'Tiles',
+                links: menus.tiles?.items || [
+                    { label: 'Subway', href: '/shop?category=subway' },
+                    { label: 'External Porcelain', href: '/shop?category=external-porcelain' },
+                ],
+            },
+            resourcesColumn,
+        ];
 
     // Company info links. "About" lives in the Resources column above as
     // "About Us"; repeating it here was the same page twice in one footer.

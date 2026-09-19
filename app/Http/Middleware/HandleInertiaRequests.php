@@ -9,6 +9,7 @@ use App\Domain\Settings\Models\Setting;
 use App\Domain\Settings\Services\FooterConfigService;
 use App\Domain\Settings\Services\SettingService;
 use App\Domain\Settings\Services\SiteConfigService;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -69,6 +70,19 @@ class HandleInertiaRequests extends Middleware
                 'footer' => app(MenuService::class)->getTree('footer'),
                 'mobile' => app(MenuService::class)->getTree('mobile'),
             ]),
+            // The storefront nav, straight from the category tree: roots across
+            // the bar, their children in the dropdown. This replaces the
+            // hardcoded DEFAULT_NAV as the source of truth, so a category added
+            // in admin appears in the navigation without a deploy.
+            //
+            // Guarded by path because it is a query on every request that gets
+            // it, and neither the admin nor the trade portal renders this
+            // header. 39 rows, one query, no cache — categories change rarely
+            // but a stale nav after an admin edit is exactly the confusion this
+            // is meant to end.
+            'categoryNav' => fn () => $request->is('builder', 'builder/*', 'admin', 'admin/*')
+                ? []
+                : $this->categoryNav(),
             'auth' => [
                 'user' => $request->user(),
             ],
@@ -128,5 +142,39 @@ class HandleInertiaRequests extends Middleware
             'organizationJsonLd' => fn () => app(SiteConfigService::class)->getOrganizationJsonLd(),
             'socialLinks' => fn () => app(SiteConfigService::class)->getSocialLinks(),
         ];
+    }
+
+    /**
+     * Root categories with their children, in the shape StorefrontHeader draws.
+     *
+     * One query for the whole tree rather than one per root: 39 rows grouped in
+     * PHP costs less than eight round trips, and the header needs every root on
+     * every page.
+     */
+    private function categoryNav(): array
+    {
+        $all = Category::query()
+            ->where('is_active', true)
+            ->orderBy('sort')
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'parent_id']);
+
+        $byParent = $all->whereNotNull('parent_id')->groupBy('parent_id');
+
+        return $all
+            ->whereNull('parent_id')
+            ->map(fn (Category $root) => [
+                'label' => $root->name,
+                'url' => '/shop?category=' . $root->slug,
+                'children' => $byParent->get($root->id, collect())
+                    ->map(fn (Category $child) => [
+                        'label' => $child->name,
+                        'url' => '/shop?category=' . $child->slug,
+                    ])
+                    ->values()
+                    ->all(),
+            ])
+            ->values()
+            ->all();
     }
 }

@@ -15,6 +15,7 @@ class ImportSheetProductsCommand extends Command
     protected $signature = 'ntd:import-sheet
                             {--url=  : Single CSV export URL (omit to import all 4 default NTD tabs)}
                             {--category= : Force a category name for every row (overrides sheet value; used with --url)}
+                            {--allow-missing-size : Import rows whose Size cell is empty, rather than skipping them}
                             {--dry-run : Preview changes without saving to the database}';
 
     protected $description = 'Import products from NTD Google Sheets (all tabs, SKU dedup, attribute tagging, skip report).';
@@ -126,7 +127,14 @@ class ImportSheetProductsCommand extends Command
         }
 
         // ── Collect existing SKUs to avoid N+1 duplicate checks ───────────────
-        $existingSkus  = ProductVariant::pluck('sku')->flip()->toArray();
+        // Check both tables: some products carry a SKU without a matching
+        // variant row, and those would otherwise be re-imported as duplicates.
+        $existingSkus = ProductVariant::pluck('sku')
+            ->merge(Product::pluck('sku'))
+            ->filter()
+            ->unique()
+            ->flip()
+            ->toArray();
         $categoryCache = [];
 
         DB::beginTransaction();
@@ -208,8 +216,24 @@ class ImportSheetProductsCommand extends Command
             $row = str_getcsv($rawLine);
 
             // ── Detect header row ─────────────────────────────────────────────
-            $firstCell = strtolower(trim($row[0] ?? ''));
-            if ($firstCell === 'code (sku)' || $firstCell === 'code') {
+            // Any cell, not just the first. The hybrid tab opens with an
+            // unlabelled grouping column holding the thickness ("7mm"), which
+            // pushes "Code (sku)" into column B — so a first-cell-only check
+            // never found the header, every row fell through as data with no
+            // column map, and the tab silently imported nothing. That is why
+            // the entire hybrid range was missing from the catalogue.
+            $isHeader = false;
+
+            foreach ($row as $cell) {
+                $c = strtolower(trim((string) $cell));
+
+                if ($c === 'code (sku)' || $c === 'code') {
+                    $isHeader = true;
+                    break;
+                }
+            }
+
+            if ($isHeader) {
                 $colMap = $this->buildColMap($row);
                 continue;
             }
@@ -252,7 +276,12 @@ class ImportSheetProductsCommand extends Command
                 $this->addSkip('Missing/Invalid Price', $sku, $name, $lineNum + 1, $url);
                 continue;
             }
-            if ($size === '') {
+            // Size normally guards against half-filled rows, but some ranges
+            // genuinely have no single size — the ENZO mosaic sheets leave it
+            // blank for the shaped sheets (Arrow Head, Windmill). Opt in with
+            // --allow-missing-size rather than inventing a dimension, which
+            // would end up quoted to a customer as fact.
+            if ($size === '' && ! $this->option('allow-missing-size')) {
                 $this->addSkip('Missing Size', $sku, $name, $lineNum + 1, $url);
                 continue;
             }

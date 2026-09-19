@@ -303,17 +303,6 @@ const DEFAULT_NAV = [
         url: '/shop?category=stone',
     },
     {
-        label: 'Builders Range',
-        url: '/shop?category=builders-range',
-        children: [
-            { label: 'Hybrid Flooring', url: '/shop?category=builders-hybrid-flooring' },
-            { label: 'Subway Tiles', url: '/shop?category=builders-subway-tiles' },
-            { label: 'Indoor Tiles', url: '/shop?category=builders-indoor-tiles' },
-            { label: 'Outdoor Tiles', url: '/shop?category=builders-outdoor-tiles' },
-            { label: 'Engineered Flooring', url: '/shop?category=builders-engineered-flooring' },
-        ],
-    },
-    {
         label: 'Clearance/Specials',
         url: '/shop?category=clearance-specials',
         children: [
@@ -557,10 +546,22 @@ function NavDropdown({ item }) {
 
     return (
         <div className="relative" onMouseEnter={enter} onMouseLeave={leave}>
-            <Link href={item.url} className={`relative flex items-center gap-1 px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] transition-colors font-sans after:absolute after:inset-x-3 after:bottom-1.5 after:h-[2px] after:origin-left after:bg-amber-400 after:transition-transform ${open ? 'text-amber-300 after:scale-x-100' : 'text-white hover:text-amber-300 after:scale-x-0 hover:after:scale-x-100'}`}>
+            {/* A root with children opens its menu and goes nowhere itself.
+                /shop?category= matches one slug exactly, so a root page lists
+                nothing — every product lives in a child. Following the parent
+                landed on an empty "No products found", and on a touch device,
+                where there is no hover, tapping was the ONLY outcome. A button
+                makes the dropdown reachable by tap and by keyboard. */}
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                aria-expanded={open}
+                aria-haspopup="true"
+                className={`relative flex items-center gap-1 px-3 py-3 text-[13px] font-semibold uppercase tracking-[0.5px] transition-colors font-sans after:absolute after:inset-x-3 after:bottom-1.5 after:h-[2px] after:origin-left after:bg-amber-400 after:transition-transform ${open ? 'text-amber-300 after:scale-x-100' : 'text-white hover:text-amber-300 after:scale-x-0 hover:after:scale-x-100'}`}
+            >
                 {item.label}
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-            </Link>
+            </button>
 
             {open && (
                 <div className="absolute left-0 top-full z-50 pt-1">
@@ -583,7 +584,7 @@ function NavDropdown({ item }) {
 }
 
 /* ── Main header ───────────────────────────────────────────────────── */
-export default function StorefrontHeader({ user, cartCount: initialCartCount = 0, topBar, menus }) {
+export default function StorefrontHeader({ user, cartCount: initialCartCount = 0, topBar, menus, categoryNav }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [cartSidebarOpen, setCartSidebarOpen] = useState(false);
     const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -617,7 +618,19 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
         };
     }, []);
 
-    const navItems = (menus?.header_main ?? []).length > 0 ? menus.header_main : DEFAULT_NAV;
+    // Source of truth, in order of preference:
+    //   1. categoryNav — the live category tree, roots across the bar and their
+    //      children in the dropdown. A category added in admin shows up here
+    //      with no deploy.
+    //   2. a header menu built in admin, if one has been populated.
+    //   3. DEFAULT_NAV, the hardcoded fallback, for a catalogue with no
+    //      categories at all.
+    // Contact Us is appended rather than stored as a category: it is a page,
+    // not a part of the catalogue.
+    const navItems = (categoryNav ?? []).length > 0
+        ? [...categoryNav, { label: 'Contact Us', url: '/contact' }]
+        : ((menus?.header_main ?? []).length > 0 ? menus.header_main : DEFAULT_NAV);
+
     const mobileItems = (menus?.mobile ?? []).length > 0 ? menus.mobile : navItems;
 
     return (

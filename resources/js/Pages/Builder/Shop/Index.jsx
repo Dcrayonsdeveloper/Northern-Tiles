@@ -97,19 +97,12 @@ function TradeProductCard({ product }) {
 }
 
 export default function BuilderShopIndex({ products, categories, filters, currentCategory, pageTitle }) {
-    const [search, setSearch] = useState(filters?.q ?? '');
-
     const applyFilter = (patch) => {
         router.get(route('builder.shop.index'), { ...filters, ...patch }, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
         });
-    };
-
-    const submitSearch = (e) => {
-        e.preventDefault();
-        applyFilter({ q: search });
     };
 
     const items = products?.data ?? [];
@@ -127,19 +120,6 @@ export default function BuilderShopIndex({ products, categories, filters, curren
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr]">
                     {/* ── Sidebar ── */}
                     <aside className="space-y-6">
-                        <form onSubmit={submitSearch}>
-                            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                Search
-                            </label>
-                            <input
-                                type="search"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Name or SKU…"
-                                className="w-full rounded border-gray-300 text-sm focus:border-slate-900 focus:ring-slate-900"
-                            />
-                        </form>
-
                         <div>
                             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 Categories

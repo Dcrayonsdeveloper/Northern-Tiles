@@ -1,6 +1,7 @@
 import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
 import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
+import TrustpilotReviewLink from '@/Components/Storefront/TrustpilotReviewLink';
 import { Head, Link, router } from '@inertiajs/react';
 import { useRef, useState, useCallback, useEffect } from 'react';
 import ProductImage from '@/Components/Catalog/ProductImage';
@@ -383,8 +384,12 @@ function OurShowroom() {
         <section className="py-20 bg-[#f7f7f5]">
             <Container>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    {/* The real Thomastown showroom, replacing an Unsplash stock
+                        photo of an unrelated building. The shot is portrait and
+                        the block is 4:3, so it is centre-cropped onto the
+                        display wall — the part worth showing. */}
                     <div className="aspect-[4/3] bg-[#e8e6e2] rounded-lg overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&h=600&fit=crop&q=80" alt="Northern Tile Distributors showroom" className="h-full w-full object-cover" loading="lazy" />
+                        <img src="/images/showroom.jpg" alt="Tile display wall inside the Northern Tile Distributors showroom in Thomastown" className="h-full w-full object-cover object-center" loading="lazy" />
                     </div>
                     <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[3px] text-brand mb-3">Visit Us</p>
@@ -927,33 +932,6 @@ function StarIcon({ filled }) {
     );
 }
 
-// Same env var and fallback as TrustpilotCarousel, so the button and the
-// widget always point at the same review page.
-const TRUSTPILOT_REVIEW_URL =
-    import.meta.env.VITE_TRUSTPILOT_REVIEW_URL
-    ?? 'https://www.trustpilot.com/review/ntiled.com.au?utm_medium=trustbox&utm_source=TrustBoxReviewCollector';
-
-function TrustpilotReviewButton() {
-    return (
-        <div className="mt-8 flex justify-center">
-            <a
-                href={TRUSTPILOT_REVIEW_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded border border-gray-300 bg-white px-5 py-2.5 text-[14px] text-gray-700 transition hover:border-gray-400 hover:shadow-sm"
-            >
-                Review us on
-                <span className="inline-flex items-center gap-1.5 font-semibold text-[#191919]">
-                    <svg viewBox="0 0 20 20" className="h-4 w-4" fill="#00b67a" aria-hidden="true">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    Trustpilot
-                </span>
-            </a>
-        </div>
-    );
-}
-
 function CustomerReviews() {
     const businessUnitId = import.meta.env.VITE_TRUSTPILOT_BUSINESS_UNIT_ID;
     const [tpFailed, setTpFailed] = useState(false);
@@ -1009,7 +987,7 @@ function CustomerReviews() {
 
                 {/* Sits outside the branch so it shows under the Trustpilot
                     widget and the fallback cards alike. */}
-                <TrustpilotReviewButton />
+                <TrustpilotReviewLink />
             </Container>
         </section>
     );

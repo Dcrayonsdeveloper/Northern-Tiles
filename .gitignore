@@ -55,3 +55,10 @@ nul
 # intermediate artifacts produced by the extract_doc*.py scripts
 /doc*_heic.json
 /doc*_php_map.txt
+
+# SSH private keys — never commit (the EC2 .pem lives in this folder)
+*.pem
+*.ppk
+
+# local .env backups
+.env.bak.*

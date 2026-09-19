@@ -1,4 +1,5 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import PasswordInput from '@/Components/PasswordInput';
 import Modal from '@/Components/Modal';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
@@ -138,8 +139,8 @@ function AccountModal({ open, onClose, account }) {
                             <label className="mb-1 block text-sm font-medium text-gray-700">
                                 Password {isEdit && <span className="font-normal text-gray-400">(leave blank to keep)</span>}
                             </label>
-                            <input
-                                type="password"
+                            <PasswordInput
+                                unstyled
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
                                 className="w-full rounded border-gray-300 text-sm focus:border-brand focus:ring-brand"
@@ -148,8 +149,8 @@ function AccountModal({ open, onClose, account }) {
                         </div>
                         <div>
                             <label className="mb-1 block text-sm font-medium text-gray-700">Confirm password</label>
-                            <input
-                                type="password"
+                            <PasswordInput
+                                unstyled
                                 value={data.password_confirmation}
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
                                 className="w-full rounded border-gray-300 text-sm focus:border-brand focus:ring-brand"

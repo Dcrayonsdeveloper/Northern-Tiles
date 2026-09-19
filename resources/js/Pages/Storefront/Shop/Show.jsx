@@ -5,6 +5,7 @@ import { useRef, useState, useCallback } from 'react';
 import { StarRating } from '@/Components/Catalog/StarRating';
 import ProductImage from '@/Components/Catalog/ProductImage';
 import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
+import TrustpilotReviewLink from '@/Components/Storefront/TrustpilotReviewLink';
 import { colourHex } from '@/Support/colours';
 
 
@@ -39,6 +40,8 @@ const SPEC_FIELDS = [
     { key: 'Pricing',            icon: SI.tag      },
     { key: 'Country of Origin',  icon: SI.globe    },
     { key: 'Quantity Per Box',   icon: SI.box      },
+    { key: 'Slip Rating',        icon: SI.sliders  },
+    { key: 'Number of Faces',    icon: SI.resize   },
 ];
 
 // Standard flooring keys in display order
@@ -47,6 +50,7 @@ const SPEC_JSON_KEYS = [
     'size_nominal', 'thickness', 'core', 'underlay',
     'variation', 'application_space', 'pricing',
     'country_of_origin', 'quantity_per_box',
+    'slip_rating', 'number_of_faces',
 ];
 
 // Icon lookup for non-standard keys
@@ -1189,6 +1193,10 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                             templateId="53aa8912dec7e10d38f59f36"
                             height="140px"
                         />
+
+                        {/* Outside the widget's iframe, so it works whether the
+                            carousel renders reviews or collapses to a logo. */}
+                        <TrustpilotReviewLink className="mt-6" />
                     </Container>
                 </section>
             )}

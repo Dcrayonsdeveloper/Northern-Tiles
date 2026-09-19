@@ -1,10 +1,11 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 
-export default function Edit({ category }) {
+export default function Edit({ category, parents = [], child_count = 0 }) {
     const { data, setData, put, processing, errors } = useForm({
         name: category?.name ?? '',
         slug: category?.slug ?? '',
+        parent_id: category?.parent_id ? String(category.parent_id) : '',
     });
 
     const submit = (e) => {
@@ -53,6 +54,29 @@ export default function Edit({ category }) {
                     </div>
 
                     <div>
+                        <label className="block text-xs font-medium text-gray-700">Parent category</label>
+                        <select
+                            value={data.parent_id}
+                            onChange={(e) => setData('parent_id', e.target.value)}
+                            disabled={child_count > 0}
+                            className="mt-1 admin-select w-full disabled:bg-gray-100 disabled:text-gray-500"
+                        >
+                            <option value="">None — this is a root category</option>
+                            {parents.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.parent_id ? <div className="mt-1 text-[12px] text-red-600">{errors.parent_id}</div> : null}
+                        <div className="mt-1 text-[12px] text-gray-500">
+                            {child_count > 0
+                                ? `This is a root with ${child_count} sub-categor${child_count === 1 ? 'y' : 'ies'}, so it cannot be moved under another. Move or delete its children first.`
+                                : 'Roots appear in the navigation bar; anything under one appears in its dropdown.'}
+                        </div>
+                    </div>
+
+                    <div>
                         <label className="block text-xs font-medium text-gray-700">Slug</label>
                         <input
                             value={data.slug}
@@ -60,6 +84,9 @@ export default function Edit({ category }) {
                             className="mt-1 admin-input"
                         />
                         {errors.slug ? <div className="mt-1 text-[12px] text-red-600">{errors.slug}</div> : null}
+                        <div className="mt-1 text-[12px] text-gray-500">
+                            Changing this changes the category&rsquo;s /shop link.
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-3 pt-2">

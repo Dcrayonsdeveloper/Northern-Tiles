@@ -41,8 +41,18 @@ export default function Index({ categories }) {
                             {categories?.length ? (
                                 categories.map((c) => (
                                     <tr key={c.id} className="hover:bg-gray-50/50">
-                                        <td className="px-4 py-2 text-xs font-medium text-gray-900">
-                                            {c.name}
+                                        <td className="px-4 py-2 text-xs text-gray-900">
+                                            {/* Roots sit flush and bold, their
+                                                children indented beneath, so the
+                                                list reads as the tree. */}
+                                            {c.is_root ? (
+                                                <span className="font-semibold">{c.name}</span>
+                                            ) : (
+                                                <span className="pl-6 text-gray-700">↳ {c.name}</span>
+                                            )}
+                                            <span className="ml-2 text-[11px] text-gray-400">
+                                                {c.product_count} product{c.product_count === 1 ? '' : 's'}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-2 text-xs text-gray-600">
                                             {c.slug}

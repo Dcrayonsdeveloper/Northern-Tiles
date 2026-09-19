@@ -149,8 +149,12 @@ export default function BuilderProductShow({ product, relatedProducts = [], fami
         post(() => setBuying(false), () => router.visit('/builder/checkout'));
     };
 
+    // Blank values are dropped, not rendered as empty rows: the admin form
+    // submits every spec key whether or not it was filled in, so a product
+    // typically carries a dozen keys and only a few values. When nothing
+    // survives, specs is empty and the section below does not render at all.
     const specs = product.specifications && typeof product.specifications === 'object'
-        ? Object.entries(product.specifications)
+        ? Object.entries(product.specifications).filter(([, value]) => String(value ?? '').trim() !== '')
         : [];
 
     return (
