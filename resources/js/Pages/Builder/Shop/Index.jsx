@@ -138,17 +138,29 @@ export default function BuilderShopIndex({ products, categories, filters, curren
                                 </li>
                                 {(categories ?? []).map((cat) => (
                                     <li key={cat.id}>
-                                        <button
-                                            type="button"
-                                            onClick={() => applyFilter({ category: cat.slug })}
-                                            className={`block w-full rounded px-2 py-1.5 text-left text-sm transition ${
-                                                filters?.category === cat.slug
-                                                    ? 'bg-slate-900 font-semibold text-white'
-                                                    : 'text-gray-700 hover:bg-gray-100'
-                                            }`}
-                                        >
-                                            {cat.name}
-                                        </button>
+                                        {/* A root with children is a heading, not a filter. Every
+                                            product hangs off a sub-category, so filtering on the
+                                            root slug matched nothing and the grid came back
+                                            "0 products available to your account". A root with no
+                                            children holds its products directly, so it stays
+                                            clickable. */}
+                                        {(cat.children ?? []).length > 0 ? (
+                                            <div className="px-2 py-1.5 text-sm font-semibold text-gray-800">
+                                                {cat.name}
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => applyFilter({ category: cat.slug })}
+                                                className={`block w-full rounded px-2 py-1.5 text-left text-sm transition ${
+                                                    filters?.category === cat.slug
+                                                        ? 'bg-slate-900 font-semibold text-white'
+                                                        : 'text-gray-700 hover:bg-gray-100'
+                                                }`}
+                                            >
+                                                {cat.name}
+                                            </button>
+                                        )}
                                         {(cat.children ?? []).length > 0 && (
                                             <ul className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-200 pl-2">
                                                 {cat.children.map((child) => (
@@ -158,8 +170,8 @@ export default function BuilderShopIndex({ products, categories, filters, curren
                                                             onClick={() => applyFilter({ category: child.slug })}
                                                             className={`block w-full rounded px-2 py-1 text-left text-[13px] transition ${
                                                                 filters?.category === child.slug
-                                                                    ? 'font-semibold text-slate-900'
-                                                                    : 'text-gray-600 hover:text-slate-900'
+                                                                    ? 'bg-slate-900 font-semibold text-white'
+                                                                    : 'text-gray-600 hover:bg-gray-100 hover:text-slate-900'
                                                             }`}
                                                         >
                                                             {child.name}

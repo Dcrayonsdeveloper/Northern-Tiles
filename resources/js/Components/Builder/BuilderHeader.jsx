@@ -5,6 +5,14 @@ import { Link, router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /* ── Icons ─────────────────────────────────────────────────────────── */
+function ChevronDownIcon({ className }) {
+    return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+    );
+}
+
 function CartIcon({ className }) {
     return (
         <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
@@ -122,6 +130,77 @@ function AccountMenu({ user }) {
                 </div>
             )}
         </div>
+    );
+}
+
+/**
+ * One root in the trade nav.
+ *
+ * A root with children opens a dropdown and goes nowhere itself: the shop
+ * filters on one slug exactly, and since the category rebuild every product
+ * hangs off a sub-category, so following a root landed on "0 products
+ * available to your account". Hover opens it on a mouse; the root is a
+ * <button> so tap and keyboard reach the same menu, which is the only way in
+ * on a touch device.
+ *
+ * A root with no children holds its products directly and stays a plain link.
+ */
+function NavCategory({ category }) {
+    const [open, setOpen] = useState(false);
+    const timer = useRef(null);
+
+    const children = category.children ?? [];
+
+    const enter = () => { clearTimeout(timer.current); setOpen(true); };
+    const leave = () => { timer.current = setTimeout(() => setOpen(false), 150); };
+
+    useEffect(() => () => clearTimeout(timer.current), []);
+
+    if (children.length === 0) {
+        return (
+            <li>
+                <Link
+                    href={`/builder/shop?category=${category.slug}`}
+                    className="block whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 text-[13px] font-semibold uppercase tracking-wide text-navy/70 transition-colors hover:border-gold/40 hover:text-navy"
+                >
+                    {category.name}
+                </Link>
+            </li>
+        );
+    }
+
+    return (
+        <li className="relative" onMouseEnter={enter} onMouseLeave={leave}>
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                aria-expanded={open}
+                aria-haspopup="true"
+                className={`flex items-center gap-1 whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] font-semibold uppercase tracking-wide transition-colors ${
+                    open ? 'border-gold text-navy' : 'border-transparent text-navy/70 hover:border-gold/40 hover:text-navy'
+                }`}
+            >
+                {category.name}
+                <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+
+            {open && (
+                <div className="absolute left-0 top-full z-50 pt-1">
+                    <div className="min-w-[240px] rounded-md border border-gray-100 bg-white py-2 shadow-lg">
+                        {children.map((child) => (
+                            <Link
+                                key={child.id}
+                                href={`/builder/shop?category=${child.slug}`}
+                                onClick={() => setOpen(false)}
+                                className="block px-5 py-2 text-[13px] text-navy/80 transition-colors hover:bg-gray-50 hover:text-navy"
+                            >
+                                {child.name}
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </li>
     );
 }
 
@@ -264,14 +343,7 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                                 </Link>
                             </li>
                             {categories.map((cat) => (
-                                <li key={cat.id}>
-                                    <Link
-                                        href={`/builder/shop?category=${cat.slug}`}
-                                        className="block whitespace-nowrap border-b-2 border-transparent px-3 py-2.5 text-[13px] font-semibold uppercase tracking-wide text-navy/70 transition-colors hover:border-gold/40 hover:text-navy"
-                                    >
-                                        {cat.name}
-                                    </Link>
-                                </li>
+                                <NavCategory key={cat.id} category={cat} />
                             ))}
                         </ul>
                     </nav>
@@ -305,13 +377,37 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                                 </li>
                                 {categories.map((cat) => (
                                     <li key={cat.id}>
-                                        <Link
-                                            href={`/builder/shop?category=${cat.slug}`}
-                                            onClick={() => setMobileOpen(false)}
-                                            className="block rounded px-2 py-2.5 text-sm text-navy/80 hover:bg-gray-50"
-                                        >
-                                            {cat.name}
-                                        </Link>
+                                        {/* No hover on a phone, so the drawer shows the
+                                            sub-categories outright rather than hiding them
+                                            behind a root that filters to nothing. */}
+                                        {(cat.children ?? []).length > 0 ? (
+                                            <>
+                                                <div className="px-2 pb-1 pt-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                    {cat.name}
+                                                </div>
+                                                <ul>
+                                                    {cat.children.map((child) => (
+                                                        <li key={child.id}>
+                                                            <Link
+                                                                href={`/builder/shop?category=${child.slug}`}
+                                                                onClick={() => setMobileOpen(false)}
+                                                                className="block rounded px-2 py-2.5 text-sm text-navy/80 hover:bg-gray-50"
+                                                            >
+                                                                {child.name}
+                                                            </Link>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </>
+                                        ) : (
+                                            <Link
+                                                href={`/builder/shop?category=${cat.slug}`}
+                                                onClick={() => setMobileOpen(false)}
+                                                className="block rounded px-2 py-2.5 text-sm text-navy/80 hover:bg-gray-50"
+                                            >
+                                                {cat.name}
+                                            </Link>
+                                        )}
                                     </li>
                                 ))}
                             </ul>
