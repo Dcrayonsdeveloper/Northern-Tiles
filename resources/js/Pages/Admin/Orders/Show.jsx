@@ -74,6 +74,18 @@ export default function Show({ order }) {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Delivery instructions the customer typed at checkout.
+                        They were saved on the order and shown nowhere, so
+                        whoever packs the order never saw them. */}
+                    {order.notes ? (
+                        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                            <div className="text-[12px] font-semibold uppercase tracking-wide text-amber-800">
+                                Order notes from customer
+                            </div>
+                            <p className="mt-1 whitespace-pre-line text-xs text-amber-900">{order.notes}</p>
+                        </div>
+                    ) : null}
                 </div>
 
                 <div className="admin-card">

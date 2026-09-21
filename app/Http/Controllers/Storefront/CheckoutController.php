@@ -248,6 +248,9 @@ class CheckoutController extends Controller
                 'total' => $orderModel->total,
                 'shipping_address' => $orderModel->shipping_address,
                 'payment_method' => $orderModel->payment_method,
+                // Captured at checkout and stored all along; it just was not
+                // passed to the view, so the customer never saw it echoed back.
+                'notes' => $orderModel->notes,
                 'created_at' => $orderModel->created_at->format('M d, Y h:i A'),
                 'items' => $orderModel->items->map(function ($item) {
                     return [
