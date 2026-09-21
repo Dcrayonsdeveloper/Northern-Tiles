@@ -1,7 +1,7 @@
 import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Fragment, useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { StarRating } from '@/Components/Catalog/StarRating';
 import ProductImage from '@/Components/Catalog/ProductImage';
 import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
@@ -577,14 +577,21 @@ function CompareWithSimilar({ currentProduct, products }) {
         <section className="py-10 border-t border-gray-200">
             <Container>
                 <h2 className="text-lg font-bold text-gray-900 mb-6 font-heading">Compare with Similar Items</h2>
+                {/* Label in its own left column, one column per product, one row
+                    per attribute. The labels used to sit in a full-width band
+                    above their own values, so nothing lined up with the thing it
+                    described and the eye had to jump a row to read the table. */}
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[600px] table-fixed">
+                    <table className="w-full min-w-[760px] table-fixed border-collapse">
                         <colgroup>
-                            {compareItems.map(p => <col key={p.id} style={{ width: `${100 / compareItems.length}%` }} />)}
+                            <col className="w-[150px]" />
+                            {compareItems.map((p) => (
+                                <col key={p.id} style={{ width: `${100 / compareItems.length}%` }} />
+                            ))}
                         </colgroup>
-                        {/* Images row */}
                         <thead>
                             <tr>
+                                <th className="p-3" />
                                 {compareItems.map((p, i) => (
                                     <th key={p.id} className="p-3 align-top">
                                         <div className="flex flex-col items-center">
@@ -600,43 +607,39 @@ function CompareWithSimilar({ currentProduct, products }) {
                                 ))}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody>
                             {/* Price */}
-                            <tr className="bg-gray-50/50">
-                                <td colSpan={compareItems.length} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">Price</td>
-                            </tr>
-                            <tr>
-                                {compareItems.map(p => (
-                                    <td key={p.id} className="p-3 text-center">
+                            <tr className="border-t border-gray-100 bg-gray-50/50">
+                                <th scope="row" className="px-3 py-2.5 text-left align-middle text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                                    Price
+                                </th>
+                                {compareItems.map((p) => (
+                                    <td key={p.id} className="px-3 py-2.5 text-center align-middle">
                                         <span className="text-[15px] font-bold text-gray-900">${parseFloat(p.price || 0).toFixed(2)}</span>
                                         {p.compare_at_price > p.price && <span className="ml-1 text-[12px] text-gray-400 line-through">${parseFloat(p.compare_at_price || 0).toFixed(2)}</span>}
                                     </td>
                                 ))}
                             </tr>
-                            {/* One band per attribute the products differ on */}
-                            {specRows.map((row) => (
-                                <Fragment key={row.label}>
-                                    <tr className="bg-gray-50/50">
-                                        <td colSpan={compareItems.length} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">
-                                            {row.label}
+                            {/* One row per attribute the products differ on */}
+                            {specRows.map((row, i) => (
+                                <tr key={row.label} className={`border-t border-gray-100 ${i % 2 ? 'bg-gray-50/50' : ''}`}>
+                                    <th scope="row" className="px-3 py-2.5 text-left align-middle text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                                        {row.label}
+                                    </th>
+                                    {compareItems.map((p) => (
+                                        <td key={p.id} className="px-3 py-2.5 text-center align-middle text-[13px] text-gray-700">
+                                            {row.value(p) || '—'}
                                         </td>
-                                    </tr>
-                                    <tr>
-                                        {compareItems.map((p) => (
-                                            <td key={p.id} className="p-3 text-center text-[13px] text-gray-700">
-                                                {row.value(p) || '—'}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                </Fragment>
+                                    ))}
+                                </tr>
                             ))}
                             {/* Availability */}
-                            <tr className="bg-gray-50/50">
-                                <td colSpan={compareItems.length} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">Availability</td>
-                            </tr>
-                            <tr>
-                                {compareItems.map(p => (
-                                    <td key={p.id} className="p-3 text-center">
+                            <tr className={`border-t border-gray-100 ${specRows.length % 2 ? 'bg-gray-50/50' : ''}`}>
+                                <th scope="row" className="px-3 py-2.5 text-left align-middle text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                                    Availability
+                                </th>
+                                {compareItems.map((p) => (
+                                    <td key={p.id} className="px-3 py-2.5 text-center align-middle">
                                         {/* Was hardcoded "In Stock" for every column, so a
                                             sold-out tile still read as available. */}
                                         <span className={`text-[13px] font-medium ${inStock(p) ? 'text-green-600' : 'text-gray-400'}`}>
@@ -646,9 +649,10 @@ function CompareWithSimilar({ currentProduct, products }) {
                                 ))}
                             </tr>
                             {/* Add to Cart */}
-                            <tr>
+                            <tr className="border-t border-gray-100">
+                                <th scope="row" className="px-3 py-3" />
                                 {compareItems.map((p, i) => (
-                                    <td key={p.id} className="p-3 text-center">
+                                    <td key={p.id} className="px-3 py-3 text-center align-middle">
                                         <button type="button" onClick={() => addToCart(p.id)} className={`rounded-none px-4 py-2 text-[13px] font-semibold transition ${i === 0 ? 'bg-brand text-white hover:bg-brand-dark' : 'border border-brand text-brand hover:bg-brand hover:text-white'}`}>
                                             Add to Cart
                                         </button>
