@@ -483,38 +483,45 @@ function FrequentlyBoughtTogether({ products, currentProduct }) {
                 <h2 className="text-lg font-bold text-gray-900 mb-6 font-heading">Frequently Bought Together</h2>
                 <div className="rounded-xl border border-gray-200 bg-white p-6">
                     <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8">
-                        {/* Product cards with + signs */}
-                        <div className="flex flex-wrap items-center gap-2">
+                        {/* Two columns on a phone, a single "a + b + c" row once
+                            there is width for it. The + used to be glued to the
+                            left of every card, so a wrapped row began with a
+                            dangling +; it is a separator between cards on one
+                            line, so it is hidden in the stacked layout. Cards
+                            top-align and the name block is a fixed two lines, so
+                            a long name can no longer push one card's price out of
+                            line with its neighbour's. */}
+                        <div className="grid w-full grid-cols-2 gap-x-3 gap-y-6 sm:flex sm:w-auto sm:flex-wrap sm:items-start sm:gap-2">
                             {/* This item */}
-                            <div className="text-center w-[130px]">
+                            <div className="w-full text-center sm:w-[130px]">
                                 <div className="aspect-square overflow-hidden rounded-lg border-2 border-brand bg-gray-50">
                                     <ProductImage src={currentProduct.image_url} alt={currentProduct.name} className="h-full w-full object-cover" />
                                 </div>
-                                <p className="mt-2 text-[11px] text-gray-500">This item</p>
-                                <p className="text-[12px] font-medium text-gray-900 line-clamp-2">{currentProduct.name}</p>
+                                <p className="mt-2 text-[11px] leading-5 text-gray-500">This item</p>
+                                <p className="line-clamp-2 min-h-[32px] text-[12px] font-medium text-gray-900">{currentProduct.name}</p>
                                 <p className="text-[13px] font-bold text-gray-900 mt-1">${parseFloat(currentProduct.price || 0).toFixed(2)} <span className="text-[10px] text-gray-400 font-normal">/ sqm</span></p>
                             </div>
 
                             {items.map((p) => (
-                                <div key={p.id} className="flex items-center gap-2">
-                                    <span className="text-3xl font-extralight text-gray-300">+</span>
-                                    <div className="text-center w-[130px]">
+                                <div key={p.id} className="flex w-full items-start gap-2 sm:w-auto">
+                                    <span className="hidden h-[130px] items-center text-3xl font-extralight text-gray-300 sm:flex">+</span>
+                                    <div className="w-full text-center sm:w-[130px]">
                                         <button type="button" onClick={() => toggle(p.id)} className={`aspect-square w-full overflow-hidden rounded-lg border-2 bg-gray-50 transition ${selected.includes(p.id) ? 'border-brand' : 'border-gray-200 opacity-40'}`}>
                                             <ProductImage src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
                                         </button>
-                                        <label className="mt-2 flex items-center justify-center gap-1 cursor-pointer">
+                                        <label className="mt-2 flex cursor-pointer items-center justify-center gap-1 leading-5">
                                             <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggle(p.id)} className="h-3.5 w-3.5 rounded border-gray-300 text-brand focus:ring-brand" />
                                             <span className="text-[11px] text-gray-500">Add this</span>
                                         </label>
-                                        <p className="text-[12px] font-medium text-gray-900 line-clamp-2">{p.name}</p>
-                                        <p className="text-[13px] font-bold text-gray-900 mt-0.5">${parseFloat(p.price || 0).toFixed(2)} <span className="text-[10px] text-gray-400 font-normal">/ sqm</span></p>
+                                        <p className="line-clamp-2 min-h-[32px] text-[12px] font-medium text-gray-900">{p.name}</p>
+                                        <p className="text-[13px] font-bold text-gray-900 mt-1">${parseFloat(p.price || 0).toFixed(2)} <span className="text-[10px] text-gray-400 font-normal">/ sqm</span></p>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
                         {/* Total + Add all */}
-                        <div className="flex-shrink-0 lg:ml-auto text-center lg:text-left">
+                        <div className="w-full flex-shrink-0 border-t border-gray-100 pt-5 text-center lg:ml-auto lg:w-auto lg:border-0 lg:pt-0 lg:text-left">
                             <p className="text-sm text-gray-500">Total price</p>
                             <p className="text-2xl font-bold text-gray-900 mt-1">${total.toFixed(2)}</p>
                             <button type="button" onClick={addAll} disabled={adding || selected.length === 0} className="mt-3 rounded-lg bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark transition disabled:opacity-50 whitespace-nowrap">
