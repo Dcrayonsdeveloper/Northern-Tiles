@@ -1,7 +1,7 @@
 import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useRef, useState, useCallback } from 'react';
+import { Fragment, useRef, useState, useCallback } from 'react';
 import { StarRating } from '@/Components/Catalog/StarRating';
 import ProductImage from '@/Components/Catalog/ProductImage';
 import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
@@ -536,6 +536,36 @@ function CompareWithSimilar({ currentProduct, products }) {
 
     const compareItems = [currentProduct, ...products.slice(0, 3)];
 
+    // A comparison row earns its place only if the products actually differ on
+    // it. Brand used to sit here printing "Northern Tile" four times — every
+    // product in the catalogue has an empty brand — which told a shopper
+    // nothing. Size, finish and colour come from the same specifications the
+    // product page shows above, and are what a tile is actually chosen on.
+    const spec = (p, ...keys) => {
+        for (const k of keys) {
+            const v = p?.specifications?.[k];
+            if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+        }
+        return null;
+    };
+
+    const inStock = (p) => {
+        if (parseFloat(p.price || 0) <= 0) return false;
+        return (p.inventory_quantity ?? 0) > 0 || p.inventory_policy === 'continue';
+    };
+
+    const specRows = [
+        { label: 'Category', value: (p) => p.category?.name || p.product_type || null },
+        // The importer writes size under size_nominal; 'size' proper is rare.
+        { label: 'Size', value: (p) => spec(p, 'size_nominal', 'size', 'size(_nominal)', 'size_actual') },
+        { label: 'Finish', value: (p) => spec(p, 'finish') },
+        { label: 'Colour', value: (p) => spec(p, 'colour', 'color') },
+        { label: 'Material', value: (p) => spec(p, 'material') },
+        { label: 'Thickness', value: (p) => spec(p, 'thickness') },
+    // Drop any row that is blank everywhere, so a range with no finish
+    // recorded doesn't render an empty band across the table.
+    ].filter((row) => compareItems.some((p) => row.value(p)));
+
     const addToCart = (productId) => {
         router.post(route('cart.store'), { product_id: productId, quantity: 1 }, {
             preserveScroll: true,
@@ -573,9 +603,7 @@ function CompareWithSimilar({ currentProduct, products }) {
                         <tbody className="divide-y divide-gray-100">
                             {/* Price */}
                             <tr className="bg-gray-50/50">
-                                {compareItems.map((p, i) => (
-                                    <td key={p.id} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">{i === 0 ? 'Price' : ''}</td>
-                                ))}
+                                <td colSpan={compareItems.length} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">Price</td>
                             </tr>
                             <tr>
                                 {compareItems.map(p => (
@@ -585,38 +613,35 @@ function CompareWithSimilar({ currentProduct, products }) {
                                     </td>
                                 ))}
                             </tr>
-                            {/* Brand */}
-                            <tr className="bg-gray-50/50">
-                                {compareItems.map((p, i) => (
-                                    <td key={p.id} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">{i === 0 ? 'Brand' : ''}</td>
-                                ))}
-                            </tr>
-                            <tr>
-                                {compareItems.map(p => (
-                                    <td key={p.id} className="p-3 text-center text-[13px] text-gray-700">{p.brand || 'Northern Tile'}</td>
-                                ))}
-                            </tr>
-                            {/* Category */}
-                            <tr className="bg-gray-50/50">
-                                {compareItems.map((p, i) => (
-                                    <td key={p.id} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">{i === 0 ? 'Category' : ''}</td>
-                                ))}
-                            </tr>
-                            <tr>
-                                {compareItems.map(p => (
-                                    <td key={p.id} className="p-3 text-center text-[13px] text-gray-700">{p.category?.name || p.product_type || '—'}</td>
-                                ))}
-                            </tr>
+                            {/* One band per attribute the products differ on */}
+                            {specRows.map((row) => (
+                                <Fragment key={row.label}>
+                                    <tr className="bg-gray-50/50">
+                                        <td colSpan={compareItems.length} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">
+                                            {row.label}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        {compareItems.map((p) => (
+                                            <td key={p.id} className="p-3 text-center text-[13px] text-gray-700">
+                                                {row.value(p) || '—'}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                </Fragment>
+                            ))}
                             {/* Availability */}
                             <tr className="bg-gray-50/50">
-                                {compareItems.map((p, i) => (
-                                    <td key={p.id} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">{i === 0 ? 'Availability' : ''}</td>
-                                ))}
+                                <td colSpan={compareItems.length} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">Availability</td>
                             </tr>
                             <tr>
                                 {compareItems.map(p => (
                                     <td key={p.id} className="p-3 text-center">
-                                        <span className="text-[13px] font-medium text-green-600">In Stock</span>
+                                        {/* Was hardcoded "In Stock" for every column, so a
+                                            sold-out tile still read as available. */}
+                                        <span className={`text-[13px] font-medium ${inStock(p) ? 'text-green-600' : 'text-gray-400'}`}>
+                                            {inStock(p) ? 'In Stock' : 'Out of Stock'}
+                                        </span>
                                     </td>
                                 ))}
                             </tr>

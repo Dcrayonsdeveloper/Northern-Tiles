@@ -91,12 +91,9 @@ class ShopController extends Controller
                     }
                 });
             })
-            ->when($categorySlug, function ($query) use ($categorySlug) {
-                $query->where(function ($q) use ($categorySlug) {
-                    $q->whereHas('category', fn ($inner) => $inner->where('slug', $categorySlug))
-                      ->orWhereHas('categories', fn ($inner) => $inner->where('slug', $categorySlug));
-                });
-            })
+            // inCategoryTree, not an exact slug match: a root category page
+            // lists everything under its children instead of nothing.
+            ->inCategoryTree($categorySlug ?: null)
             ->when($filters['on_sale'], function ($query) {
                 $query->whereColumn('compare_at_price', '>', 'price');
             })
@@ -204,9 +201,17 @@ class ShopController extends Controller
             ->pluck('id')
             ->shuffle()
             ->take(8);
+        // category / specifications / inventory are here for the comparison
+        // table: without them it printed "—" for every sibling's category and
+        // had nothing to compare but price.
         $relatedProducts = $relatedIds->isNotEmpty()
             ? Product::whereIn('id', $relatedIds)
-                ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description'])
+                ->with('category:id,name,slug')
+                ->get([
+                    'id', 'category_id', 'name', 'slug', 'price', 'compare_at_price',
+                    'image_url', 'short_description', 'specifications',
+                    'inventory_quantity', 'inventory_policy',
+                ])
                 ->shuffle()->values()
             : collect();
 
