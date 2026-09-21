@@ -107,8 +107,12 @@ export default function Index({
     };
 
     const selectedShipping = shippingMethods.find(m => m.id === data.shipping_method);
-    const shippingCost = selectedShipping?.price || 0;
-    const grandTotal = (totals.subtotal || 0) + shippingCost + (totals.tax || 0) - (totals.discount || 0);
+    const shippingCost = parseFloat(selectedShipping?.price ?? 0);
+    // Sample shipping is charged on top of the chosen method and was missing
+    // here, so a cart with samples showed a total lower than it was billed.
+    const sampleShipping = parseFloat(totals.sample_shipping || 0);
+    const grandTotal = (parseFloat(totals.subtotal || 0) - parseFloat(totals.discount || 0))
+        + shippingCost + sampleShipping + parseFloat(totals.tax || 0);
 
     const isEmpty = items.length === 0;
 
@@ -507,10 +511,12 @@ export default function Index({
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-600">{d('checkout.summary.shipping', 'Shipping')}</span>
                                                 <span className="font-medium text-gray-900">
+                                                    {/* The rate for the method actually selected. This read
+                                                        the server's page-load total instead, so choosing
+                                                        Express moved the Total but left this line on $50. */}
                                                     {(() => {
-                                                        const nonSampleShipping = Math.max(0, parseFloat(totals.shipping || 0) - parseFloat(totals.sample_shipping || 0));
-                                                        if (nonSampleShipping > 0) {
-                                                            return `$${nonSampleShipping.toFixed(2)}`;
+                                                        if (shippingCost > 0) {
+                                                            return `$${shippingCost.toFixed(2)}`;
                                                         }
                                                         if (parseFloat(totals.subtotal || 0) > 0) {
                                                             return <span className="text-green-600">{d('checkout.free', 'Free')}</span>;
