@@ -943,6 +943,11 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
 
     const sqmPerBox = parseFloat(product?.sqm_per_box) || 0;
     const hasBoxes = sqmPerBox > 0;
+    // Per-product buy-box copy. Blank means "show nothing there", which is a
+    // deliberate setting, so these are read straight through without defaults.
+    const unitLabel = (product?.unit_label ?? '').trim();
+    const quantityLabel = (product?.quantity_label ?? '').trim();
+    const showWastage = product?.show_wastage !== false;
     const requiredArea = wastage ? area * 1.1 : area;
     const boxCount = hasBoxes ? Math.max(1, Math.ceil(requiredArea / sqmPerBox)) : 0;
     // Boxed products round up to the nearest full box; sold-by-m² products
@@ -1144,28 +1149,37 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 </div>
                             </div>
 
-                            {/* Area Calculator */}
+                            {/* Quantity. The label and the unit are set per
+                                product in admin: a bag of grout is not bought
+                                by "Area" in "M²", and both were hardcoded. */}
                             <div className="mt-5">
                                 <div className="flex flex-wrap items-center gap-4">
                                     <div className="flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5">
-                                        <span className="text-[13px] font-semibold text-gray-700">Area</span>
+                                        {quantityLabel ? (
+                                            <span className="text-[13px] font-semibold text-gray-700">{quantityLabel}</span>
+                                        ) : null}
                                         <button type="button" onClick={() => adjustArea(-1)} disabled={area <= 1 || !inStock} className="text-gray-500 hover:text-brand disabled:opacity-30 transition"><Minus c="h-4 w-4" /></button>
                                         <span className="min-w-[2rem] text-center text-[15px] font-bold text-gray-900">{area}</span>
-                                        <span className="text-[13px] text-gray-500">M<sup>2</sup></span>
+                                        {unitLabel ? (
+                                            <span className="text-[13px] text-gray-500">{unitLabel}</span>
+                                        ) : null}
                                         <button type="button" onClick={() => adjustArea(1)} disabled={!inStock} className="text-gray-500 hover:text-brand disabled:opacity-30 transition"><Plus c="h-4 w-4" /></button>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[12px] font-semibold text-brand">Please add 10% wastage</span>
-                                        <button type="button" onClick={() => { if (wastage) { setShowWastageModal(true); } else { setWastage(true); } }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${wastage ? 'bg-brand' : 'bg-gray-300'}`}>
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${wastage ? 'translate-x-6' : 'translate-x-1'}`} />
-                                        </button>
-                                    </div>
+                                    {showWastage ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[12px] font-semibold text-brand">Please add 10% wastage</span>
+                                            <button type="button" onClick={() => { if (wastage) { setShowWastageModal(true); } else { setWastage(true); } }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${wastage ? 'bg-brand' : 'bg-gray-300'}`}>
+                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${wastage ? 'translate-x-6' : 'translate-x-1'}`} />
+                                            </button>
+                                        </div>
+                                    ) : null}
                                 </div>
-                                {hasBoxes && <p className="mt-1.5 text-[11px] text-gray-400">We round up to the full box</p>}
+                                {showWastage && hasBoxes && <p className="mt-1.5 text-[11px] text-gray-400">We round up to the full box</p>}
                             </div>
 
-                            {/* Subtotal line */}
-                            {hasBoxes ? (
+                            {/* Subtotal line — part of the same box calculator,
+                                so it is hidden by the same switch. */}
+                            {!showWastage ? null : hasBoxes ? (
                                 <div className="mt-3 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-[13px] text-gray-700">
                                     <span className="font-semibold text-gray-900">{boxCount} {boxCount === 1 ? 'Box' : 'Boxes'}</span>
                                     <span className="text-gray-500"> = {billedSqm.toFixed(2)} m²</span>

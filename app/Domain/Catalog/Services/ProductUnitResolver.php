@@ -126,7 +126,14 @@ class ProductUnitResolver
     public function decorate(Product $product): Product
     {
         $product->setAttribute('is_sold_per_sqm', $this->isSoldPerSquareMetre($product));
-        $product->setAttribute('unit_label', $this->unitLabel($product));
+
+        // unit_label is a column the admin sets per product, and a blank one
+        // means "show no unit" — so it is only derived when the column was
+        // not loaded at all, as happens on the queries that select an
+        // explicit column list.
+        if (! array_key_exists('unit_label', $product->getAttributes())) {
+            $product->setAttribute('unit_label', $this->unitLabel($product));
+        }
 
         return $product;
     }

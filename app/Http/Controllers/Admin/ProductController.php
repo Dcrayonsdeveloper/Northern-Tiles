@@ -496,6 +496,9 @@ class ProductController extends Controller
             'width_mm' => $product->width_mm,
             'height_mm' => $product->height_mm,
             'sqm_per_box' => $product->sqm_per_box,
+            'unit_label' => $product->unit_label,
+            'quantity_label' => $product->quantity_label,
+            'show_wastage' => (bool) $product->show_wastage,
 
             // Images
             'lifestyle_image_url' => $product->lifestyle_image_url,
