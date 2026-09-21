@@ -50,7 +50,10 @@ class VariantFamilyController extends Controller
                     'slug' => $p->slug,
                     'sku' => $p->sku,
                     'price' => (float) $p->price,
-                    'image_url' => $p->media->first()?->url ?: ($p->image_url ?: null),
+                    // Not media->first(): older imports left rows pointing at
+                    // files that were never synced, which rendered as broken
+                    // thumbnails here even though image_url held a good one.
+                    'image_url' => ProductFamily::imageUrl($p),
                     'in_stock' => ($p->inventory_quantity ?? 0) > 0 || $p->inventory_policy === 'continue',
                     'is_active' => $p->is_active,
                     'is_live' => $p->is_active && $p->status === Product::STATUS_PUBLISHED,

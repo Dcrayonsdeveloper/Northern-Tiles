@@ -50,7 +50,10 @@ class BuilderDashboardController extends Controller
             ->limit(8)
             ->get()
             ->map(function (Product $product) use ($pricing, $user) {
-                $primary = $product->media->first();
+                // fileExists: older imports left media rows pointing at files
+                // that were never synced, and overwriting a good image_url with
+                // one of those showed a broken thumbnail.
+                $primary = $product->media->first(fn ($m) => $m->fileExists());
                 if ($primary) {
                     $product->image_url = $primary->url;
                 }

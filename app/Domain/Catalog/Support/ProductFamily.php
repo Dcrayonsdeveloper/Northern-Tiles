@@ -134,8 +134,11 @@ class ProductFamily
      * broken image, even though products.image_url held a perfectly good .webp
      * and the main gallery showed it. So each candidate is checked, and the
      * first that resolves wins.
+     *
+     * Public because the admin lists render the same thumbnails and were
+     * showing the same broken images.
      */
-    private static function imageUrl(Product $product): ?string
+    public static function imageUrl(Product $product): ?string
     {
         if ($product->relationLoaded('media')) {
             foreach ($product->media as $media) {
