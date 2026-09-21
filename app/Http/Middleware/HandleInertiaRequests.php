@@ -92,7 +92,7 @@ class HandleInertiaRequests extends Middleware
             // nav collapsed to "All Products" everywhere else.
             // Closure + path guard = no query at all outside /builder.
             'builderCategories' => fn () => $request->is('builder', 'builder/*')
-                ? app(\App\Domain\Builder\Services\BuilderNavigationService::class)->categories()
+                ? app(\App\Domain\Builder\Services\BuilderNavigationService::class)->categories($request->user())
                 : [],
             // Cart badges: retail_count and trade_count are computed separately
             // so a builder viewing /shop sees only retail items, and viewing

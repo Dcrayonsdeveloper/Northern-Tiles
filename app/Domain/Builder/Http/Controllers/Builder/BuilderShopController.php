@@ -4,6 +4,7 @@ namespace App\Domain\Builder\Http\Controllers\Builder;
 
 use App\Domain\Builder\Models\BuilderProduct;
 use App\Domain\Builder\Services\BuilderNavigationService;
+use App\Domain\Builder\Services\BuilderPricingService;
 use App\Domain\Catalog\Services\ProductUnitResolver;
 use App\Domain\Catalog\Models\Attribute;
 use App\Domain\Catalog\Support\ProductFamily;
@@ -168,7 +169,7 @@ class BuilderShopController extends Controller
 
         // Same list the header uses — the sidebar and the nav must not disagree
         // about which categories have trade stock.
-        $categories = app(BuilderNavigationService::class)->categories();
+        $categories = app(BuilderNavigationService::class)->categories($request->user());
 
         return Inertia::render('Builder/Shop/Index', [
             'products' => $products,
@@ -221,7 +222,7 @@ class BuilderShopController extends Controller
         return Inertia::render('Builder/Shop/Show', [
             'product' => $product,
             'relatedProducts' => $relatedProducts,
-            'familyVariants' => $this->builderFamilySelector($product),
+            'familyVariants' => $this->builderFamilySelector($product, $request->user()),
         ]);
     }
 
@@ -235,7 +236,7 @@ class BuilderShopController extends Controller
      *
      * @return array{family: array{id:int,name:string}, variants: array<int, array<string, mixed>>}|null
      */
-    private function builderFamilySelector(Product $product): ?array
+    private function builderFamilySelector(Product $product, ?\App\Models\User $user = null): ?array
     {
         $selector = ProductFamily::selectorFor($product);
 
@@ -243,9 +244,14 @@ class BuilderShopController extends Controller
             return null;
         }
 
-        $tradePrices = BuilderProduct::live()
-            ->whereIn('product_id', array_column($selector['variants'], 'id'))
-            ->pluck('price', 'product_id');
+        // priceMap is account-aware: for an account with its own catalogue it
+        // returns only the siblings on that list, at that account's prices.
+        // Reading builder_products here offered siblings whose pages 404 for
+        // them, tagged with prices they do not pay.
+        $tradePrices = $this->pricing->priceMap(
+            array_column($selector['variants'], 'id'),
+            $user
+        );
 
         $variants = [];
         foreach ($selector['variants'] as $variant) {

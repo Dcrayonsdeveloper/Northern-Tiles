@@ -2,7 +2,7 @@
 
 namespace App\Domain\Builder\Http\Controllers\Builder;
 
-use App\Domain\Builder\Models\BuilderProduct;
+use App\Domain\Builder\Services\BuilderPricingService;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
@@ -32,32 +32,36 @@ class BuilderDashboardController extends Controller
     {
         $user = $request->user();
 
+        $pricing = app(BuilderPricingService::class);
+
+        // "From your catalogue" has to mean THIS account's catalogue. Reading
+        // builderListing directly showed every account the shared list — so an
+        // account with its own list saw products it cannot buy, at prices it
+        // does not pay, and clicking one landed on a 404 from the product page
+        // where the gate is applied properly.
         $featured = Product::query()
             ->where('is_active', true)
-            ->whereHas('builderListing', fn ($q) => $q->where('is_active', true))
+            ->builderVisibleTo($user)
             ->with([
-                'builderListing',
                 'media' => fn ($q) => $q->where('type', 'image')->orderByDesc('is_primary')->orderBy('sort'),
             ])
             ->orderByDesc('is_featured')
             ->orderByDesc('id')
             ->limit(8)
             ->get()
-            ->map(function (Product $product) {
+            ->map(function (Product $product) use ($pricing, $user) {
                 $primary = $product->media->first();
                 if ($primary) {
                     $product->image_url = $primary->url;
                 }
                 $product->unsetRelation('media');
 
-                $listing = $product->getRelation('builderListing');
                 $retail = (float) $product->price;
-                $builderPrice = $listing ? (float) $listing->price : $retail;
+                $builderPrice = $pricing->builderPrice($product, $user) ?? $retail;
 
                 $product->setAttribute('retail_price', $retail);
                 $product->setAttribute('price', $builderPrice);
                 $product->setAttribute('compare_at_price', $retail > $builderPrice ? $retail : null);
-                $product->unsetRelation('builderListing');
 
                 return $product;
             });
@@ -72,7 +76,13 @@ class BuilderDashboardController extends Controller
             'featuredProducts' => $featured,
             'recentOrders' => $recentOrders,
             'stats' => [
-                'catalogue_size' => BuilderProduct::live()->count(),
+                // Counts what this account can actually see, so an account
+                // with its own list is not told it has the shared catalogue's
+                // product count.
+                'catalogue_size' => Product::query()
+                    ->where('is_active', true)
+                    ->builderVisibleTo($user)
+                    ->count(),
                 'order_count' => Order::where('user_id', $user->id)->count(),
                 'total_spent' => (float) Order::where('user_id', $user->id)
                     ->where('payment_status', 'paid')
