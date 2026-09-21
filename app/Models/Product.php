@@ -172,6 +172,37 @@ class Product extends Model
         return $query->whereHas('builderListing', fn ($q) => $q->where('is_active', true));
     }
 
+    /**
+     * Products in a category, including everything under its children.
+     *
+     * Matching the slug alone made a root category an empty page: since the
+     * category rebuild every product hangs off a sub-category, so /shop?category=tiles
+     * returned nothing while Tiles' five children held hundreds. Roots are no
+     * longer linked in the nav, but a bookmark, a search result or a typed URL
+     * still lands here and must show the range rather than "0 products".
+     */
+    public function scopeInCategoryTree($query, ?string $slug)
+    {
+        if (! $slug) {
+            return $query;
+        }
+
+        $slugs = [$slug];
+
+        $category = \App\Models\Category::where('slug', $slug)->first(['id']);
+        if ($category) {
+            $slugs = array_merge(
+                $slugs,
+                \App\Models\Category::where('parent_id', $category->id)->pluck('slug')->all(),
+            );
+        }
+
+        return $query->where(function ($q) use ($slugs) {
+            $q->whereHas('category', fn ($inner) => $inner->whereIn('slug', $slugs))
+                ->orWhereHas('categories', fn ($inner) => $inner->whereIn('slug', $slugs));
+        });
+    }
+
     public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class, 'seller_id');

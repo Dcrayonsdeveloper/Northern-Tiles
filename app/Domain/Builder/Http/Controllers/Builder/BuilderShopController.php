@@ -88,12 +88,9 @@ class BuilderShopController extends Controller
                     }
                 });
             })
-            ->when($categorySlug, function ($query) use ($categorySlug) {
-                $query->where(function ($q) use ($categorySlug) {
-                    $q->whereHas('category', fn ($inner) => $inner->where('slug', $categorySlug))
-                        ->orWhereHas('categories', fn ($inner) => $inner->where('slug', $categorySlug));
-                });
-            })
+            // inCategoryTree, not an exact slug match: a root category page
+            // lists everything under its children instead of nothing.
+            ->inCategoryTree($categorySlug ?: null)
             ->when(! empty($attributeFilters), function ($query) use ($attributeFilters, $attributeIds) {
                 foreach ($attributeFilters as $attrSlug => $values) {
                     $attrId = $attributeIds[$attrSlug] ?? null;

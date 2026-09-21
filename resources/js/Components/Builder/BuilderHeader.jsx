@@ -329,7 +329,11 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
 
                     {/* ── Category nav ── */}
                     <nav className="hidden border-t border-gray-100 lg:block">
-                        <ul className="flex items-center gap-1 overflow-x-auto py-1">
+                        {/* No overflow-x-auto here: the dropdown is absolutely positioned
+                            inside this list, and a scroll container clipped it to a
+                            sliver. Wrapping is the right behaviour for a handful of
+                            roots anyway. */}
+                        <ul className="flex flex-wrap items-center gap-1 py-1">
                             <li>
                                 <Link
                                     href={route('builder.shop.index')}
