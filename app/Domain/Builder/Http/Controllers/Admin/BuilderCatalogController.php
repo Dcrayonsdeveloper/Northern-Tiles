@@ -26,7 +26,12 @@ class BuilderCatalogController extends Controller
     {
         $search = trim((string) $request->input('q', ''));
         $categoryId = $request->input('category_id');
-        $status = $request->input('status', ''); // '', 'active', 'inactive'
+        // Cast, do not just default: ConvertEmptyStringsToNull turns a
+        // "?status=" in the query string into null, and a default only applies
+        // when the key is absent entirely. Selecting an account sends every
+        // current filter back, empty ones included, so this arrived as null
+        // and the typed parameter below threw a 500.
+        $status = (string) ($request->input('status', '') ?? '');
         $account = $this->resolveAccount($request);
 
         if ($account) {
@@ -92,7 +97,7 @@ class BuilderCatalogController extends Controller
      * the same thing to edit, and splitting them into two screens would mean
      * two copies of the price editor, the live toggle and the bulk actions.
      */
-    private function indexForAccount(Request $request, User $account, string $search, $categoryId, string $status): Response
+    private function indexForAccount(Request $request, User $account, string $search, $categoryId, ?string $status): Response
     {
         $listings = BuilderAccountProduct::query()
             ->forAccount($account)
