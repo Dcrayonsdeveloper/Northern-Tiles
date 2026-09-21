@@ -55,11 +55,12 @@ class ProductController extends Controller
             'filters' => $filters,
             'categories' => $categories,
             'vendors' => $vendors,
+            // Two states only: Active is on sale, Draft is hidden everywhere.
+            // Scheduled and Archived are gone from the UI — nothing in the
+            // catalogue used them and each was another way to be half-visible.
             'statuses' => [
+                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Active'],
                 ['value' => Product::STATUS_DRAFT, 'label' => 'Draft'],
-                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Published'],
-                ['value' => Product::STATUS_SCHEDULED, 'label' => 'Scheduled'],
-                ['value' => Product::STATUS_ARCHIVED, 'label' => 'Archived'],
             ],
         ]);
     }
@@ -77,10 +78,12 @@ class ProductController extends Controller
             'categories' => $this->buildCategoryTree($categories),
             'vendors' => $vendors,
             'popularTags' => $popularTags,
+            // Two states only: Active is on sale, Draft is hidden everywhere.
+            // Scheduled and Archived are gone from the UI — nothing in the
+            // catalogue used them and each was another way to be half-visible.
             'statuses' => [
+                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Active'],
                 ['value' => Product::STATUS_DRAFT, 'label' => 'Draft'],
-                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Published'],
-                ['value' => Product::STATUS_SCHEDULED, 'label' => 'Scheduled'],
             ],
         ]);
     }
@@ -138,11 +141,12 @@ class ProductController extends Controller
             'popularTags' => $popularTags,
             'collections' => $collections,
             'productCollections' => $productCollections,
+            // Two states only: Active is on sale, Draft is hidden everywhere.
+            // Scheduled and Archived are gone from the UI — nothing in the
+            // catalogue used them and each was another way to be half-visible.
             'statuses' => [
+                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Active'],
                 ['value' => Product::STATUS_DRAFT, 'label' => 'Draft'],
-                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Published'],
-                ['value' => Product::STATUS_SCHEDULED, 'label' => 'Scheduled'],
-                ['value' => Product::STATUS_ARCHIVED, 'label' => 'Archived'],
             ],
         ]);
     }

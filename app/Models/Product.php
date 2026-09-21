@@ -104,6 +104,22 @@ class Product extends Model
 
     protected static function booted(): void
     {
+        // One control, two columns. The editor offers Active or Draft, but the
+        // storefront gates on is_active in most places and on status in a few
+        // (the range selector, for one). Kept in lockstep here rather than in
+        // the form, so a bulk action, an import or an older screen cannot
+        // leave a product half-hidden — as one already had: a draft that was
+        // still is_active and therefore still listed and sellable.
+        static::saving(function (self $product) {
+            if ($product->isDirty('status')) {
+                $product->is_active = $product->status === self::STATUS_PUBLISHED;
+            } elseif ($product->isDirty('is_active')) {
+                $product->status = $product->is_active
+                    ? self::STATUS_PUBLISHED
+                    : self::STATUS_DRAFT;
+            }
+        });
+
         static::saved(function (self $product) {
             Cache::forget("product.{$product->slug}");
             // Reindex automated collections when product attributes change

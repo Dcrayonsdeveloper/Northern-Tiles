@@ -1172,7 +1172,14 @@ export default function Edit({ product, categories, vendors, popularTags, status
                             <h3 className="text-xs font-semibold text-gray-900 mb-3">Status</h3>
                             <select
                                 value={data.status}
-                                onChange={(e) => setData('status', e.target.value)}
+                                onChange={(e) => setData((d) => ({
+                                    ...d,
+                                    status: e.target.value,
+                                    // is_active is what nearly every storefront
+                                    // query gates on; the server keeps the two in
+                                    // step as well, this just keeps the form honest.
+                                    is_active: e.target.value === 'published',
+                                }))}
                                 className="admin-select w-full"
                             >
                                 {statuses?.map((s) => (
@@ -1181,45 +1188,16 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     </option>
                                 ))}
                             </select>
-                            {data.status === 'scheduled' && (
-                                <div className="mt-3">
-                                    <label className="block text-xs font-medium text-gray-700">Publish date</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={data.published_at ? data.published_at.slice(0, 16) : ''}
-                                        onChange={(e) => setData('published_at', e.target.value)}
-                                        className="mt-1 admin-input w-full"
-                                    />
-                                </div>
-                            )}
-                            <div className="mt-4 space-y-3 border-t border-gray-100 pt-3">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-700">Active (visible on site)</p>
-                                        <p className="text-[10px] text-gray-400">Inactive products return 404</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setData('is_active', !data.is_active)}
-                                        className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${data.is_active ? 'bg-green-500' : 'bg-gray-300'}`}
-                                    >
-                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.is_active ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
-                                    </button>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-700">Featured product</p>
-                                        <p className="text-[10px] text-gray-400">Highlights product across the site</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setData('is_featured', !data.is_featured)}
-                                        className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${data.is_featured ? 'bg-brand' : 'bg-gray-300'}`}
-                                    >
-                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.is_featured ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
-                                    </button>
-                                </div>
-                            </div>
+                            {/* One control, two states. The Active toggle and this
+                                dropdown used to be separate, which allowed a draft
+                                that was still active — and that product stayed
+                                listed and sellable. Setting the status now sets
+                                both, so Draft means hidden everywhere. */}
+                            <p className="mt-2 text-[11px] text-gray-500">
+                                {data.status === 'published'
+                                    ? 'Live on the website and available to buy.'
+                                    : 'Hidden everywhere — shop, search, categories and its own page.'}
+                            </p>
                         </div>
 
                         {/* Organization */}
@@ -1276,13 +1254,6 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                 </div>
                             </div>
                         </div>
-
-                        {/* Tags */}
-                        <TagInput
-                            tags={data.tags}
-                            onChange={(tags) => setData('tags', tags)}
-                            popularTags={popularTags}
-                        />
 
                         {/* Collections */}
                         <CollectionsCard
