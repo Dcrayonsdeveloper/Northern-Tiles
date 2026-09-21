@@ -30,6 +30,10 @@ class UpdateProductRequest extends FormRequest
 
             // Categories (many-to-many)
             'category_id' => ['nullable', 'exists:categories,id'],
+
+            // Which range this product belongs to. Nullable: "no variant" is a
+            // valid choice, and clearing the dropdown has to be able to unset it.
+            'variant_family_id' => ['nullable', 'exists:variant_families,id'],
             'category_ids' => ['nullable', 'array'],
             'category_ids.*' => ['exists:categories,id'],
 

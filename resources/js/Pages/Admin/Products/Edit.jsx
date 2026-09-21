@@ -486,101 +486,117 @@ function TagInput({ tags = [], onChange, popularTags = [] }) {
 }
 
 // Variants Editor Component
-function VariantsEditor({ options = [], variants = [], onChange, onGenerateVariants, onVariantUpdate }) {
-    const [localOptions, setLocalOptions] = useState(options);
+//
+// "Add Option" used to open a Shopify-style option builder — name a Size or
+// Colour, add its values, press Generate Variants. This product range is not
+// sold that way: a colour is its own product with its own SKU, and the ranges
+// are modelled as variant families instead. So the button now opens one field:
+// which family this product belongs to.
+function VariantsEditor({ variants = [], variantFamilies = [], variantFamilyId = '', onVariantFamilyChange, onVariantUpdate }) {
+    const [picking, setPicking] = useState(false);
+    const [draft, setDraft] = useState(variantFamilyId ?? '');
 
-    const addOption = () => {
-        setLocalOptions([...localOptions, { name: '', values: [] }]);
+    const selected = variantFamilies.find((f) => String(f.id) === String(variantFamilyId));
+
+    const open = () => {
+        setDraft(variantFamilyId ?? '');
+        setPicking(true);
     };
 
-    const updateOption = (index, field, value) => {
-        const updated = [...localOptions];
-        updated[index] = { ...updated[index], [field]: value };
-        setLocalOptions(updated);
-    };
-
-    const removeOption = (index) => {
-        setLocalOptions(localOptions.filter((_, i) => i !== index));
-    };
-
-    const addOptionValue = (optionIndex, value) => {
-        if (!value.trim()) return;
-        const updated = [...localOptions];
-        updated[optionIndex].values = [...(updated[optionIndex].values || []), value.trim()];
-        setLocalOptions(updated);
-    };
-
-    const removeOptionValue = (optionIndex, valueIndex) => {
-        const updated = [...localOptions];
-        updated[optionIndex].values = updated[optionIndex].values.filter((_, i) => i !== valueIndex);
-        setLocalOptions(updated);
-    };
-
-    const handleGenerateVariants = () => {
-        onGenerateVariants?.(localOptions);
+    const confirm = () => {
+        onVariantFamilyChange?.(draft === '' ? '' : parseInt(draft, 10));
+        setPicking(false);
     };
 
     return (
         <div className="admin-card">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-semibold text-gray-900">Options & Variants</h3>
-                <button type="button" onClick={addOption} className="btn-secondary text-xs">
+                <button type="button" onClick={open} className="btn-secondary text-xs">
                     Add Option
                 </button>
             </div>
 
-            {/* Options */}
-            {localOptions.map((option, optIdx) => (
-                <div key={optIdx} className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                        <input
-                            type="text"
-                            value={option.name}
-                            onChange={(e) => updateOption(optIdx, 'name', e.target.value)}
-                            placeholder="Option name (e.g., Size, Color)"
+            {picking && (
+                <div className="mb-4 rounded-lg bg-gray-50 p-3">
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="variant-family" className="whitespace-nowrap text-xs font-medium text-gray-700">
+                            Variant :
+                        </label>
+                        <select
+                            id="variant-family"
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
                             className="admin-input flex-1 text-xs"
-                        />
+                        >
+                            <option value="">— None —</option>
+                            {variantFamilies.map((family) => (
+                                <option key={family.id} value={family.id}>
+                                    {family.name}{family.is_active ? '' : ' (inactive)'}
+                                </option>
+                            ))}
+                        </select>
                         <button
                             type="button"
-                            onClick={() => removeOption(optIdx)}
-                            className="text-red-500 hover:text-red-700 p-1"
+                            onClick={confirm}
+                            title="Apply"
+                            aria-label="Apply variant"
+                            className="rounded-md bg-brand p-1.5 text-white transition hover:bg-brand-dark"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPicking(false)}
+                            title="Cancel"
+                            aria-label="Cancel"
+                            className="p-1.5 text-gray-400 transition hover:text-gray-600"
+                        >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
-                    <div className="flex flex-wrap gap-1">
-                        {option.values?.map((val, valIdx) => (
-                            <span key={valIdx} className="inline-flex items-center gap-1 bg-white border text-gray-700 text-[11px] px-2 py-0.5 rounded">
-                                {typeof val === 'string' ? val : val.value}
-                                <button type="button" onClick={() => removeOptionValue(optIdx, valIdx)} className="text-gray-400 hover:text-gray-600">
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </span>
-                        ))}
-                        <input
-                            type="text"
-                            placeholder="Add value"
-                            className="admin-input text-xs w-24"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    addOptionValue(optIdx, e.target.value);
-                                    e.target.value = '';
-                                }
-                            }}
-                        />
-                    </div>
-                </div>
-            ))}
 
-            {localOptions.length > 0 && (
-                <button type="button" onClick={handleGenerateVariants} className="btn-primary text-xs w-full">
-                    Generate Variants
-                </button>
+                    {/* The list is empty until families are created, and an
+                        empty dropdown with no explanation reads as a bug. */}
+                    {variantFamilies.length === 0 && (
+                        <p className="mt-2 text-[11px] text-gray-500">
+                            No variant families yet —{' '}
+                            <a href="/admin/variant-families" className="font-medium text-brand hover:underline">
+                                create one first
+                            </a>
+                            .
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {/* Current assignment, so the answer is visible without opening the picker. */}
+            {!picking && (
+                <div className="mb-3 flex items-center gap-2 text-xs">
+                    <span className="font-medium text-gray-700">Variant :</span>
+                    {selected ? (
+                        <>
+                            <span className="rounded bg-blue-50 px-2 py-0.5 font-medium text-blue-800">{selected.name}</span>
+                            <button
+                                type="button"
+                                onClick={() => onVariantFamilyChange?.('')}
+                                className="text-gray-400 transition hover:text-red-600"
+                                title="Remove from this variant"
+                                aria-label="Remove variant"
+                            >
+                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </>
+                    ) : (
+                        <span className="text-gray-400">None</span>
+                    )}
+                </div>
             )}
 
             {/* Variants Table — Editable */}
@@ -666,7 +682,7 @@ function SeoPreview({ title, description, slug }) {
 }
 
 // Main Edit Component
-export default function Edit({ product, categories, vendors, popularTags, statuses, collections = [], productCollections = [] }) {
+export default function Edit({ product, categories, vendors, popularTags, statuses, collections = [], productCollections = [], variantFamilies = [] }) {
     const { data, setData, put, processing, errors, isDirty } = useForm({
         name: product?.name ?? '',
         slug: product?.slug ?? '',
@@ -676,6 +692,7 @@ export default function Edit({ product, categories, vendors, popularTags, status
         brand: product?.brand ?? '',
         product_type: product?.product_type ?? '',
         category_ids: product?.category_ids ?? [],
+        variant_family_id: product?.variant_family_id ?? '',
         seller_id: product?.seller_id ?? '',
         price: product?.price ?? '',
         compare_at_price: product?.compare_at_price ?? '',
@@ -749,22 +766,6 @@ export default function Edit({ product, categories, vendors, popularTags, status
 
     const updateStatus = (status, publishAt = null) => {
         router.post(route('admin.products.status', product.id), { status, published_at: publishAt });
-    };
-
-    const handleGenerateVariants = async (options) => {
-        try {
-            await fetch(route('admin.products.variants.generate', product.id), {
-                method: 'POST',
-                body: JSON.stringify({ options }),
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
-                    'Content-Type': 'application/json',
-                },
-            });
-            router.reload({ only: ['product'] });
-        } catch (error) {
-            console.error('Generate variants failed:', error);
-        }
     };
 
     const handleVariantUpdate = async (variantId, field, value) => {
@@ -1097,9 +1098,10 @@ export default function Edit({ product, categories, vendors, popularTags, status
 
                         {/* Variants */}
                         <VariantsEditor
-                            options={product?.options}
                             variants={product?.variants}
-                            onGenerateVariants={handleGenerateVariants}
+                            variantFamilies={variantFamilies}
+                            variantFamilyId={data.variant_family_id}
+                            onVariantFamilyChange={(id) => setData('variant_family_id', id)}
                             onVariantUpdate={handleVariantUpdate}
                         />
 

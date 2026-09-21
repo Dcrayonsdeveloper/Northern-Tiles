@@ -130,6 +130,10 @@ class ProductController extends Controller
         return Inertia::render('Admin/Products/Edit', [
             'product' => $this->transformProductForEditor($product),
             'categories' => $this->buildCategoryTree($categories),
+            // Ranges this product can be filed under. Empty until families are
+            // created on the Variant Families page, which the picker says.
+            'variantFamilies' => \App\Domain\Catalog\Models\VariantFamily::orderBy('name')
+                ->get(['id', 'name', 'is_active']),
             'vendors' => $vendors,
             'popularTags' => $popularTags,
             'collections' => $collections,
@@ -510,6 +514,8 @@ class ProductController extends Controller
 
             // Relations
             'category_id' => $product->category_id,
+            // Current range, so the picker opens on what is already set.
+            'variant_family_id' => $product->variant_family_id,
             'category_ids' => $product->categories->pluck('id'),
             'categories' => $product->categories,
             'seller_id' => $product->seller_id,
