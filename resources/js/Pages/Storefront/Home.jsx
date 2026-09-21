@@ -604,55 +604,18 @@ function FeaturedCollections() {
 /* ═══════════════════════════════════════════════════════════════════════
    8. SHOP BY COLLECTION — horizontal carousel
    ═══════════════════════════════════════════════════════════════════════ */
-function ShopByCollection() {
-    const collections = [
-        {
-            name: 'Tiles',
-            desc: 'Porcelain, subway, terrazzo & more',
-            img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=tiles',
-            count: '120+',
-        },
-        {
-            name: 'External',
-            desc: 'Outdoor pavers & alfresco surfaces',
-            img: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=external',
-            count: '40+',
-        },
-        {
-            name: 'Timber',
-            desc: 'Engineered & solid oak flooring',
-            img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=timber',
-            count: '45+',
-        },
-        {
-            name: 'Hybrid',
-            desc: 'Waterproof rigid core planks',
-            img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=hybrid',
-            count: '80+',
-        },
-        {
-            name: 'Trade Products',
-            desc: 'Adhesives, grout & installation gear',
-            img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=trade-products',
-            count: '60+',
-        },
-        {
-            name: 'Subway',
-            desc: 'Classic subway & metro tiles',
-            img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=subway',
-            count: '50+',
-        },
-    ];
+function ShopByCollection({ categories = [] }) {
+    // Comes from the category tree now. It used to be six literals with stock
+    // photos, made-up counts and two slugs that stopped existing at the
+    // category rebuild, so the External and Trade Products cards both landed
+    // on an empty shop page.
+    const collections = categories;
 
     const { r, l, rr, ck, go } = useHS(320);
 
     useEffect(() => { ck(); }, [ck]);
+
+    if (!collections.length) return null;
 
     return (
         <section className="py-12 sm:py-20 bg-white">
@@ -676,18 +639,24 @@ function ShopByCollection() {
                 >
                     {collections.map((c) => (
                         <Link
-                            key={c.name}
+                            key={c.slug}
                             href={c.href}
                             className="group relative block flex-shrink-0 snap-start overflow-hidden bg-gray-900 w-[280px] sm:w-[300px]"
                             style={{ aspectRatio: '3/4' }}
                         >
-                            {/* Image with zoom on hover */}
-                            <img
-                                src={c.img}
-                                alt={c.name}
-                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                                loading="lazy"
-                            />
+                            {/* A product from inside the category. Falls back to a
+                                plain ground rather than a broken image when the
+                                range has no usable picture yet. */}
+                            {c.image ? (
+                                <img
+                                    src={c.image}
+                                    alt={c.name}
+                                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900" />
+                            )}
 
                             {/* Dark overlay — lighter on hover */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-500 group-hover:from-black/80 group-hover:via-black/40" />
@@ -695,14 +664,16 @@ function ShopByCollection() {
                             {/* Product count badge */}
                             <div className="absolute top-4 right-4 z-10">
                                 <span className="rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 text-[11px] font-semibold text-white border border-white/20">
-                                    {c.count} Products
+                                    {c.count} {c.count === 1 ? 'Product' : 'Products'}
                                 </span>
                             </div>
 
                             {/* Content — slides up on hover */}
                             <div className="absolute bottom-0 left-0 right-0 p-6 z-10 transition-transform duration-500 ease-out group-hover:-translate-y-2">
                                 <h3 className="text-[22px] font-bold text-white tracking-wide">{c.name}</h3>
-                                <p className="mt-1 text-[13px] text-white/70 transition-colors duration-300 group-hover:text-white/90">{c.desc}</p>
+                                {c.desc ? (
+                                    <p className="mt-1 text-[13px] text-white/70 transition-colors duration-300 group-hover:text-white/90">{c.desc}</p>
+                                ) : null}
 
                                 {/* Explore link — fades in on hover */}
                                 <div className="mt-4 flex items-center gap-2 opacity-0 translate-y-3 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0">
@@ -1003,13 +974,13 @@ function CustomerReviews() {
 /* ═══════════════════════════════════════════════════════════════════════
    MAIN HOME
    ═══════════════════════════════════════════════════════════════════════ */
-export default function Home({ hero_slider, category_carousel, new_arrivals, video_section, discount_tile_carousel, gallery }) {
+export default function Home({ hero_slider, category_carousel, new_arrivals, video_section, discount_tile_carousel, gallery, rootCategories = [] }) {
     const products = new_arrivals?.products || discount_tile_carousel?.products || [];
     return (
         <PublicLayout>
             <Head title="Home" />
             <HeroSlider heroSlider={hero_slider} />
-            <ShopByCollection />
+            <ShopByCollection categories={rootCategories} />
             <TrendingProducts products={products} />
             <TileVisualizer />
             <ChooseBy />
