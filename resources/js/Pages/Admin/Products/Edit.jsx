@@ -1205,15 +1205,6 @@ export default function Edit({ product, categories, vendors, popularTags, status
                             <h3 className="text-xs font-semibold text-gray-900 mb-3">Organization</h3>
                             <div className="space-y-3">
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700">Product type</label>
-                                    <input
-                                        value={data.product_type}
-                                        onChange={(e) => setData('product_type', e.target.value)}
-                                        className="mt-1 admin-input w-full"
-                                        placeholder="e.g., Shoes, Electronics"
-                                    />
-                                </div>
-                                <div>
                                     <label className="block text-xs font-medium text-gray-700">Vendor</label>
                                     <select
                                         value={data.seller_id ?? ''}
@@ -1243,14 +1234,6 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                         ))}
                                     </select>
                                     <div className="mt-1 text-[10px] text-gray-500">Hold Ctrl/Cmd to select multiple</div>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700">Brand</label>
-                                    <input
-                                        value={data.brand}
-                                        onChange={(e) => setData('brand', e.target.value)}
-                                        className="mt-1 admin-input w-full"
-                                    />
                                 </div>
                             </div>
                         </div>
