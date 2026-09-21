@@ -17,6 +17,7 @@ class HomeController extends Controller
         // CMS section list, cached for an hour, and the category strip has to
         // track the catalogue on a shorter leash than the page layout does.
         $homeData['rootCategories'] = $homeService->rootCategories();
+        $homeData['trendingProducts'] = $homeService->trendingProducts();
 
         return Inertia::render('Storefront/Home', $homeData);
     }

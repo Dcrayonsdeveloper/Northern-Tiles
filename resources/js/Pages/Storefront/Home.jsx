@@ -974,8 +974,12 @@ function CustomerReviews() {
 /* ═══════════════════════════════════════════════════════════════════════
    MAIN HOME
    ═══════════════════════════════════════════════════════════════════════ */
-export default function Home({ hero_slider, category_carousel, new_arrivals, video_section, discount_tile_carousel, gallery, rootCategories = [] }) {
-    const products = new_arrivals?.products || discount_tile_carousel?.products || [];
+export default function Home({ hero_slider, category_carousel, new_arrivals, video_section, discount_tile_carousel, gallery, rootCategories = [], trendingProducts = [] }) {
+    // Trending is hand-picked in admin now; the old new_arrivals feed stays
+    // as a fallback so the strip is never empty if that prop is missing.
+    const products = trendingProducts.length
+        ? trendingProducts
+        : (new_arrivals?.products || discount_tile_carousel?.products || []);
     return (
         <PublicLayout>
             <Head title="Home" />

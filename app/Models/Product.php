@@ -122,6 +122,10 @@ class Product extends Model
 
         static::saved(function (self $product) {
             Cache::forget("product.{$product->slug}");
+            // The home strips are hand-picked from product flags, so ticking
+            // "Trending" has to show up without waiting out a cache window.
+            Cache::forget('home.trending_products');
+            Cache::forget('home.root_categories');
             // Reindex automated collections when product attributes change
             ReindexCollectionsForProductJob::dispatch($product->id)->onQueue('collections');
         });

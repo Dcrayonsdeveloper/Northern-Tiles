@@ -1198,6 +1198,28 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     ? 'Live on the website and available to buy.'
                                     : 'Hidden everywhere — shop, search, categories and its own page.'}
                             </p>
+
+                            {/* Hand-picks the home page strip. Only meaningful
+                                while the product is Active — a draft is hidden
+                                everywhere, this section included — so the box is
+                                disabled rather than silently ignored. */}
+                            <label className="mt-4 flex cursor-pointer items-start gap-2 border-t border-gray-100 pt-3">
+                                <input
+                                    type="checkbox"
+                                    checked={Boolean(data.is_featured)}
+                                    disabled={data.status !== 'published'}
+                                    onChange={(e) => setData('is_featured', e.target.checked)}
+                                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand disabled:opacity-40"
+                                />
+                                <span>
+                                    <span className="block text-xs font-medium text-gray-700">Trending product</span>
+                                    <span className="block text-[10px] text-gray-400">
+                                        {data.status === 'published'
+                                            ? 'Shows in Trending Products on the home page'
+                                            : 'Set the product to Active to use this'}
+                                    </span>
+                                </span>
+                            </label>
                         </div>
 
                         {/* Organization */}

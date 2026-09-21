@@ -22,6 +22,49 @@ class HomeService
     ];
 
     /**
+     * The home page's "Trending Products" strip.
+     *
+     * Hand-picked: whatever the admin has ticked as trending, in catalogue
+     * order. It used to be "the 8 most recently created products", which is
+     * not trending and could not be influenced from the admin at all — the
+     * only way to change it was to add products in a different order.
+     *
+     * Falls back to the newest products when nothing is ticked, so the strip
+     * never renders empty while the list is being set up.
+     *
+     * Draft products are excluded by is_active, so unticking is not the only
+     * way to pull something out of here — setting it to Draft does too.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function trendingProducts(int $limit = 12): array
+    {
+        return Cache::remember('home.trending_products', 600, function () use ($limit) {
+            $columns = [
+                'id', 'name', 'slug', 'short_description',
+                'price', 'compare_at_price', 'image_url', 'sqm_per_box', 'category_id',
+            ];
+
+            $picked = Product::query()
+                ->where('is_active', true)
+                ->where('is_featured', true)
+                ->orderBy('name')
+                ->limit($limit)
+                ->get($columns);
+
+            if ($picked->isEmpty()) {
+                $picked = Product::query()
+                    ->where('is_active', true)
+                    ->orderByDesc('created_at')
+                    ->limit(8)
+                    ->get($columns);
+            }
+
+            return $picked->all();
+        });
+    }
+
+    /**
      * Root categories for the "Shop by Category" strip.
      *
      * Was six hardcoded cards with stock photography, invented counts
