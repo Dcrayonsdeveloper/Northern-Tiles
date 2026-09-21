@@ -820,8 +820,8 @@ function VariantFamilySelector({ familyVariants }) {
 /* ═══════════════════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════════════════ */
-export default function Show({ product, relatedProducts, availableCoupons = [], familyVariants = null }) {
-    const { settings } = usePage().props;
+export default function Show({ product, relatedProducts, availableCoupons = [], familyVariants = null, isWishlisted = false }) {
+    const { settings, auth } = usePage().props;
     const [quantity, setQuantity] = useState(1);
     const [area, setArea] = useState(1);
     const [wastage, setWastage] = useState(true);
@@ -830,7 +830,70 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
     const [addingToCart, setAddingToCart] = useState(false);
     const [addingSample, setAddingSample] = useState(false);
     const [buyingNow, setBuyingNow] = useState(false);
-    const [wishlisted, setWishlisted] = useState(false);
+    const [wishlisted, setWishlisted] = useState(isWishlisted);
+    const [savingWishlist, setSavingWishlist] = useState(false);
+    const [shareNote, setShareNote] = useState('');
+
+    // Saving needs an account. A guest still posts: the route is behind `auth`,
+    // so Laravel bounces them to the login page and — because this is a POST —
+    // stores THIS product page as the intended url, returning them here once
+    // they have signed in. Flipping the heart optimistically would be a lie for
+    // a guest, so the state only changes on a confirmed save.
+    const toggleWishlist = () => {
+        if (savingWishlist) return;
+        setSavingWishlist(true);
+        router.post(route('wishlist.toggle'), { product_id: product.id }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => { if (auth?.user) setWishlisted((w) => !w); },
+            onFinish: () => setSavingWishlist(false),
+        });
+    };
+
+    // navigator.share and navigator.clipboard both require a secure context,
+    // and this site is served over plain HTTP — so on the live box both are
+    // undefined and the old one-liner silently did nothing at all. Falls back
+    // through the share sheet, the async clipboard, then execCommand, which
+    // still works on HTTP.
+    const shareProduct = async () => {
+        const url = window.location.href;
+        const note = (text) => { setShareNote(text); setTimeout(() => setShareNote(''), 2000); };
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: product.name, url });
+                return;
+            } catch (err) {
+                // A cancelled share sheet is not a failure — say nothing.
+                if (err?.name === 'AbortError') return;
+            }
+        }
+
+        if (navigator.clipboard?.writeText) {
+            try {
+                await navigator.clipboard.writeText(url);
+                note('Link copied');
+                return;
+            } catch {
+                // fall through to the execCommand path
+            }
+        }
+
+        try {
+            const field = document.createElement('textarea');
+            field.value = url;
+            field.setAttribute('readonly', '');
+            field.style.position = 'fixed';
+            field.style.opacity = '0';
+            document.body.appendChild(field);
+            field.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(field);
+            note(ok ? 'Link copied' : 'Press Ctrl+C to copy');
+        } catch {
+            note('Copy the address bar link');
+        }
+    };
 
     // Selectable colour + finish parsed from the spec strings.
     // "Black, Charcoal, Carbon", "Matt / Soft Touch" and "White + Cloud" all
@@ -1151,13 +1214,19 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
 
                             {/* Wishlist + Share */}
                             <div className="mt-4 flex items-center gap-4">
-                                <button type="button" onClick={() => setWishlisted(!wishlisted)} className="flex items-center gap-1.5 text-[13px] text-gray-600 hover:text-brand transition">
+                                <button
+                                    type="button"
+                                    onClick={toggleWishlist}
+                                    disabled={savingWishlist}
+                                    aria-pressed={wishlisted}
+                                    className={`flex items-center gap-1.5 text-[13px] transition disabled:opacity-60 ${wishlisted ? 'text-brand' : 'text-gray-600 hover:text-brand'}`}
+                                >
                                     <Heart c="h-5 w-5" filled={wishlisted} />
-                                    {wishlisted ? 'Wishlisted' : 'Add to Wishlist'}
+                                    {wishlisted ? 'Saved to Wishlist' : 'Add to Wishlist'}
                                 </button>
-                                <button type="button" onClick={() => navigator.share?.({ title: product.name, url: window.location.href }).catch(() => {})} className="flex items-center gap-1.5 text-[13px] text-gray-600 hover:text-brand transition">
+                                <button type="button" onClick={shareProduct} className="flex items-center gap-1.5 text-[13px] text-gray-600 transition hover:text-brand">
                                     <Share c="h-5 w-5" />
-                                    Share
+                                    {shareNote || 'Share'}
                                 </button>
                             </div>
 

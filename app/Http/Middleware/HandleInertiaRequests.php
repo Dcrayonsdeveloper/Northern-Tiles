@@ -121,6 +121,12 @@ class HandleInertiaRequests extends Middleware
                     'count' => $isBuilderSurface ? $tradeCount : $retailCount,
                 ];
             },
+            // Badge on the header's wishlist button. Closure + guest guard so
+            // an anonymous request costs no query; guests have no wishlist at
+            // all, since saving requires an account.
+            'wishlistCount' => fn () => $request->user()
+                ? app(\App\Domain\Catalog\Services\FavoriteService::class)->getCount($request->user()->id)
+                : 0,
             'flash' => [
                 'success'     => fn () => $request->session()->get('success'),
                 'error'       => fn () => $request->session()->get('error'),

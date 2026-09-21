@@ -281,6 +281,16 @@ Route::middleware('auth')->group(function () {
         ->name('orders.index');
     Route::get('/orders/{order}', [\App\Http\Controllers\User\OrderHistoryController::class, 'show'])
         ->name('orders.show');
+
+    // Wishlist. Behind `auth` on purpose — that is what forces a sign-in
+    // before anything can be saved, and Laravel returns the guest to the
+    // product page they came from once they have logged in.
+    Route::get('/wishlist', [\App\Http\Controllers\Storefront\WishlistController::class, 'index'])
+        ->name('wishlist.index');
+    Route::post('/wishlist', [\App\Http\Controllers\Storefront\WishlistController::class, 'toggle'])
+        ->name('wishlist.toggle');
+    Route::delete('/wishlist/{product}', [\App\Http\Controllers\Storefront\WishlistController::class, 'destroy'])
+        ->name('wishlist.destroy');
 });
 
 require __DIR__.'/auth.php';

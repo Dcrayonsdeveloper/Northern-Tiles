@@ -234,6 +234,11 @@ class ShopController extends Controller
 
         return Inertia::render('Storefront/Shop/Show', [
             'product' => $product,
+            // So the heart renders filled on load for a product already saved,
+            // instead of resetting to "Add to Wishlist" on every visit.
+            'isWishlisted' => request()->user()
+                ? \App\Domain\Catalog\Models\Favorite::isFavorite(request()->user()->id, $product->id)
+                : false,
             'relatedProducts' => $relatedProducts,
             'availableCoupons' => $availableCoupons,
             'familyVariants' => $familyVariants,
