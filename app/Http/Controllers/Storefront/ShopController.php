@@ -184,6 +184,11 @@ class ShopController extends Controller
         abort_unless($product->is_active, 404);
 
         $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media', 'variantFamily']);
+
+        // Drop media rows whose file was never synced to disk, or the gallery
+        // renders a blank thumbnail for each one.
+        $product->setRelation('media', $product->media->filter->fileExists()->values());
+
         app(ProductUnitResolver::class)->decorate($product);
 
         // Same-range products (e.g. every ARGILE tile) presented as a variant

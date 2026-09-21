@@ -125,12 +125,23 @@ class ProductFamily
         return $label;
     }
 
+    /**
+     * First image that is actually there.
+     *
+     * Older imports left product_media rows pointing at files that were never
+     * synced to disk — 103 products carry one. Returning the first row blind
+     * handed the range selector a dead .jpg and every swatch rendered as a
+     * broken image, even though products.image_url held a perfectly good .webp
+     * and the main gallery showed it. So each candidate is checked, and the
+     * first that resolves wins.
+     */
     private static function imageUrl(Product $product): ?string
     {
         if ($product->relationLoaded('media')) {
-            $first = $product->media->first();
-            if ($first) {
-                return $first->url;
+            foreach ($product->media as $media) {
+                if ($media->fileExists()) {
+                    return $media->url;
+                }
             }
         }
 
