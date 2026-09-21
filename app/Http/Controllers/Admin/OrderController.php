@@ -29,12 +29,36 @@ class OrderController extends Controller
     {
         $order->loadMissing([
             'user:id,name,email',
-            'items:id,order_id,product_id,name,price,quantity,line_total',
-            'items.product:id,name,slug',
+            'items:id,order_id,product_id,name,sku,price,quantity,line_total,is_sample',
+            'items.product:id,name,slug,image_url',
+            'items.product.media',
         ]);
+
+        // A thumbnail per line, skipping media rows whose file was never
+        // synced — the same guard the storefront listings use.
+        $order->items->each(function ($item) {
+            $product = $item->product;
+            $image = $product?->image_url;
+
+            if ($product?->relationLoaded('media')) {
+                $primary = $product->media
+                    ->where('type', 'image')
+                    ->sortByDesc('is_primary')
+                    ->first(fn ($m) => $m->fileExists());
+
+                if ($primary) {
+                    $image = $primary->url;
+                }
+                $product->unsetRelation('media');
+            }
+
+            $item->setAttribute('image_url', $image);
+        });
 
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
+            'statuses' => ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'],
+            'paymentStatuses' => ['pending', 'paid', 'failed', 'refunded'],
         ]);
     }
 
@@ -50,6 +74,19 @@ class OrderController extends Controller
 
             if (!empty($validated['status'])) {
                 $updates['status'] = $validated['status'];
+
+                // Stamp the milestone the first time it is reached. The
+                // tracking timeline reads these, and nothing was setting them
+                // — an order could sit at "shipped" with no shipped date.
+                if ($validated['status'] === 'shipped' && ! $order->shipped_at) {
+                    $updates['shipped_at'] = now();
+                }
+
+                if ($validated['status'] === 'delivered') {
+                    $updates['delivered_at'] = $order->delivered_at ?? now();
+                    // Delivered implies it shipped, even if that step was skipped.
+                    $updates['shipped_at'] = $order->shipped_at ?? now();
+                }
             }
 
             if (!empty($validated['payment_status'])) {

@@ -31,6 +31,8 @@ class Order extends Model
         'payment_method',
         'payment_status',
         'notes',
+        'shipped_at',
+        'delivered_at',
     ];
 
     protected $casts = [
@@ -42,6 +44,8 @@ class Order extends Model
         'shipping_address' => 'array',
         'billing_address'  => 'array',
         'is_builder_order' => 'boolean',
+        'shipped_at'       => 'datetime',
+        'delivered_at'     => 'datetime',
     ];
 
     public function items()
