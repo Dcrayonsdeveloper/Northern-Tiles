@@ -211,6 +211,24 @@ function TileVisualizer() {
 /* ═══════════════════════════════════════════════════════════════════════
    4. CHOOSE BY — tabbed filter section with color circles/cards
    ═══════════════════════════════════════════════════════════════════════ */
+/* Scroll arrow pinned to the edge of a rail. Hidden below sm: a phone swipes,
+   and a 44px button over the first card would cover it. */
+function Arrow({ side, off, fn }) {
+    return (
+        <button
+            type="button"
+            onClick={fn}
+            disabled={off}
+            aria-label={side === 'l' ? 'Previous' : 'Next'}
+            className={`absolute top-1/2 z-10 hidden h-[44px] w-[44px] -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-[#333] shadow-md transition hover:border-brand hover:text-brand disabled:pointer-events-none disabled:opacity-0 sm:flex ${
+                side === 'l' ? '-left-3' : '-right-3'
+            }`}
+        >
+            {side === 'l' ? <CL c="h-5 w-5" /> : <CR c="h-5 w-5" />}
+        </button>
+    );
+}
+
 /* Swatch colours for the By Colour tab. Collections carry a name, not a hex,
    so the shade is matched by name and anything unknown falls back to a neutral
    chip rather than rendering nothing. */
@@ -281,12 +299,19 @@ const artFor = (item) => {
 
 function ChooseBy({ dimensions = [] }) {
     const [tab, setTab] = useState(0);
+    // Same scroller the other home strips use. Arrows are a desktop nicety —
+    // on a phone the rail is swiped, so they stay hidden there.
+    const { r, l, rr, ck, go } = useHS(320);
 
-    // Driven by the Collections screen in admin. Nothing configured means the
-    // section has nothing honest to show, so it stays out of the page.
+    const activeIndex = Math.min(tab, Math.max(dimensions.length - 1, 0));
+
+    // Switching tab swaps the rail's contents, so what can be scrolled to
+    // changes; without re-checking, the arrows keep the previous tab's state.
+    useEffect(() => { ck(); }, [ck, activeIndex, dimensions.length]);
+
     if (!dimensions.length) return null;
 
-    const current = dimensions[Math.min(tab, dimensions.length - 1)];
+    const current = dimensions[activeIndex];
     const isColour = current?.key === 'colour';
 
     // One row that scrolls sideways, with no bar and no arrows — the cards are
@@ -311,7 +336,7 @@ function ChooseBy({ dimensions = [] }) {
                             type="button"
                             onClick={() => setTab(i)}
                             className={`-mb-px flex-shrink-0 border-b-2 px-4 py-3 text-[12px] font-semibold uppercase tracking-[1px] transition-colors ${
-                                i === Math.min(tab, dimensions.length - 1)
+                                i === activeIndex
                                     ? 'border-brand text-brand'
                                     : 'border-transparent text-gray-500 hover:text-gray-800'
                             }`}
@@ -322,7 +347,10 @@ function ChooseBy({ dimensions = [] }) {
                 </div>
 
                 {isColour ? (
-                    <div className={`${rail} px-1`}>
+                    <div className="relative">
+                        <Arrow side="l" off={!l} fn={() => go('l')} />
+                        <Arrow side="r" off={!rr} fn={() => go('r')} />
+                        <div ref={r} onScroll={ck} className={`${rail} px-1`}>
                         {current.items.map((item) => (
                             <Link
                                 key={item.handle}
@@ -340,9 +368,13 @@ function ChooseBy({ dimensions = [] }) {
                                 </span>
                             </Link>
                         ))}
+                        </div>
                     </div>
                 ) : (
-                    <div className={rail}>
+                    <div className="relative">
+                        <Arrow side="l" off={!l} fn={() => go('l')} />
+                        <Arrow side="r" off={!rr} fn={() => go('r')} />
+                        <div ref={r} onScroll={ck} className={rail}>
                         {current.items.map((item) => {
                             const art = artFor(item);
                             return (
@@ -370,6 +402,7 @@ function ChooseBy({ dimensions = [] }) {
                                 </Link>
                             );
                         })}
+                        </div>
                     </div>
                 )}
             </Container>
