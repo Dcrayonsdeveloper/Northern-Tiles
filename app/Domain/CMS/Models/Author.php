@@ -18,13 +18,23 @@ class Author extends Model
         'avatar_file',
         'social_json',
         'job_title',
+        'credentials',
+        'expertise_json',
+        'is_verified',
         'is_active',
     ];
+
+    /**
+     * Serialised with the model so the admin editor can populate its fields.
+     */
+    protected $appends = ['avatar_url', 'bio', 'social_links', 'expertise_areas'];
 
     protected $casts = [
         'bio_json' => 'array',
         'social_json' => 'array',
         'is_active' => 'boolean',
+        'is_verified' => 'boolean',
+        'expertise_json' => 'array',
     ];
 
     public function user(): BelongsTo
@@ -62,5 +72,21 @@ class Author extends Model
     public function getSocialLinks(): array
     {
         return $this->social_json ?? [];
+    }
+
+    /**
+     * The edit form reads bio, social_links, expertise_areas and avatar_url.
+     * They are accessors over the json columns, and without $appends none of
+     * them reach the page — which is why the form opened blank however much
+     * had been saved.
+     */
+    public function getSocialLinksAttribute(): array
+    {
+        return $this->social_json ?? ['twitter' => '', 'linkedin' => '', 'website' => ''];
+    }
+
+    public function getExpertiseAreasAttribute(): array
+    {
+        return $this->expertise_json ?? [];
     }
 }
