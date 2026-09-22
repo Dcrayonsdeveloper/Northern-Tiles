@@ -118,21 +118,6 @@ export default function Show({ collection, products }) {
                         </p>
                     ) : null}
 
-                    {collection.brochure_url && (
-                        <div className="mt-7">
-                            <a
-                                href={collection.brochure_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3 text-xs font-semibold uppercase tracking-[2px] text-white shadow-md transition hover:bg-brand/90"
-                            >
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-                                </svg>
-                                Download Brochure
-                            </a>
-                        </div>
-                    )}
                 </Container>
             </section>
 
