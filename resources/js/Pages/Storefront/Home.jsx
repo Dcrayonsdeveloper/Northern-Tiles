@@ -211,168 +211,98 @@ function TileVisualizer() {
 /* ═══════════════════════════════════════════════════════════════════════
    4. CHOOSE BY — tabbed filter section with color circles/cards
    ═══════════════════════════════════════════════════════════════════════ */
-function ChooseBy() {
+/* Swatch colours for the By Colour tab. Collections carry a name, not a hex,
+   so the shade is matched by name and anything unknown falls back to a neutral
+   chip rather than rendering nothing. */
+const SWATCHES = {
+    white: '#f5f5f5', cream: '#f0e6d2', ivory: '#fffff0', beige: '#d4c5a9', sand: '#dcd0b4',
+    tan: '#c9a227', taupe: '#b8a894', 'light grey': '#c8c8c8', grey: '#a0a0a0', gray: '#a0a0a0',
+    'mid grey': '#8a8a8a', 'dark grey': '#555555', charcoal: '#36454f', black: '#222222',
+    brown: '#8b6b3d', chocolate: '#6b4423', terracotta: '#c75b39', orange: '#d2703a',
+    red: '#b23b2e', pink: '#d49aa4', purple: '#7b5ea7', blue: '#4a7c9b', navy: '#2c4a6b',
+    green: '#6b8e6b', moss: '#7a8b5a', yellow: '#e0c060', gold: '#c8a951',
+    multicolour: 'linear-gradient(135deg,#c75b39,#4a7c9b,#6b8e6b)',
+};
+
+const swatchFor = (title) => {
+    const key = String(title ?? '').trim().toLowerCase();
+    return SWATCHES[key] ?? '#d9d9d9';
+};
+
+function ChooseBy({ dimensions = [] }) {
     const [tab, setTab] = useState(0);
-    const tabs = ['By Colour', 'By Space', 'By Size', 'By Material', 'By Finish', 'By Style'];
 
-    const colors = [
-        { name: 'White', hex: '#f5f5f5', q: 'white' },
-        { name: 'Beige', hex: '#d4c5a9', q: 'beige' },
-        { name: 'Grey', hex: '#a0a0a0', q: 'grey' },
-        { name: 'Dark Grey', hex: '#555555', q: 'dark-grey' },
-        { name: 'Black', hex: '#222222', q: 'black' },
-        { name: 'Brown', hex: '#8b6b3d', q: 'brown' },
-        { name: 'Blue', hex: '#4a7c9b', q: 'blue' },
-        { name: 'Green', hex: '#6b8e6b', q: 'green' },
-        { name: 'Terracotta', hex: '#c75b39', q: 'terracotta' },
-        { name: 'Pink', hex: '#d49aa4', q: 'pink' },
-        { name: 'Cream', hex: '#f0e6d2', q: 'cream' },
-    ];
+    // Driven by the Collections screen in admin. Nothing configured means the
+    // section has nothing honest to show, so it stays out of the page.
+    if (!dimensions.length) return null;
 
-    const spaces = [
-        { name: 'Bathroom', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=300&fit=crop&q=80', q: 'bathroom' },
-        { name: 'Kitchen', img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop&q=80', q: 'kitchen' },
-        { name: 'Living Room', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop&q=80', q: 'living-room' },
-        { name: 'Outdoor', img: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop&q=80', q: 'outdoor' },
-        { name: 'Pool Area', img: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=400&h=300&fit=crop&q=80', q: 'pool' },
-        { name: 'Commercial', img: 'https://images.unsplash.com/photo-1600585153490-76fb20a32601?w=400&h=300&fit=crop&q=80', q: 'commercial' },
-    ];
-
-    const sizes = [
-        { name: '300x300', label: '300×300mm', img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=300&h=300&fit=crop&q=80', q: '300x300' },
-        { name: '300x600', label: '300×600mm', img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=300&h=300&fit=crop&q=80', q: '300x600' },
-        { name: '600x600', label: '600×600mm', img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=300&h=300&fit=crop&q=80', q: '600x600' },
-        { name: '600x900', label: '600×900mm', img: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=300&h=300&fit=crop&q=80', q: '600x900' },
-        { name: '600x1200', label: '600×1200mm', img: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=300&h=300&fit=crop&q=80', q: '600x1200' },
-        { name: '800x800', label: '800×800mm', img: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=300&h=300&fit=crop&q=80', q: '800x800' },
-    ];
-
-    const materials = [
-        { name: 'Porcelain', img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400&h=300&fit=crop&q=80', q: 'porcelain', desc: 'Durable, low maintenance' },
-        { name: 'Ceramic', img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop&q=80', q: 'ceramic', desc: 'Classic & versatile' },
-        { name: 'Natural Stone', img: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=400&h=300&fit=crop&q=80', q: 'natural-stone', desc: 'Unique natural beauty' },
-        { name: 'Hybrid', img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=400&h=300&fit=crop&q=80', q: 'hybrid', desc: 'Waterproof rigid core' },
-        { name: 'Timber', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop&q=80', q: 'timber', desc: 'Warm natural wood' },
-        { name: 'Engineered', img: 'https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=400&h=300&fit=crop&q=80', q: 'engineered', desc: 'Stable & sustainable' },
-    ];
-
-    const finishes = [
-        { name: 'Matt', img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400&h=300&fit=crop&q=80', q: 'matt', desc: 'Subtle & contemporary' },
-        { name: 'Gloss', img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=400&h=300&fit=crop&q=80', q: 'gloss', desc: 'Sleek & reflective' },
-        { name: 'Honed', img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop&q=80', q: 'honed', desc: 'Smooth satin feel' },
-        { name: 'Textured', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop&q=80', q: 'textured', desc: 'Grip & character' },
-        { name: 'Polished', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=300&fit=crop&q=80', q: 'polished', desc: 'Mirror-like shine' },
-        { name: 'Lappato', img: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop&q=80', q: 'lappato', desc: 'Semi-polished finish' },
-    ];
-
-    const styles = [
-        { name: 'Marble Look', img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=400&h=300&fit=crop&q=80', q: 'marble-look', desc: 'Luxurious veining' },
-        { name: 'Wood Look', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop&q=80', q: 'wood-look', desc: 'Natural timber grain' },
-        { name: 'Concrete Look', img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop&q=80', q: 'concrete-look', desc: 'Industrial aesthetic' },
-        { name: 'Stone Look', img: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=400&h=300&fit=crop&q=80', q: 'stone-look', desc: 'Natural elegance' },
-        { name: 'Terrazzo Look', img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400&h=300&fit=crop&q=80', q: 'terrazzo-look', desc: 'Retro & modern' },
-        { name: 'Geometric', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=300&fit=crop&q=80', q: 'geometric', desc: 'Bold patterns' },
-    ];
+    const current = dimensions[Math.min(tab, dimensions.length - 1)];
+    const isColour = current?.key === 'colour';
 
     return (
-        <section className="py-10 sm:py-16 bg-white">
+        <section className="py-12 sm:py-16 bg-white">
             <Container>
-                <div className="text-center mb-8">
-                    <h2 className="text-[28px] font-light text-[#222] tracking-[2px] uppercase font-heading">Find Your <span className="font-semibold">Perfect Tile</span></h2>
+                <div className="mb-8 text-center">
+                    <h2 className="font-heading text-[28px] font-light uppercase tracking-[2px] text-[#222]">
+                        Find your <span className="font-semibold">perfect tile</span>
+                    </h2>
                     <div className="mx-auto mt-3 h-[2px] w-12 bg-brand" />
                 </div>
-                {/* Tabs */}
-                <div className="flex flex-wrap justify-center gap-0 mb-10 border-b border-gray-200">
-                    {tabs.map((t, idx) => (
-                        <button key={idx} type="button" onClick={() => setTab(idx)} className={`px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[1px] transition-all border-b-2 ${idx === tab ? 'border-brand text-brand' : 'border-transparent text-[#4a4a4a] hover:text-[#333]'}`}>{t}</button>
+
+                <div className="mb-8 flex flex-wrap justify-center gap-1 border-b border-gray-200">
+                    {dimensions.map((d, i) => (
+                        <button
+                            key={d.key}
+                            type="button"
+                            onClick={() => setTab(i)}
+                            className={`-mb-px border-b-2 px-4 py-3 text-[12px] font-semibold uppercase tracking-[1px] transition-colors ${
+                                i === Math.min(tab, dimensions.length - 1)
+                                    ? 'border-brand text-brand'
+                                    : 'border-transparent text-gray-500 hover:text-gray-800'
+                            }`}
+                        >
+                            {d.label}
+                        </button>
                     ))}
                 </div>
 
-                {/* Tab 0: Colours */}
-                {tab === 0 && (
-                    <div className="flex flex-wrap justify-center gap-6">
-                        {colors.map(c => (
-                            <Link key={c.name} href={`/shop?color=${c.q}`} className="group flex flex-col items-center gap-2 w-[80px]">
-                                <div className="h-[60px] w-[60px] rounded-full shadow-md border-2 border-white transition-transform duration-300 group-hover:scale-110 group-hover:shadow-lg" style={{ backgroundColor: c.hex }} />
-                                <span className="text-[11px] font-medium text-[#4a4a4a] group-hover:text-brand transition-colors">{c.name}</span>
+                {isColour ? (
+                    <div className="flex flex-wrap justify-center gap-x-6 gap-y-6">
+                        {current.items.map((item) => (
+                            <Link key={item.handle} href={item.url} className="group flex w-[80px] flex-col items-center gap-2">
+                                <span
+                                    className="h-[60px] w-[60px] rounded-full border border-gray-200 shadow-sm transition-transform group-hover:scale-110"
+                                    style={swatchFor(item.title).startsWith('linear')
+                                        ? { backgroundImage: swatchFor(item.title) }
+                                        : { backgroundColor: swatchFor(item.title) }}
+                                />
+                                <span className="text-center text-[12px] text-gray-600 group-hover:text-brand">{item.title}</span>
                             </Link>
                         ))}
                     </div>
-                )}
-
-                {/* Tab 1: Spaces — image cards */}
-                {tab === 1 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {spaces.map(s => (
-                            <Link key={s.name} href={`/shop?space=${s.q}`} className="group relative overflow-hidden rounded-lg aspect-[4/3]">
-                                <img src={s.img} alt={s.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent transition-opacity duration-300 group-hover:from-black/70" />
-                                <div className="absolute bottom-0 left-0 right-0 p-3">
-                                    <span className="text-[13px] font-semibold text-white">{s.name}</span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-
-                {/* Tab 2: Sizes — image cards with size overlay */}
-                {tab === 2 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {sizes.map(s => (
-                            <Link key={s.name} href={`/shop?size=${s.q}`} className="group relative overflow-hidden rounded-lg aspect-square">
-                                <img src={s.img} alt={s.label} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-black/40 transition-all duration-300 group-hover:bg-black/50" />
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-[18px] font-bold text-white">{s.name}</span>
-                                    <span className="text-[11px] text-white/80 mt-1">mm</span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-
-                {/* Tab 3: Materials — image cards with description */}
-                {tab === 3 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {materials.map(m => (
-                            <Link key={m.name} href={`/shop?material=${m.q}`} className="group relative overflow-hidden rounded-lg aspect-[3/4]">
-                                <img src={m.img} alt={m.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-300 group-hover:from-black/80" />
-                                <div className="absolute bottom-0 left-0 right-0 p-3">
-                                    <span className="text-[14px] font-bold text-white block">{m.name}</span>
-                                    <span className="text-[11px] text-white/70 mt-0.5 block">{m.desc}</span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-
-                {/* Tab 4: Finishes — image cards with description */}
-                {tab === 4 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {finishes.map(f => (
-                            <Link key={f.name} href={`/shop?finish=${f.q}`} className="group relative overflow-hidden rounded-lg aspect-[3/4]">
-                                <img src={f.img} alt={f.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-300 group-hover:from-black/80" />
-                                <div className="absolute bottom-0 left-0 right-0 p-3">
-                                    <span className="text-[14px] font-bold text-white block">{f.name}</span>
-                                    <span className="text-[11px] text-white/70 mt-0.5 block">{f.desc}</span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-
-                {/* Tab 5: Styles — image cards with description */}
-                {tab === 5 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {styles.map(st => (
-                            <Link key={st.name} href={`/shop?style=${st.q}`} className="group relative overflow-hidden rounded-lg aspect-[3/4]">
-                                <img src={st.img} alt={st.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-300 group-hover:from-black/80" />
-                                <div className="absolute bottom-0 left-0 right-0 p-3">
-                                    <span className="text-[14px] font-bold text-white block">{st.name}</span>
-                                    <span className="text-[11px] text-white/70 mt-0.5 block">{st.desc}</span>
+                ) : (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                        {current.items.map((item) => (
+                            <Link
+                                key={item.handle}
+                                href={item.url}
+                                className="group relative block overflow-hidden rounded-lg bg-gray-900"
+                                style={{ aspectRatio: '4/3' }}
+                            >
+                                {item.image ? (
+                                    <img
+                                        src={item.image}
+                                        alt={item.title}
+                                        loading="lazy"
+                                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    />
+                                ) : (
+                                    <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800" />
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                                <div className="absolute bottom-0 left-0 right-0 p-4">
+                                    <div className="text-[15px] font-semibold text-white">{item.title}</div>
+                                    <div className="text-[11px] text-white/70">{item.count} products</div>
                                 </div>
                             </Link>
                         ))}
@@ -974,7 +904,7 @@ function CustomerReviews() {
 /* ═══════════════════════════════════════════════════════════════════════
    MAIN HOME
    ═══════════════════════════════════════════════════════════════════════ */
-export default function Home({ hero_slider, category_carousel, new_arrivals, video_section, discount_tile_carousel, gallery, rootCategories = [], trendingProducts = [] }) {
+export default function Home({ hero_slider, category_carousel, new_arrivals, video_section, discount_tile_carousel, gallery, rootCategories = [], trendingProducts = [], tileFinder = [] }) {
     // Trending is hand-picked in admin now; the old new_arrivals feed stays
     // as a fallback so the strip is never empty if that prop is missing.
     const products = trendingProducts.length
@@ -987,7 +917,7 @@ export default function Home({ hero_slider, category_carousel, new_arrivals, vid
             <ShopByCollection categories={rootCategories} />
             <TrendingProducts products={products} />
             <TileVisualizer />
-            <ChooseBy />
+            <ChooseBy dimensions={tileFinder} />
             <OurShowroom />
             <OurServices />
             <FeaturedCollections />

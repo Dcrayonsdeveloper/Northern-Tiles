@@ -65,6 +65,69 @@ class HomeService
     }
 
     /**
+     * The home page's "Find your perfect tile" filters.
+     *
+     * Built from the collections the admin maintains, grouped by the dimension
+     * their handle encodes — colour-white, space-bathroom, finish-matt. The
+     * section used to be hardcoded literals linking at ?color=white, which read
+     * a separate set of import tags nobody could edit; the collections page
+     * existed to drive this and was never wired to it.
+     *
+     * Only collections holding products are offered: a swatch that lands on an
+     * empty page is worse than one less swatch. Dimensions with nothing in them
+     * drop out entirely, which is what makes an unused "By Size" disappear
+     * rather than render an empty tab.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function tileFinder(): array
+    {
+        return Cache::remember('home.tile_finder', 600, function () {
+            $dimensions = [
+                'colour' => ['label' => 'By Colour', 'prefix' => 'colour-'],
+                'space' => ['label' => 'By Space', 'prefix' => 'space-'],
+                'size' => ['label' => 'By Size', 'prefix' => 'size-'],
+                'material' => ['label' => 'By Material', 'prefix' => 'material-'],
+                'finish' => ['label' => 'By Finish', 'prefix' => 'finish-'],
+                'style' => ['label' => 'By Style', 'prefix' => 'style-'],
+            ];
+
+            $collections = \App\Domain\Catalog\Models\Collection::query()
+                ->where('is_active', true)
+                ->orderBy('title')
+                ->get(['id', 'title', 'handle', 'image_path']);
+
+            $out = [];
+
+            foreach ($dimensions as $key => $dimension) {
+                $items = $collections
+                    ->filter(fn ($c) => str_starts_with((string) $c->handle, $dimension['prefix']))
+                    ->map(fn ($c) => [
+                        'title' => $c->title,
+                        'handle' => $c->handle,
+                        'url' => '/collections/' . $c->handle,
+                        'count' => $c->products()->where('is_active', true)->count(),
+                        'image' => $c->image_url,
+                    ])
+                    ->filter(fn ($item) => $item['count'] > 0)
+                    ->values();
+
+                if ($items->isEmpty()) {
+                    continue;
+                }
+
+                $out[] = [
+                    'key' => $key,
+                    'label' => $dimension['label'],
+                    'items' => $items->all(),
+                ];
+            }
+
+            return $out;
+        });
+    }
+
+    /**
      * Root categories for the "Shop by Category" strip.
      *
      * Was six hardcoded cards with stock photography, invented counts

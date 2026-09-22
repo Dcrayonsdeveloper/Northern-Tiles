@@ -119,22 +119,25 @@ function RuleBuilder({ rules, onChange, fields, operators, presets }) {
     );
 }
 
-function ProductSelector({ selectedIds, onChange, onSearch }) {
+function ProductSelector({ selectedIds = [], known = [], onChange }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(false);
+    // Details for everything on the list: what the page was given, plus
+    // anything added during this edit. Without it the picker knew the ids but
+    // not the names, so it could only report a count.
+    const [details, setDetails] = useState(() => new Map(known.map((p) => [Number(p.id), p])));
 
     const search = async (query) => {
         if (!query || query.length < 2) {
             setSearchResults([]);
             return;
         }
-
         setLoading(true);
         try {
             const response = await fetch(route('admin.collections.search-products') + '?q=' + encodeURIComponent(query));
             const data = await response.json();
-            setSearchResults(data.filter(p => !selectedIds.includes(p.id)));
+            setSearchResults(data.filter((p) => !selectedIds.includes(p.id)));
         } catch (e) {
             console.error(e);
         }
@@ -142,13 +145,14 @@ function ProductSelector({ selectedIds, onChange, onSearch }) {
     };
 
     const addProduct = (product) => {
+        setDetails((m) => new Map(m).set(Number(product.id), product));
         onChange([...selectedIds, product.id]);
-        setSearchResults(searchResults.filter(p => p.id !== product.id));
+        setSearchResults(searchResults.filter((p) => p.id !== product.id));
     };
 
-    const removeProduct = (id) => {
-        onChange(selectedIds.filter(i => i !== id));
-    };
+    const removeProduct = (id) => onChange(selectedIds.filter((i) => Number(i) !== Number(id)));
+
+    const rows = selectedIds.map((id) => details.get(Number(id)) ?? { id, name: `Product #${id}` });
 
     return (
         <div className="space-y-3">
@@ -156,15 +160,13 @@ function ProductSelector({ selectedIds, onChange, onSearch }) {
                 <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        search(e.target.value);
-                    }}
-                    placeholder="Search products to add..."
+                    onChange={(e) => { setSearchQuery(e.target.value); search(e.target.value); }}
+                    placeholder="Search products to add…"
                     className="admin-input w-full"
                 />
+                {loading && <p className="mt-1 text-[11px] text-gray-400">Searching…</p>}
                 {searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                    <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
                         {searchResults.map((product) => (
                             <button
                                 key={product.id}
@@ -172,7 +174,10 @@ function ProductSelector({ selectedIds, onChange, onSearch }) {
                                 onClick={() => addProduct(product)}
                                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-gray-50"
                             >
-                                <span className="font-medium">{product.name}</span>
+                                <span className="h-8 w-8 flex-shrink-0 overflow-hidden rounded bg-gray-100">
+                                    {product.image_url ? <img src={product.image_url} alt="" className="h-full w-full object-cover" /> : null}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate font-medium">{product.name}</span>
                                 <span className="text-gray-500">${product.price}</span>
                             </button>
                         ))}
@@ -180,9 +185,49 @@ function ProductSelector({ selectedIds, onChange, onSearch }) {
                 )}
             </div>
 
-            <div className="text-xs text-gray-500">
-                {selectedIds.length} products selected
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-700">
+                    {rows.length} product{rows.length === 1 ? '' : 's'} in this collection
+                </span>
+                {rows.length > 0 && (
+                    <button
+                        type="button"
+                        onClick={() => { if (confirm(`Remove all ${rows.length} products from this collection?`)) onChange([]); }}
+                        className="text-[11px] text-gray-400 hover:text-red-600"
+                    >
+                        Remove all
+                    </button>
+                )}
             </div>
+
+            {rows.length > 0 ? (
+                <ul className="max-h-80 divide-y divide-gray-100 overflow-y-auto rounded-lg border border-gray-200">
+                    {rows.map((p) => (
+                        <li key={p.id} className="flex items-center gap-2 px-2 py-1.5">
+                            <span className="h-9 w-9 flex-shrink-0 overflow-hidden rounded bg-gray-100">
+                                {p.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-cover" /> : null}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <span className="block truncate text-xs text-gray-900">{p.name}</span>
+                                {p.sku ? <span className="block text-[11px] text-gray-400">{p.sku}</span> : null}
+                            </span>
+                            {p.price ? <span className="text-[11px] text-gray-500">${p.price}</span> : null}
+                            <button
+                                type="button"
+                                onClick={() => removeProduct(p.id)}
+                                className="rounded p-1 text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                                aria-label={`Remove ${p.name}`}
+                            >
+                                ×
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                <p className="rounded-lg border border-dashed border-gray-200 py-6 text-center text-xs text-gray-500">
+                    No products yet — search above to add some.
+                </p>
+            )}
         </div>
     );
 }
@@ -403,70 +448,20 @@ export default function Create({ collection, sortModes, ruleFields, ruleOperator
                             </div>
                         </div>
 
-                        {/* Collection Type */}
+                        {/* Products. The Manual/Automated switch is gone: these
+                            collections are the storefront's filter dimensions and
+                            are curated by hand, and the automated branch hid the
+                            product list behind a rule builder nobody used. */}
                         <div className="rounded-xl border border-gray-200 bg-white p-4">
-                            <h2 className="text-xs font-semibold text-gray-900 mb-4">Collection Type</h2>
-                            <div className="flex gap-4">
-                                <label className="flex items-center gap-2">
-                                    <input
-                                        type="radio"
-                                        name="type"
-                                        value="manual"
-                                        checked={data.type === 'manual'}
-                                        onChange={(e) => setData('type', e.target.value)}
-                                        className="text-brand focus:ring-brand"
-                                    />
-                                    <span className="text-xs">Manual</span>
-                                </label>
-                                <label className="flex items-center gap-2">
-                                    <input
-                                        type="radio"
-                                        name="type"
-                                        value="automated"
-                                        checked={data.type === 'automated'}
-                                        onChange={(e) => setData('type', e.target.value)}
-                                        className="text-brand focus:ring-brand"
-                                    />
-                                    <span className="text-xs">Automated</span>
-                                </label>
-                            </div>
-
-                            {data.type === 'automated' ? (
-                                <div className="mt-4">
-                                    <h3 className="text-xs font-medium text-gray-700 mb-2">Conditions</h3>
-                                    <RuleBuilder
-                                        rules={data.rules_json}
-                                        onChange={(rules) => setData('rules_json', rules)}
-                                        fields={ruleFields}
-                                        operators={ruleOperators}
-                                        presets={rulePresets}
-                                    />
-
-                                    {/* Preview */}
-                                    <div className="mt-4 rounded-lg bg-gray-50 p-3">
-                                        <div className="text-xs font-medium text-gray-700">
-                                            Preview: {preview.count} products match
-                                        </div>
-                                        {preview.products?.length > 0 && (
-                                            <div className="mt-2 flex flex-wrap gap-2">
-                                                {preview.products.map((p) => (
-                                                    <span key={p.id} className="rounded bg-white px-2 py-1 text-[11px] border">
-                                                        {p.name}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="mt-4">
-                                    <h3 className="text-xs font-medium text-gray-700 mb-2">Products</h3>
-                                    <ProductSelector
-                                        selectedIds={data.product_ids}
-                                        onChange={(ids) => setData('product_ids', ids)}
-                                    />
-                                </div>
-                            )}
+                            <h2 className="mb-1 text-xs font-semibold text-gray-900">Products</h2>
+                            <p className="mb-3 text-[11px] text-gray-500">
+                                What appears under this filter on the storefront.
+                            </p>
+                            <ProductSelector
+                                selectedIds={data.product_ids}
+                                known={collection?.products ?? []}
+                                onChange={(ids) => setData('product_ids', ids)}
+                            />
                         </div>
 
                         {/* SEO */}

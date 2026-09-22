@@ -147,16 +147,26 @@ class CollectionController extends Controller
 
     public function edit(Collection $collection): Response
     {
+        // No limit: the editor lists what is in the collection so it can be
+        // managed, and a cap of 100 silently hid the rest of a large one.
         $collection->load(['products' => function ($q) {
-            $q->select('products.id', 'name', 'slug', 'price', 'image_url')
-                ->orderBy('collection_products.sort_order')
-                ->limit(100);
+            $q->select('products.id', 'name', 'slug', 'sku', 'price', 'image_url')
+                ->orderBy('collection_products.sort_order');
         }]);
 
         return Inertia::render('Admin/Collections/Edit', [
             'collection' => [
                 ...$collection->toArray(),
                 'product_ids' => $collection->products->pluck('id'),
+                // The picker had ids only, so it could say "24 products
+                // selected" but not show which 24.
+                'products' => $collection->products->map(fn ($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'sku' => $p->sku,
+                    'price' => $p->price,
+                    'image_url' => $p->image_url,
+                ])->values(),
                 'image_url' => $collection->image_url,
                 'brochure_url' => $collection->brochure_url,
             ],

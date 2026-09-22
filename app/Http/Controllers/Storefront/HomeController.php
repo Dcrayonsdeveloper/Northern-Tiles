@@ -18,6 +18,7 @@ class HomeController extends Controller
         // track the catalogue on a shorter leash than the page layout does.
         $homeData['rootCategories'] = $homeService->rootCategories();
         $homeData['trendingProducts'] = $homeService->trendingProducts();
+        $homeData['tileFinder'] = $homeService->tileFinder();
 
         return Inertia::render('Storefront/Home', $homeData);
     }
