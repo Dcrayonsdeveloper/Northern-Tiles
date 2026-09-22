@@ -65,9 +65,6 @@ export default function Index({ carts, statistics, filters }) {
             <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-gray-900">Abandoned Carts</div>
                 <div className="flex items-center gap-2">
-                    <Link href={route('admin.abandoned-carts.flows')} className="btn-secondary">
-                        Manage Flows
-                    </Link>
                     <Link href={route('admin.email-templates.index')} className="btn-secondary">
                         Email Templates
                     </Link>
