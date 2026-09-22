@@ -60,41 +60,63 @@ function ProductCard({ product }) {
 }
 
 export default function Show({ collection, products }) {
+    // A collection without a picture should not get a picture-sized banner.
+    const hasBanner = Boolean(collection.image_url);
+
     return (
         <PublicLayout>
             <Head title={collection.meta_title || collection.title} />
 
-            {/* Collection Banner */}
+            {/* Collection banner.
+                Most of these collections are filter dimensions — Beige, Matt,
+                Bathroom — and carry no photograph. The banner was a fixed
+                420px of near-black whether there was an image or not, so those
+                pages opened on a wall of nothing. With no image it is now a
+                short, light header; with one it keeps the full photo treatment. */}
             <section
-                className="relative flex min-h-[360px] items-center overflow-hidden bg-gray-900 md:min-h-[420px]"
+                className={`relative flex items-center overflow-hidden ${
+                    hasBanner
+                        ? 'min-h-[360px] bg-gray-900 md:min-h-[420px]'
+                        : 'border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white'
+                }`}
                 style={
-                    collection.image_url
+                    hasBanner
                         ? { backgroundImage: `url(${collection.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
                         : undefined
                 }
             >
-                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70" />
+                {hasBanner && <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70" />}
 
-                <Container className="relative z-10 py-16 text-center">
-                    <nav className="mb-6 flex items-center justify-center gap-2 text-xs text-white/80">
-                        <Link href={route('home')} className="hover:text-white">Home</Link>
+                <Container className={`relative z-10 text-center ${hasBanner ? 'py-16' : 'py-10'}`}>
+                    <nav className={`mb-5 flex items-center justify-center gap-2 text-xs ${hasBanner ? 'text-white/80' : 'text-gray-500'}`}>
+                        <Link href={route('home')} className={hasBanner ? 'hover:text-white' : 'hover:text-brand'}>Home</Link>
                         <span>/</span>
-                        <Link href={route('collections.index')} className="hover:text-white">Collections</Link>
+                        <Link href={route('collections.index')} className={hasBanner ? 'hover:text-white' : 'hover:text-brand'}>Collections</Link>
                         <span>/</span>
-                        <span className="text-white">{collection.title}</span>
+                        <span className={hasBanner ? 'text-white' : 'text-gray-900'}>{collection.title}</span>
                     </nav>
 
-                    <p className="text-[11px] font-semibold uppercase tracking-[3px] text-white/80">Collection</p>
-                    <h1 className="mt-3 text-3xl font-light uppercase tracking-[2px] text-white md:text-5xl">
+                    <p className={`text-[11px] font-semibold uppercase tracking-[3px] ${hasBanner ? 'text-white/80' : 'text-brand'}`}>
+                        Collection
+                    </p>
+                    <h1 className={`mt-2 font-light uppercase tracking-[2px] ${
+                        hasBanner ? 'text-3xl text-white md:text-5xl' : 'text-2xl text-gray-900 md:text-4xl'
+                    }`}>
                         {collection.title}
                     </h1>
                     <div className="mx-auto mt-4 h-[2px] w-12 bg-brand" />
 
                     {collection.description && (
-                        <p className="mx-auto mt-5 max-w-2xl text-sm text-white/85 md:text-base">
+                        <p className={`mx-auto mt-4 max-w-2xl text-sm md:text-base ${hasBanner ? 'text-white/85' : 'text-gray-600'}`}>
                             {collection.description}
                         </p>
                     )}
+
+                    {products?.total ? (
+                        <p className={`mt-3 text-xs ${hasBanner ? 'text-white/70' : 'text-gray-500'}`}>
+                            {products.total} product{products.total === 1 ? '' : 's'}
+                        </p>
+                    ) : null}
 
                     {collection.brochure_url && (
                         <div className="mt-7">
