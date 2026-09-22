@@ -95,7 +95,10 @@ class CollectionController extends Controller
             'product_ids.*' => ['exists:products,id'],
             'image' => ['nullable', 'image', 'max:2048'],
             'brochure' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'redirect_to' => ['nullable', 'string', 'in:index'],
         ]);
+
+        unset($validated['redirect_to']);
 
         // Generate handle if not provided
         if (empty($validated['handle'])) {
@@ -126,6 +129,15 @@ class CollectionController extends Controller
         // Reindex if automated
         if ($collection->isAutomated()) {
             ReindexCollectionsJob::dispatch($collection->id);
+        }
+
+        // Created from the collections list, where the job is filing products
+        // into an existing dimension — send them back to the tab they were on
+        // rather than to a full edit form they did not ask for.
+        if ($request->input('redirect_to') === 'index') {
+            return redirect()
+                ->route('admin.collections.index')
+                ->with('success', "Created \"{$collection->title}\".");
         }
 
         return redirect()

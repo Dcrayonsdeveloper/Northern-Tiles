@@ -122,6 +122,77 @@ function AddProducts({ collection, onAdded }) {
     );
 }
 
+/**
+ * Creates another collection inside one dimension.
+ *
+ * The handle carries the dimension — colour-sand, finish-crackle — and that
+ * prefix is what everything else groups on, so it is derived from the tab
+ * rather than typed. Getting it wrong by hand would file the collection under
+ * "Other" and leave it out of the storefront filter it was meant for.
+ */
+function NewCollection({ group, existing = [] }) {
+    const [open, setOpen] = useState(false);
+    const [title, setTitle] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+
+    const prefix = group?.prefixes?.[0];
+    if (!prefix) return null;
+
+    const slug = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const handle = slug ? `${prefix}${slug}` : '';
+    const clash = handle && existing.some((c) => String(c.handle).toLowerCase() === handle);
+
+    const create = () => {
+        if (!slug || clash) return;
+        setBusy(true);
+        setError('');
+        router.post(route('admin.collections.store'), {
+            title: title.trim(),
+            handle,
+            type: 'manual',
+            sort_mode: 'manual',
+            is_active: true,
+            redirect_to: 'index',
+        }, {
+            preserveScroll: true,
+            onError: (errs) => setError(Object.values(errs)[0] ?? 'Could not create that collection.'),
+            onSuccess: () => { setTitle(''); setOpen(false); },
+            onFinish: () => setBusy(false),
+        });
+    };
+
+    if (!open) {
+        return (
+            <button type="button" onClick={() => setOpen(true)} className="btn-primary px-3 py-1.5 text-xs">
+                + New {group.label.replace('By ', '').toLowerCase()}
+            </button>
+        );
+    }
+
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            <input
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && create()}
+                placeholder={`e.g. ${group.key === 'colour' ? 'Sand' : group.key === 'size' ? '600x600' : 'New'}`}
+                className="admin-input w-48 text-xs"
+            />
+            <span className="text-[11px] text-gray-400">/{handle || `${prefix}…`}</span>
+            <button type="button" onClick={create} disabled={!slug || clash || busy} className="btn-primary px-3 py-1.5 text-xs disabled:opacity-50">
+                {busy ? 'Creating…' : 'Create'}
+            </button>
+            <button type="button" onClick={() => { setOpen(false); setTitle(''); setError(''); }} className="btn-secondary px-3 py-1.5 text-xs">
+                Cancel
+            </button>
+            {clash ? <span className="text-[11px] text-amber-700">That one already exists.</span> : null}
+            {error ? <span className="text-[11px] text-red-600">{error}</span> : null}
+        </div>
+    );
+}
+
 export default function Index({ collections = [], filters = {} }) {
     const list = Array.isArray(collections) ? collections : (collections.data ?? []);
     const [search, setSearch] = useState(filters?.search ?? '');
@@ -186,7 +257,10 @@ export default function Index({ collections = [], filters = {} }) {
             </div>
 
             <div className="admin-card mt-4">
-                <div className="mb-3 text-xs font-semibold text-gray-900">{current?.label}</div>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-gray-900">{current?.label}</span>
+                    <NewCollection group={current} existing={list} />
+                </div>
 
                 {current?.items?.length ? (
                     <div className="divide-y divide-gray-100">
