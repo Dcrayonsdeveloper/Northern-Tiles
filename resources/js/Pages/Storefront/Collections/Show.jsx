@@ -60,64 +60,45 @@ function ProductCard({ product }) {
 }
 
 export default function Show({ collection, products }) {
-    // A collection without a picture should not get a picture-sized banner.
-    const hasBanner = Boolean(collection.image_url);
 
     return (
         <PublicLayout>
             <Head title={collection.meta_title || collection.title} />
 
-            {/* Collection banner.
-                Most of these collections are filter dimensions — Beige, Matt,
-                Bathroom — and carry no photograph. The banner was a fixed
-                420px of near-black whether there was an image or not, so those
-                pages opened on a wall of nothing. With no image it is now a
-                short, light header; with one it keeps the full photo treatment. */}
-            <section
-                className={`relative flex items-center overflow-hidden ${
-                    hasBanner
-                        ? 'min-h-[360px] bg-gray-900 md:min-h-[420px]'
-                        : 'border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white'
-                }`}
-                style={
-                    hasBanner
-                        ? { backgroundImage: `url(${collection.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                        : undefined
-                }
-            >
-                {hasBanner && <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70" />}
-
-                <Container className={`relative z-10 text-center ${hasBanner ? 'py-16' : 'py-10'}`}>
-                    <nav className={`mb-5 flex items-center justify-center gap-2 text-xs ${hasBanner ? 'text-white/80' : 'text-gray-500'}`}>
-                        <Link href={route('home')} className={hasBanner ? 'hover:text-white' : 'hover:text-brand'}>Home</Link>
+            {/* Collection header.
+                Always this — no photo background, whether the collection has an
+                uploaded image or not. These are filter dimensions (Bathroom,
+                Beige, 300x300), and a full-bleed tile close-up behind the title
+                made every one of them look like a different page and swallowed
+                the breadcrumb. The uploaded image is still used on the home
+                page card; it just does not become a wall here. */}
+            <section className="border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
+                <Container className="py-10 text-center">
+                    <nav className="mb-5 flex items-center justify-center gap-2 text-xs text-gray-500">
+                        <Link href={route('home')} className="hover:text-brand">Home</Link>
                         <span>/</span>
-                        <Link href={route('collections.index')} className={hasBanner ? 'hover:text-white' : 'hover:text-brand'}>Collections</Link>
+                        <Link href={route('collections.index')} className="hover:text-brand">Collections</Link>
                         <span>/</span>
-                        <span className={hasBanner ? 'text-white' : 'text-gray-900'}>{collection.title}</span>
+                        <span className="text-gray-900">{collection.title}</span>
                     </nav>
 
-                    <p className={`text-[11px] font-semibold uppercase tracking-[3px] ${hasBanner ? 'text-white/80' : 'text-brand'}`}>
-                        Collection
-                    </p>
-                    <h1 className={`mt-2 font-light uppercase tracking-[2px] ${
-                        hasBanner ? 'text-3xl text-white md:text-5xl' : 'text-2xl text-gray-900 md:text-4xl'
-                    }`}>
+                    <p className="text-[11px] font-semibold uppercase tracking-[3px] text-brand">Collection</p>
+                    <h1 className="mt-2 text-2xl font-light uppercase tracking-[2px] text-gray-900 md:text-4xl">
                         {collection.title}
                     </h1>
                     <div className="mx-auto mt-4 h-[2px] w-12 bg-brand" />
 
                     {collection.description && (
-                        <p className={`mx-auto mt-4 max-w-2xl text-sm md:text-base ${hasBanner ? 'text-white/85' : 'text-gray-600'}`}>
+                        <p className="mx-auto mt-4 max-w-2xl text-sm text-gray-600 md:text-base">
                             {collection.description}
                         </p>
                     )}
 
                     {products?.total ? (
-                        <p className={`mt-3 text-xs ${hasBanner ? 'text-white/70' : 'text-gray-500'}`}>
+                        <p className="mt-3 text-xs text-gray-500">
                             {products.total} product{products.total === 1 ? '' : 's'}
                         </p>
                     ) : null}
-
                 </Container>
             </section>
 
