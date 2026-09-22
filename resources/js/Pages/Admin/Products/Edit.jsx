@@ -1,4 +1,5 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { groupCollections } from '@/Utils/collectionGroups';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import debounce from 'lodash/debounce';
@@ -277,143 +278,95 @@ function MediaUploader({ product, media = [], onUpdate }) {
 }
 
 // Collections Display Component
-function CollectionsCard({ productCollections = [], allCollections = [], productId, onUpdate }) {
-    const [isAdding, setIsAdding] = useState(false);
-    const [selectedCollection, setSelectedCollection] = useState('');
+function CollectionsCard({ value = [], allCollections = [], onChange }) {
+    // One dropdown per storefront filter dimension, because that is what these
+    // collections are: colour-white, space-bathroom, finish-matt. A single flat
+    // "Select collection…" list of 36 gave no clue which dimension you were
+    // setting, and the storefront reads them per dimension.
+    const groups = groupCollections(allCollections.filter((c) => c.type === 'manual'));
+    const selected = new Set((value ?? []).map(Number));
 
-    const availableCollections = allCollections.filter(
-        c => c.type === 'manual' && !productCollections.some(pc => pc.id === c.id)
-    );
-
-    const handleAddToCollection = async () => {
-        if (!selectedCollection) return;
-
-        try {
-            const response = await fetch(route('admin.collections.add-product', selectedCollection), {
-                method: 'POST',
-                body: JSON.stringify({ product_id: productId }),
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
-                    'Content-Type': 'application/json',
-                },
-            });
-            if (response.ok) {
-                onUpdate?.();
-            }
-        } catch (error) {
-            console.error('Failed to add to collection:', error);
-        }
-        setSelectedCollection('');
-        setIsAdding(false);
+    const add = (id) => {
+        if (!id) return;
+        onChange?.([...selected, Number(id)]);
     };
 
-    const handleRemoveFromCollection = async (collectionId) => {
-        if (!confirm('Remove product from this collection?')) return;
-
-        try {
-            const response = await fetch(route('admin.collections.remove-product', collectionId), {
-                method: 'POST',
-                body: JSON.stringify({ product_id: productId }),
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
-                    'Content-Type': 'application/json',
-                },
-            });
-            if (response.ok) {
-                onUpdate?.();
-            }
-        } catch (error) {
-            console.error('Failed to remove from collection:', error);
-        }
+    const remove = (id) => {
+        const next = new Set(selected);
+        next.delete(Number(id));
+        onChange?.([...next]);
     };
+
+    const byId = new Map(allCollections.map((c) => [Number(c.id), c]));
 
     return (
         <div className="admin-card">
-            <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-semibold text-gray-900">Collections</h3>
-                {!isAdding && availableCollections.length > 0 && (
-                    <button
-                        type="button"
-                        onClick={() => setIsAdding(true)}
-                        className="text-xs text-brand hover:text-brand/80"
-                    >
-                        Add to collection
-                    </button>
-                )}
+            <h3 className="mb-1 text-xs font-semibold text-gray-900">Collections</h3>
+            <p className="mb-3 text-[10px] text-gray-400">
+                Where this product appears under “Find your perfect tile”
+            </p>
+
+            <div className="space-y-3">
+                {groups.map((group) => {
+                    const chosen = group.items.filter((c) => selected.has(Number(c.id)));
+                    const available = group.items.filter((c) => !selected.has(Number(c.id)));
+
+                    return (
+                        <div key={group.key}>
+                            <label className="block text-xs font-medium text-gray-700">{group.label}</label>
+
+                            {/* Already chosen, each removable. A tile can be two
+                                colours, so this is not a single-value picker. */}
+                            {chosen.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                    {chosen.map((c) => (
+                                        <span key={c.id} className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800">
+                                            {c.title}
+                                            <button
+                                                type="button"
+                                                onClick={() => remove(c.id)}
+                                                className="text-blue-400 transition hover:text-red-600"
+                                                aria-label={`Remove ${c.title}`}
+                                            >
+                                                ×
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            <select
+                                value=""
+                                onChange={(e) => add(e.target.value)}
+                                disabled={available.length === 0}
+                                className="mt-1 admin-select w-full text-xs disabled:opacity-50"
+                            >
+                                <option value="">
+                                    {group.items.length === 0
+                                        ? 'None set up yet'
+                                        : available.length === 0
+                                            ? 'All selected'
+                                            : `Add ${group.label.replace('By ', '').toLowerCase()}…`}
+                                </option>
+                                {available.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.title}</option>
+                                ))}
+                            </select>
+                        </div>
+                    );
+                })}
             </div>
 
-            {isAdding && (
-                <div className="mb-3 flex gap-2">
-                    <select
-                        value={selectedCollection}
-                        onChange={(e) => setSelectedCollection(e.target.value)}
-                        className="admin-select flex-1 text-xs"
-                    >
-                        <option value="">Select collection...</option>
-                        {availableCollections.map((c) => (
-                            <option key={c.id} value={c.id}>{c.title}</option>
-                        ))}
-                    </select>
-                    <button
-                        type="button"
-                        onClick={handleAddToCollection}
-                        className="btn-primary text-xs px-2"
-                        disabled={!selectedCollection}
-                    >
-                        Add
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setIsAdding(false)}
-                        className="btn-secondary text-xs px-2"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            )}
-
-            {productCollections.length > 0 ? (
-                <div className="space-y-2">
-                    {productCollections.map((collection) => (
-                        <div
-                            key={collection.id}
-                            className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs"
-                        >
-                            <div className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${collection.type === 'automated' ? 'bg-blue-500' : 'bg-green-500'}`} />
-                                <span className="font-medium">{collection.title}</span>
-                                <span className="text-gray-400 text-[10px]">
-                                    ({collection.type})
-                                </span>
-                            </div>
-                            {collection.type === 'manual' && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveFromCollection(collection.id)}
-                                    className="text-gray-400 hover:text-red-500"
-                                >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <p className="text-xs text-gray-500">Not in any collections</p>
-            )}
-
-            {productCollections.some(c => c.type === 'automated') && (
-                <p className="mt-2 text-[10px] text-gray-400">
-                    Automated collections are managed by rules
+            {/* Anything selected that is no longer in an active collection —
+                shown so it can be cleared rather than silently persisting. */}
+            {[...selected].filter((id) => !byId.has(id)).length > 0 && (
+                <p className="mt-3 text-[10px] text-amber-700">
+                    {[...selected].filter((id) => !byId.has(id)).length} selected collection(s) are inactive or deleted.
                 </p>
             )}
         </div>
     );
 }
-
-// Tag Input Component
 function TagInput({ tags = [], onChange, popularTags = [] }) {
     const [input, setInput] = useState('');
     const [suggestions, setSuggestions] = useState([]);
@@ -693,6 +646,7 @@ export default function Edit({ product, categories, vendors, popularTags, status
         product_type: product?.product_type ?? '',
         category_ids: product?.category_ids ?? [],
         variant_family_id: product?.variant_family_id ?? '',
+        collection_ids: (productCollections ?? []).map((c) => Number(c.id)),
         unit_label: product?.unit_label ?? '',
         quantity_label: product?.quantity_label ?? '',
         show_wastage: product?.show_wastage ?? true,
@@ -1333,10 +1287,9 @@ export default function Edit({ product, categories, vendors, popularTags, status
 
                         {/* Collections */}
                         <CollectionsCard
-                            productCollections={productCollections}
+                            value={data.collection_ids}
                             allCollections={collections}
-                            productId={product?.id}
-                            onUpdate={() => router.reload({ only: ['productCollections'] })}
+                            onChange={(ids) => setData('collection_ids', ids)}
                         />
                     </div>
                 </div>

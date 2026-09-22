@@ -1,4 +1,5 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { groupCollections } from '@/Utils/collectionGroups';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import RichTextEditor from '@/Components/Admin/RichTextEditor';
@@ -96,7 +97,7 @@ function TagInput({ tags = [], onChange, popularTags = [] }) {
     );
 }
 
-export default function Create({ categories, vendors, popularTags, statuses }) {
+export default function Create({ categories, vendors, popularTags, statuses, collections = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         slug: '',
@@ -106,6 +107,7 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
         brand: '',
         product_type: '',
         category_ids: [],
+        collection_ids: [],
         seller_id: '',
         price: '',
         compare_at_price: '',
@@ -615,6 +617,51 @@ export default function Create({ categories, vendors, popularTags, statuses }) {
                                     </select>
                                     <div className="mt-1 text-[10px] text-gray-500">Hold Ctrl/Cmd to select multiple</div>
                                 </div>
+
+                                {/* Same six filter dimensions as the edit page,
+                                    so a product can be filed correctly the
+                                    moment it is created rather than needing a
+                                    second pass afterwards. */}
+                                {groupCollections(collections.filter((c) => c.type === 'manual')).map((group) => {
+                                    const chosen = new Set((data.collection_ids ?? []).map(Number));
+                                    const available = group.items.filter((c) => !chosen.has(Number(c.id)));
+                                    const picked = group.items.filter((c) => chosen.has(Number(c.id)));
+
+                                    return (
+                                        <div key={group.key}>
+                                            <label className="block text-xs font-medium text-gray-700">{group.label}</label>
+                                            {picked.length > 0 && (
+                                                <div className="mt-1 flex flex-wrap gap-1">
+                                                    {picked.map((c) => (
+                                                        <span key={c.id} className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800">
+                                                            {c.title}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setData('collection_ids', (data.collection_ids ?? []).filter((id) => Number(id) !== Number(c.id)))}
+                                                                className="text-blue-400 transition hover:text-red-600"
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <select
+                                                value=""
+                                                onChange={(e) => e.target.value && setData('collection_ids', [...(data.collection_ids ?? []), Number(e.target.value)])}
+                                                disabled={available.length === 0}
+                                                className="mt-1 admin-select w-full text-xs disabled:opacity-50"
+                                            >
+                                                <option value="">
+                                                    {group.items.length === 0 ? 'None set up yet' : available.length === 0 ? 'All selected' : `Add ${group.label.replace('By ', '').toLowerCase()}…`}
+                                                </option>
+                                                {available.map((c) => (
+                                                    <option key={c.id} value={c.id}>{c.title}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    );
+                                })}
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700">Brand</label>
                                     <input

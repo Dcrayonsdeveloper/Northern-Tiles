@@ -50,9 +50,10 @@ class CollectionController extends Controller
             });
         }
 
-        $collections = $query->orderBy('title')
-            ->paginate(20)
-            ->withQueryString();
+        // Not paginated: the page groups these into the six storefront filter
+        // dimensions and lets you switch between them, which a page-at-a-time
+        // list cannot do. There are a few dozen collections, not thousands.
+        $collections = $query->orderBy('title')->get();
 
         return Inertia::render('Admin/Collections/Index', [
             'collections' => $collections,

@@ -76,6 +76,10 @@ class ProductController extends Controller
 
         return Inertia::render('Admin/Products/Create', [
             'categories' => $this->buildCategoryTree($categories),
+            'collections' => Collection::query()
+                ->where('is_active', true)
+                ->orderBy('title')
+                ->get(['id', 'title', 'handle', 'type']),
             'vendors' => $vendors,
             'popularTags' => $popularTags,
             // Two states only: Active is on sale, Draft is hidden everywhere.
@@ -91,12 +95,42 @@ class ProductController extends Controller
     /**
      * Store a new product.
      */
+
+    /**
+     * Put the product in exactly the collections the editor selected.
+     *
+     * These are the storefront's filter dimensions, so the pivot has to end up
+     * matching the form exactly — sync, not attach. products_count is kept in
+     * step because the collections list reads that column rather than counting
+     * rows each time.
+     */
+    private function syncCollections(Product $product, ?array $collectionIds): void
+    {
+        if ($collectionIds === null) {
+            return;   // field absent — leave existing membership alone
+        }
+
+        $before = $product->collections()->pluck('collections.id')->all();
+        $product->collections()->sync(array_map('intval', $collectionIds));
+        $after = $product->collections()->pluck('collections.id')->all();
+
+        $touched = array_unique(array_merge($before, $after));
+
+        if ($touched) {
+            \App\Domain\Catalog\Models\Collection::whereIn('id', $touched)
+                ->get()
+                ->each(fn ($c) => $c->update(['products_count' => $c->products()->count()]));
+        }
+    }
+
     public function store(StoreProductRequest $request): RedirectResponse
     {
         $product = $this->productService->createProduct(
             $request->validated(),
             $request->user()
         );
+
+        $this->syncCollections($product, $request->input('collection_ids'));
 
         // Handle options and variants
         if ($request->has('options') && !empty($request->options)) {
@@ -120,14 +154,16 @@ class ProductController extends Controller
         $popularTags = $this->tagService->getPopularTags(30);
 
         // Get all collections for the dropdown
+        // handle carries the dimension prefix (colour-, space-, finish-…) the
+        // editor groups these by, so it has to come through.
         $collections = Collection::query()
             ->where('is_active', true)
             ->orderBy('title')
-            ->get(['id', 'title', 'type']);
+            ->get(['id', 'title', 'handle', 'type']);
 
         // Get collections this product belongs to
         $productCollections = $product->collections()
-            ->select(['collections.id', 'title', 'type'])
+            ->select(['collections.id', 'title', 'collections.handle', 'type'])
             ->get();
 
         return Inertia::render('Admin/Products/Edit', [
@@ -157,6 +193,8 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
         $this->productService->updateProduct($product, $request->validated(), $request->user());
+
+        $this->syncCollections($product, $request->input('collection_ids'));
 
         // Handle options and variants updates
         if ($request->has('options')) {
