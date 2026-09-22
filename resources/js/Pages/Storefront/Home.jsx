@@ -28,7 +28,7 @@ function SB({ d, off, fn }) {
    ═══════════════════════════════════════════════════════════════════════ */
 const FALLBACK_SLIDES = [
     {
-        image_url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&h=1080&fit=crop&q=80',
+        image_url: '/storage/stock/photo-1600607687939-ce8a6c25118c.jpg',
         image_alt_key: 'Modern tiled living space',
         h1_key: 'Premium Tiles & Flooring',
         p_key: 'Melbourne\'s trusted wholesale supplier of tiles, stone, timber and hybrid flooring.',
@@ -40,7 +40,7 @@ const FALLBACK_SLIDES = [
         align: 'left',
     },
     {
-        image_url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1920&h=1080&fit=crop&q=80',
+        image_url: '/storage/stock/photo-1600210492486-724fe5c67fb0.jpg',
         image_alt_key: 'Luxury bathroom tile design',
         h1_key: 'New Season Collections',
         p_key: 'Discover our latest range of porcelain, ceramic and natural stone tiles.',
@@ -50,7 +50,7 @@ const FALLBACK_SLIDES = [
         align: 'left',
     },
     {
-        image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&h=1080&fit=crop&q=80',
+        image_url: '/storage/stock/photo-1600585154340-be6161a56a0c.jpg',
         image_alt_key: 'Contemporary home interior with premium flooring',
         h1_key: 'Trade & Wholesale Pricing',
         p_key: 'Exclusive rates for builders, architects and designers. Open to the public.',
@@ -293,7 +293,7 @@ const STOCK = {
 
 const artFor = (item) => {
     if (item.image) return item.image;
-    if (STOCK[item.handle]) return 'https://images.unsplash.com/' + STOCK[item.handle] + '?w=600&h=450&fit=crop&q=80';
+    if (STOCK[item.handle]) return '/storage/stock/' + STOCK[item.handle] + '.jpg';
     return item.product_image || null;
 };
 
@@ -573,12 +573,12 @@ function OurServices() {
    ═══════════════════════════════════════════════════════════════════════ */
 function FeaturedCollections() {
     const items = [
-        { num: '01', name: 'SWARD Collection', desc: 'Premium Italian-inspired porcelain tiles', img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=600&h=800&fit=crop&q=80' },
-        { num: '02', name: 'Hybrid Flooring', desc: 'Waterproof rigid core in timber oak', img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=600&h=800&fit=crop&q=80' },
-        { num: '03', name: 'BALTIC STONE', desc: 'Natural stone look porcelain', img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&h=800&fit=crop&q=80' },
-        { num: '04', name: 'External 20mm', desc: 'Heavy-duty outdoor pavers', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&h=800&fit=crop&q=80' },
-        { num: '05', name: 'Solid Oak Timber', desc: 'Sustainably sourced flooring', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=800&fit=crop&q=80' },
-        { num: '06', name: 'Trade Supplies', desc: 'Mapei, ARDEX, Soudal products', img: 'https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=600&h=800&fit=crop&q=80' },
+        { num: '01', name: 'SWARD Collection', desc: 'Premium Italian-inspired porcelain tiles', img: '/storage/stock/photo-1615971677499-5467cbab01c0.jpg' },
+        { num: '02', name: 'Hybrid Flooring', desc: 'Waterproof rigid core in timber oak', img: '/storage/stock/photo-1600566752355-35792bedcfea.jpg' },
+        { num: '03', name: 'BALTIC STONE', desc: 'Natural stone look porcelain', img: '/storage/stock/photo-1600566753190-17f0baa2a6c3.jpg' },
+        { num: '04', name: 'External 20mm', desc: 'Heavy-duty outdoor pavers', img: '/storage/stock/photo-1600210492486-724fe5c67fb0.jpg' },
+        { num: '05', name: 'Solid Oak Timber', desc: 'Sustainably sourced flooring', img: '/storage/stock/photo-1600585154340-be6161a56a0c.jpg' },
+        { num: '06', name: 'Trade Supplies', desc: 'Mapei, ARDEX, Soudal products', img: '/storage/stock/photo-1581858726788-75bc0f6a952d.jpg' },
     ];
     const { r, l, rr, ck, go } = useHS(380);
 
