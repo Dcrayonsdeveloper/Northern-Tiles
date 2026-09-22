@@ -224,9 +224,59 @@ const SWATCHES = {
     multicolour: 'linear-gradient(135deg,#c75b39,#4a7c9b,#6b8e6b)',
 };
 
-const swatchFor = (title) => {
-    const key = String(title ?? '').trim().toLowerCase();
-    return SWATCHES[key] ?? '#d9d9d9';
+const swatchFor = (title) => SWATCHES[String(title ?? '').trim().toLowerCase()] ?? '#d9d9d9';
+
+/* Interior photography per collection, keyed on handle. A collection's own
+   uploaded image always wins; this is the fallback so the strip looks finished
+   before anyone has uploaded anything, and a product shot is the last resort. */
+const STOCK = {
+    'space-bathroom': 'photo-1600210492486-724fe5c67fb0',
+    'space-kitchen': 'photo-1600607687939-ce8a6c25118c',
+    'space-living-room': 'photo-1600585154340-be6161a56a0c',
+    'space-outdoor': 'photo-1600596542815-ffad4c1539a9',
+    'space-pool': 'photo-1600047509807-ba8f99d2cdde',
+    'space-pool-area': 'photo-1600047509807-ba8f99d2cdde',
+    'space-commercial': 'photo-1600585153490-76fb20a32601',
+    'space-shower': 'photo-1584622650111-993a426fbf0a',
+    'space-splashback': 'photo-1556909212-d5b604d0c90d',
+    'space-floor': 'photo-1600566752355-35792bedcfea',
+    'space-wall': 'photo-1615971677499-5467cbab01c0',
+    'space-feature': 'photo-1600566753190-17f0baa2a6c3',
+    'space-feature-wall': 'photo-1600573472592-401b489a3cdc',
+    'space-vanity-feature': 'photo-1552321554-5fefe8c9ef14',
+    'material-porcelain': 'photo-1615971677499-5467cbab01c0',
+    'material-ceramic': 'photo-1600566753190-17f0baa2a6c3',
+    'material-natural-stone': 'photo-1552321554-5fefe8c9ef14',
+    'material-hybrid': 'photo-1600566752355-35792bedcfea',
+    'material-timber': 'photo-1600585154340-be6161a56a0c',
+    'material-engineered': 'photo-1618220179428-22790b461013',
+    'finish-matt': 'photo-1600210492486-724fe5c67fb0',
+    'finish-gloss': 'photo-1584622650111-993a426fbf0a',
+    'finish-honed': 'photo-1600573472592-401b489a3cdc',
+    'finish-textured': 'photo-1552321554-5fefe8c9ef14',
+    'finish-polish': 'photo-1600607687939-ce8a6c25118c',
+    'finish-polished': 'photo-1600607687939-ce8a6c25118c',
+    'finish-lappato': 'photo-1615971677499-5467cbab01c0',
+    'finish-satin': 'photo-1600566753190-17f0baa2a6c3',
+    'finish-handmade': 'photo-1600047509807-ba8f99d2cdde',
+    'finish-smooth': 'photo-1618220179428-22790b461013',
+    'finish-smooth-matt': 'photo-1600210492486-724fe5c67fb0',
+    'finish-dimpled': 'photo-1556909212-d5b604d0c90d',
+    'finish-wave': 'photo-1600596542815-ffad4c1539a9',
+    'style-subway': 'photo-1615971677499-5467cbab01c0',
+    'style-marble-look': 'photo-1600573472592-401b489a3cdc',
+    'style-wood-look': 'photo-1600585154340-be6161a56a0c',
+    'style-concrete-look': 'photo-1600585153490-76fb20a32601',
+    'style-stone-look': 'photo-1552321554-5fefe8c9ef14',
+    'style-terrazzo-look': 'photo-1600566753190-17f0baa2a6c3',
+    'style-travertinelook': 'photo-1600566753190-17f0baa2a6c3',
+    'style-geometric': 'photo-1556909212-d5b604d0c90d',
+};
+
+const artFor = (item) => {
+    if (item.image) return item.image;
+    if (STOCK[item.handle]) return 'https://images.unsplash.com/' + STOCK[item.handle] + '?w=600&h=450&fit=crop&q=80';
+    return item.product_image || null;
 };
 
 function ChooseBy({ dimensions = [] }) {
@@ -239,8 +289,13 @@ function ChooseBy({ dimensions = [] }) {
     const current = dimensions[Math.min(tab, dimensions.length - 1)];
     const isColour = current?.key === 'colour';
 
+    // One row that scrolls sideways, with no bar and no arrows — the cards are
+    // dragged or swiped. A grid wrapped onto three rows on a wide screen and
+    // buried the later options below the fold.
+    const rail = 'flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 scrollbar-hide';
+
     return (
-        <section className="py-12 sm:py-16 bg-white">
+        <section className="bg-white py-12 sm:py-16">
             <Container>
                 <div className="mb-8 text-center">
                     <h2 className="font-heading text-[28px] font-light uppercase tracking-[2px] text-[#222]">
@@ -249,13 +304,13 @@ function ChooseBy({ dimensions = [] }) {
                     <div className="mx-auto mt-3 h-[2px] w-12 bg-brand" />
                 </div>
 
-                <div className="mb-8 flex flex-wrap justify-center gap-1 border-b border-gray-200">
+                <div className={`mb-8 border-b border-gray-200 ${rail} justify-start sm:justify-center`}>
                     {dimensions.map((d, i) => (
                         <button
                             key={d.key}
                             type="button"
                             onClick={() => setTab(i)}
-                            className={`-mb-px border-b-2 px-4 py-3 text-[12px] font-semibold uppercase tracking-[1px] transition-colors ${
+                            className={`-mb-px flex-shrink-0 border-b-2 px-4 py-3 text-[12px] font-semibold uppercase tracking-[1px] transition-colors ${
                                 i === Math.min(tab, dimensions.length - 1)
                                     ? 'border-brand text-brand'
                                     : 'border-transparent text-gray-500 hover:text-gray-800'
@@ -267,45 +322,54 @@ function ChooseBy({ dimensions = [] }) {
                 </div>
 
                 {isColour ? (
-                    <div className="flex flex-wrap justify-center gap-x-6 gap-y-6">
-                        {current.items.map((item) => (
-                            <Link key={item.handle} href={item.url} className="group flex w-[80px] flex-col items-center gap-2">
-                                <span
-                                    className="h-[60px] w-[60px] rounded-full border border-gray-200 shadow-sm transition-transform group-hover:scale-110"
-                                    style={swatchFor(item.title).startsWith('linear')
-                                        ? { backgroundImage: swatchFor(item.title) }
-                                        : { backgroundColor: swatchFor(item.title) }}
-                                />
-                                <span className="text-center text-[12px] text-gray-600 group-hover:text-brand">{item.title}</span>
-                            </Link>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    <div className={`${rail} px-1`}>
                         {current.items.map((item) => (
                             <Link
                                 key={item.handle}
                                 href={item.url}
-                                className="group relative block overflow-hidden rounded-lg bg-gray-900"
-                                style={{ aspectRatio: '4/3' }}
+                                className="group flex w-[84px] flex-shrink-0 snap-start flex-col items-center gap-2"
                             >
-                                {item.image ? (
-                                    <img
-                                        src={item.image}
-                                        alt={item.title}
-                                        loading="lazy"
-                                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                    />
-                                ) : (
-                                    <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800" />
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                                <div className="absolute bottom-0 left-0 right-0 p-4">
-                                    <div className="text-[15px] font-semibold text-white">{item.title}</div>
-                                    <div className="text-[11px] text-white/70">{item.count} products</div>
-                                </div>
+                                <span
+                                    className="h-[62px] w-[62px] rounded-full border border-gray-200 shadow-sm transition-transform group-hover:scale-110"
+                                    style={swatchFor(item.title).startsWith('linear')
+                                        ? { backgroundImage: swatchFor(item.title) }
+                                        : { backgroundColor: swatchFor(item.title) }}
+                                />
+                                <span className="text-center text-[12px] leading-tight text-gray-600 group-hover:text-brand">
+                                    {item.title}
+                                </span>
                             </Link>
                         ))}
+                    </div>
+                ) : (
+                    <div className={rail}>
+                        {current.items.map((item) => {
+                            const art = artFor(item);
+                            return (
+                                <Link
+                                    key={item.handle}
+                                    href={item.url}
+                                    className="group relative block w-[260px] flex-shrink-0 snap-start overflow-hidden rounded-lg bg-gray-900 sm:w-[290px]"
+                                    style={{ aspectRatio: '4/3' }}
+                                >
+                                    {art ? (
+                                        <img
+                                            src={art}
+                                            alt={item.title}
+                                            loading="lazy"
+                                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                        />
+                                    ) : (
+                                        <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800" />
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                                        <div className="text-[15px] font-semibold text-white">{item.title}</div>
+                                        <div className="text-[11px] text-white/75">{item.count} products</div>
+                                    </div>
+                                </Link>
+                            );
+                        })}
                     </div>
                 )}
             </Container>

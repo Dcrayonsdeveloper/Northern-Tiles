@@ -108,6 +108,14 @@ class HomeService
                         'url' => '/collections/' . $c->handle,
                         'count' => $c->products()->where('is_active', true)->count(),
                         'image' => $c->image_url,
+                        // Last-resort artwork: a tile that is actually in the
+                        // collection, so a card is never blank even before
+                        // anyone uploads a photo for it.
+                        'product_image' => $c->products()
+                            ->where('is_active', true)
+                            ->whereNotNull('image_url')
+                            ->where('image_url', '!=', '')
+                            ->value('products.image_url'),
                     ])
                     ->filter(fn ($item) => $item['count'] > 0)
                     ->values();
