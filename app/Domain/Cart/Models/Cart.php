@@ -195,6 +195,26 @@ class Cart extends Model
         return $this;
     }
 
+    /**
+     * Stamp the cart as active, and remember who it belongs to.
+     *
+     * eligibleForAbandonment() requires both an email and a last_activity_at
+     * older than the flow's threshold. Nothing ever wrote either column, so no
+     * cart could ever qualify and the abandoned-carts screen was permanently
+     * empty however many carts existed.
+     */
+    public function touchActivity(): self
+    {
+        $email = $this->email ?: $this->user?->email;
+
+        $this->forceFill([
+            'email' => $email,
+            'last_activity_at' => now(),
+        ])->save();
+
+        return $this;
+    }
+
     public function getSubtotal(): float
     {
         return $this->items->sum(fn ($item) => $item->price * $item->quantity);
