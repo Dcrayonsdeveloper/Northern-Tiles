@@ -266,7 +266,11 @@ class CouponService
         $userId = $cart->user_id;
         $email = $cart->email;
 
+        // Only coupons that opted in. Every active coupon used to be a
+        // candidate, so a code meant to be given out privately was applied to
+        // every cart on the site unasked.
         $coupons = Coupon::active()
+            ->where('auto_apply', true)
             ->where(function ($q) {
                 $q->whereNull('usage_limit')->orWhereColumn('times_used', '<', 'usage_limit');
             })
@@ -280,7 +284,12 @@ class CouponService
         $bestDiscount = -1.0;
 
         if ($cart->coupon_id) {
-            $applied = $coupons->firstWhere('id', $cart->coupon_id);
+            // Looked up separately, not taken from the candidate list: a code
+            // the customer typed is usually NOT an auto-apply coupon, and
+            // reading it from that list would drop their discount the moment
+            // this ran.
+            $applied = $coupons->firstWhere('id', $cart->coupon_id)
+                ?? Coupon::active()->find($cart->coupon_id);
             if ($applied
                 && $applied->canBeUsedBy($userId, $email)
                 && (!$applied->minimum_purchase || $subtotal >= (float) $applied->minimum_purchase)
