@@ -472,7 +472,18 @@ function FrequentlyBoughtTogether({ products, currentProduct }) {
         const ids = [currentProduct.id, ...selectedItems.map(p => p.id)];
         const addNext = (i) => {
             if (i >= ids.length) { setAdding(false); window.dispatchEvent(new CustomEvent('cart-updated')); window.dispatchEvent(new CustomEvent('open-cart-sidebar')); return; }
-            fetch('/api/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content }, credentials: 'same-origin', body: JSON.stringify({ product_id: ids[i], quantity: 1 }) }).then(() => addNext(i + 1)).catch(() => addNext(i + 1));
+            fetch('/api/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content }, credentials: 'same-origin', body: JSON.stringify({ product_id: ids[i], quantity: 1 }) })
+                .then((res) => {
+                    // Buying needs an account; the endpoint answers 401 to a
+                    // guest, which would otherwise fail silently here.
+                    if (res.status === 401 || res.status === 419) {
+                        setAdding(false);
+                        window.location.href = '/login';
+                        return;
+                    }
+                    addNext(i + 1);
+                })
+                .catch(() => addNext(i + 1));
         };
         addNext(0);
     };

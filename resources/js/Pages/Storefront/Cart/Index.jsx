@@ -165,7 +165,7 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal, 
 
     const addCrossSell = async (productId) => {
         try {
-            await fetch('/api/cart/add', {
+            const res = await fetch('/api/cart/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -176,6 +176,13 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal, 
                 credentials: 'same-origin',
                 body: JSON.stringify({ product_id: productId, quantity: 1 }),
             });
+
+            // The endpoint requires an account; a guest gets 401 rather than a
+            // silently ignored click.
+            if (res && (res.status === 401 || res.status === 419)) {
+                window.location.href = '/login';
+                return;
+            }
             await fetchCart();
             window.dispatchEvent(new CustomEvent('cart-updated'));
         } catch (e) {
