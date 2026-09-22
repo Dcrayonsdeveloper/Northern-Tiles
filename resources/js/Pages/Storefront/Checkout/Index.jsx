@@ -449,7 +449,7 @@ export default function Index({
                                     <div className="lg:sticky lg:top-24">
                                     <div className="mb-4 rounded-lg border bg-white p-6 shadow-sm">
                                         <h2 className="mb-3 text-sm font-semibold text-gray-900">
-                                            {d('checkout.coupon.title', 'Discount Code')}
+                                            {d('checkout.coupon.title', 'Discount coupon')}
                                         </h2>
                                         <CouponInput
                                             appliedCoupon={appliedCoupon}

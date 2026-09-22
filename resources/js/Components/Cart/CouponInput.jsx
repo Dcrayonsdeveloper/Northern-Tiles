@@ -376,7 +376,7 @@ export default function CouponInput({ appliedCoupon, currency = '$', onApply, on
             <div className="flex items-center gap-1.5">
                 <TagIcon className="h-4 w-4 text-gray-400" />
                 <span className="text-sm font-medium text-gray-700">
-                    {d('cart.coupon.title', 'Discount Code')}
+                    {d('cart.coupon.title', 'Discount coupon')}
                 </span>
             </div>
 

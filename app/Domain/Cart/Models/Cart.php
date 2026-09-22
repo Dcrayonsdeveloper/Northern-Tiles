@@ -31,6 +31,7 @@ class Cart extends Model
         'currency',
         'coupon_id',
         'discount_amount',
+        'auto_coupon_declined',
         'expires_at',
         'abandoned_at',
         'recovered_order_id',

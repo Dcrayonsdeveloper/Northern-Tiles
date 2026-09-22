@@ -102,6 +102,8 @@ class CouponService
         // Apply coupon to cart
         $cart->update([
             'coupon_id' => $coupon->id,
+            // Entering a code is opting back in.
+            'auto_coupon_declined' => false,
             'discount_amount' => $discount,
         ]);
 
@@ -129,6 +131,10 @@ class CouponService
         $cart->update([
             'coupon_id' => null,
             'discount_amount' => 0,
+            // Remember the decision. autoApplyBestCoupon runs on every cart
+            // change and on every checkout render, so without this the coupon
+            // the customer just removed reappeared on the next page load.
+            'auto_coupon_declined' => true,
         ]);
 
         return [
@@ -251,6 +257,12 @@ class CouponService
             if ($cart->coupon_id) {
                 $cart->update(['coupon_id' => null, 'discount_amount' => 0]);
             }
+            return;
+        }
+
+        // The customer removed the automatic discount; putting it back on the
+        // next render is what made the remove button look broken.
+        if ($cart->auto_coupon_declined) {
             return;
         }
 
