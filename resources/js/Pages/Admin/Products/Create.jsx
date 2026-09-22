@@ -126,6 +126,8 @@ export default function Create({ categories, vendors, popularTags, statuses, col
         status: 'draft',
         published_at: '',
         is_active: true,
+        show_sample: true,
+        show_big_sample: true,
         is_featured: false,
         meta_title: '',
         meta_description: '',
@@ -570,6 +572,42 @@ export default function Create({ categories, vendors, popularTags, statuses, col
                                         <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.is_featured ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Samples. Both default on; Trade lines and
+                            Quads/Scotia are switched off after creation by the
+                            same rule the catalogue was backfilled with. */}
+                        <div className="admin-card">
+                            <h3 className="mb-1 text-xs font-semibold text-gray-900">Samples</h3>
+                            <p className="mb-3 text-[10px] text-gray-400">
+                                Which sample buttons appear on the product page
+                            </p>
+                            <div className="space-y-3">
+                                <label className="flex cursor-pointer items-start gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(data.show_sample)}
+                                        onChange={(e) => setData('show_sample', e.target.checked)}
+                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                                    />
+                                    <span>
+                                        <span className="block text-xs font-medium text-gray-700">Get a Sample</span>
+                                        <span className="block text-[10px] text-gray-400">Free sample · max 5 per order</span>
+                                    </span>
+                                </label>
+                                <label className="flex cursor-pointer items-start gap-2 border-t border-gray-100 pt-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(data.show_big_sample)}
+                                        onChange={(e) => setData('show_big_sample', e.target.checked)}
+                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                                    />
+                                    <span>
+                                        <span className="block text-xs font-medium text-gray-700">Get a Big Sample</span>
+                                        <span className="block text-[10px] text-gray-400">Full-size tile · contact page</span>
+                                    </span>
+                                </label>
                             </div>
                         </div>
 

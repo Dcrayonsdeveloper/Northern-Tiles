@@ -537,6 +537,8 @@ class ProductController extends Controller
             'unit_label' => $product->unit_label,
             'quantity_label' => $product->quantity_label,
             'show_wastage' => (bool) $product->show_wastage,
+            'show_sample' => (bool) $product->show_sample,
+            'show_big_sample' => (bool) $product->show_big_sample,
 
             // Images
             'lifestyle_image_url' => $product->lifestyle_image_url,

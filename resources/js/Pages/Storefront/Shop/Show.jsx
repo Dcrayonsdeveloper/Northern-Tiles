@@ -965,6 +965,9 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
     const unitLabel = (product?.unit_label ?? '').trim();
     const quantityLabel = (product?.quantity_label ?? '').trim();
     const showWastage = product?.show_wastage !== false;
+    // Absent means on — an older payload should not silently hide a button.
+    const showSample = product?.show_sample !== false;
+    const showBigSample = product?.show_big_sample !== false;
     const requiredArea = wastage ? area * 1.1 : area;
     const boxCount = hasBoxes ? Math.max(1, Math.ceil(requiredArea / sqmPerBox)) : 0;
     // Boxed products round up to the nearest full box; sold-by-m² products
@@ -1211,8 +1214,14 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 </div>
                             )}
 
-                            {/* Get a Sample */}
+                            {/* Samples. Both buttons are per-product now: a bag of
+                                grout offered a free tile sample and a showroom
+                                visit to see it full size, which neither applies to.
+                                The wrapper only renders when at least one is on, so
+                                nothing leaves an empty gap. */}
+                            {(showSample || showBigSample) && (
                             <div className="mt-2">
+                                {showSample && (
                                 <button type="button" onClick={addSample} disabled={addingSample} className="group w-full rounded-lg border-2 border-gray-800 px-8 py-1.5 hover:bg-gray-800 transition disabled:opacity-50">
                                     <span className="block text-sm font-bold uppercase tracking-wide leading-tight text-gray-800 group-hover:text-white">
                                         {addingSample ? 'Adding...' : 'Get a Sample'}
@@ -1221,7 +1230,9 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                         Free samples · Max 5 per order · Flat $9.99 shipping
                                     </span>
                                 </button>
+                                )}
 
+                                {showBigSample && (
                                 <Link
                                     href={route('pages.contact')}
                                     className="group mt-2 block w-full rounded-lg border-2 border-brand px-8 py-1.5 text-center transition hover:bg-brand"
@@ -1233,7 +1244,9 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                         Full-size tiles · Visit our showroom
                                     </span>
                                 </Link>
+                                )}
                             </div>
+                            )}
 
                             {/* Product Specifications */}
                             <div className="mt-4">

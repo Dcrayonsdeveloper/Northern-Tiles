@@ -32,6 +32,9 @@ class StoreProductRequest extends FormRequest
 
             // The storefront's colour / space / size / material / finish /
             // style filters are collections; the editor sets them per product.
+            'show_sample' => ['nullable', 'boolean'],
+            'show_big_sample' => ['nullable', 'boolean'],
+
             'collection_ids' => ['nullable', 'array'],
             'collection_ids.*' => ['integer', 'exists:collections,id'],
             'category_ids.*' => ['exists:categories,id'],

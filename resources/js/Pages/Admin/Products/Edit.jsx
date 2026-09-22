@@ -650,6 +650,8 @@ export default function Edit({ product, categories, vendors, popularTags, status
         unit_label: product?.unit_label ?? '',
         quantity_label: product?.quantity_label ?? '',
         show_wastage: product?.show_wastage ?? true,
+        show_sample: product?.show_sample ?? true,
+        show_big_sample: product?.show_big_sample ?? true,
         seller_id: product?.seller_id ?? '',
         price: product?.price ?? '',
         compare_at_price: product?.compare_at_price ?? '',
@@ -1177,6 +1179,57 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     </span>
                                 </span>
                             </label>
+                        </div>
+
+
+                        {/* Samples. Sits under Status because it is the same
+                            kind of decision: what this product offers on its
+                            page. Both default on; Trade lines and Quads/Scotia
+                            ship with the free sample off, since neither is
+                            something a customer takes a sample of. */}
+                        <div className="admin-card">
+                            <h3 className="mb-1 text-xs font-semibold text-gray-900">Samples</h3>
+                            <p className="mb-3 text-[10px] text-gray-400">
+                                Which sample buttons appear on the product page
+                            </p>
+
+                            <div className="space-y-3">
+                                <label className="flex items-start gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(data.show_sample)}
+                                        onChange={(e) => setData('show_sample', e.target.checked)}
+                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                                    />
+                                    <span>
+                                        <span className="block text-xs font-medium text-gray-700">Get a Sample</span>
+                                        <span className="block text-[10px] text-gray-400">
+                                            Free sample · max 5 per order · flat $9.99 shipping
+                                        </span>
+                                    </span>
+                                </label>
+
+                                <label className="flex items-start gap-2 cursor-pointer border-t border-gray-100 pt-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(data.show_big_sample)}
+                                        onChange={(e) => setData('show_big_sample', e.target.checked)}
+                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                                    />
+                                    <span>
+                                        <span className="block text-xs font-medium text-gray-700">Get a Big Sample</span>
+                                        <span className="block text-[10px] text-gray-400">
+                                            Full-size tile · sends the customer to the contact page
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            {!data.show_sample && !data.show_big_sample && (
+                                <p className="mt-3 text-[10px] text-amber-700">
+                                    No sample buttons will show on this product.
+                                </p>
+                            )}
                         </div>
 
                         {/* Buy box */}

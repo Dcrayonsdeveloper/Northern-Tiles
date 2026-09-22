@@ -41,6 +41,8 @@ class UpdateProductRequest extends FormRequest
             'unit_label' => ['nullable', 'string', 'max:30'],
             'quantity_label' => ['nullable', 'string', 'max:30'],
             'show_wastage' => ['nullable', 'boolean'],
+            'show_sample' => ['nullable', 'boolean'],
+            'show_big_sample' => ['nullable', 'boolean'],
             'category_ids' => ['nullable', 'array'],
 
             // The storefront's colour / space / size / material / finish /
