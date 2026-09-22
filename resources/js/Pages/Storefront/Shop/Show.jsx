@@ -778,7 +778,13 @@ function VariantFamilySelector({ familyVariants }) {
                                     />
                                 )}
                             </div>
-                            <span className="line-clamp-2 min-h-[2rem] text-[11px] font-medium leading-tight text-gray-800">
+                            {/* Two lines, fixed height, ellipsis past that — so a
+                                long name never makes one card taller than its
+                                neighbours. Full name on hover. */}
+                            <span
+                                title={v.name}
+                                className="line-clamp-2 h-[2rem] text-[11px] font-medium leading-tight text-gray-800"
+                            >
                                 {v.label}
                             </span>
                             <span className="mt-0.5 text-[13px] font-bold text-gray-900">

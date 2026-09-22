@@ -100,13 +100,11 @@ class ProductFamily
     {
         $specs = is_array($product->specifications) ? $product->specifications : [];
 
-        $label = '';
-        foreach (['name', 'colour', 'color', 'model', 'style'] as $key) {
-            if (! empty($specs[$key]) && is_string($specs[$key])) {
-                $label = $specs[$key];
-                break;
-            }
-        }
+        // Only specifications.name — the importer's clean product name. The
+        // old list also fell back to colour/model/style, which are shared
+        // across a whole range: every card in Resiplank 9.7mm Hybrid read
+        // "Straight Boards", so the selector offered ten identical choices.
+        $label = (! empty($specs['name']) && is_string($specs['name'])) ? $specs['name'] : '';
 
         if ($label === '') {
             // "ARGILE ICE MATT 60X246MM - Premium Spanish Porcelain…" -> "ARGILE ICE MATT 60X246MM"
