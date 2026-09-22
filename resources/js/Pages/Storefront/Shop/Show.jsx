@@ -289,107 +289,6 @@ function SBtn({ dir, disabled, onClick }) {
 }
 
 /* ── Available Coupons ────────────────────────────────────────────── */
-function AvailableCoupons({ coupons = [] }) {
-    const [copiedCode, setCopiedCode] = useState(null);
-    const [open, setOpen] = useState(false);
-
-    const copyCode = useCallback(async (text) => {
-        try {
-            if (navigator.clipboard?.writeText) {
-                await navigator.clipboard.writeText(text);
-            } else {
-                const el = document.createElement('textarea');
-                el.value = text;
-                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-            }
-            setCopiedCode(text);
-            setTimeout(() => setCopiedCode(null), 2000);
-        } catch {}
-    }, []);
-
-    if (!coupons?.length) return null;
-    return (
-        <div className="mt-6 rounded-lg border border-dashed border-green-300 bg-green-50 p-4">
-            <button
-                type="button"
-                onClick={() => setOpen(o => !o)}
-                aria-expanded={open}
-                className={`flex w-full items-center gap-2 text-left focus:outline-none ${open ? 'mb-3' : ''}`}
-            >
-                <Tag c="h-5 w-5 text-green-600" />
-                <span className="text-sm font-semibold text-green-800">Available Offers</span>
-                <span className="rounded-full bg-green-200 px-2 py-0.5 text-[10px] font-bold text-green-800">{coupons.length}</span>
-                <svg
-                    className={`ml-auto h-4 w-4 text-green-700 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-                    aria-hidden="true"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
-            {open && (
-            <div className="space-y-2">
-                {coupons.map((coupon, i) => {
-                    const isCopied = copiedCode === coupon.code;
-                    return (
-                        <div key={coupon.code || i} className="flex items-start gap-2">
-                            <div className="flex-1">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                    <code className="rounded bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800">{coupon.code}</code>
-                                    <button
-                                        type="button"
-                                        onClick={() => copyCode(coupon.code)}
-                                        title={isCopied ? 'Copied!' : 'Copy code'}
-                                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all active:scale-90 touch-manipulation ${
-                                            isCopied
-                                                ? 'border-green-400 bg-green-100'
-                                                : 'border-green-300 bg-white hover:border-green-500 hover:bg-green-50'
-                                        }`}
-                                    >
-                                        {isCopied ? (
-                                            <svg className="h-3 w-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        ) : (
-                                            <svg className="h-3 w-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                            </svg>
-                                        )}
-                                    </button>
-                                    {isCopied && (
-                                        <span className="text-[10px] font-medium text-green-600">Copied!</span>
-                                    )}
-                                    {coupon.type === 'free_shipping' && (
-                                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">Free Shipping</span>
-                                    )}
-                                    {coupon.first_order_only && (
-                                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">First order</span>
-                                    )}
-                                </div>
-                                <p className="mt-1 text-xs text-green-700">
-                                    {coupon.title || coupon.description || (
-                                        coupon.type === 'percentage' ? `Get ${coupon.value}% off` :
-                                        coupon.type === 'fixed_amount' ? `Get $${coupon.value} off` :
-                                        coupon.type === 'free_shipping' ? 'Free shipping' :
-                                        `Save with ${coupon.code}`
-                                    )}
-                                    {coupon.minimum_purchase > 0 && (
-                                        <span className="text-green-600"> (Min. ${parseFloat(coupon.minimum_purchase).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
-                                    )}
-                                </p>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-            )}
-        </div>
-    );
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    SECTION: Image Gallery with Thumbnails
@@ -1253,8 +1152,6 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 <SpecificationsBlock specifications={product.specifications} description={product.description} />
                             </div>
 
-                            {/* Coupons */}
-                            <AvailableCoupons coupons={availableCoupons} />
 
                             {/* Wishlist + Share */}
                             <div className="mt-4 flex items-center gap-4">

@@ -1,6 +1,7 @@
+import CouponInput from '@/Components/Cart/CouponInput';
 import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { d } from '@/Support/dictionary';
 
@@ -42,6 +43,7 @@ export default function Index({
     items = [],
     totals = {},
     shippingMethods = [],
+    appliedCoupon = null,
     paymentMethods = [],
     isGuest = true,
     user = null,
@@ -438,7 +440,25 @@ export default function Index({
 
                                 {/* Right Column - Order Summary */}
                                 <div className="lg:col-span-1">
-                                    <div className="lg:sticky lg:top-24 rounded-lg border bg-white p-6 shadow-sm">
+                                    {/* Discount code, above the summary so the
+                                        total underneath visibly reflects it.
+                                        Same component the cart uses, so a code
+                                        applied in either place behaves the same
+                                        and the totals come back from the server
+                                        rather than being guessed here. */}
+                                    <div className="lg:sticky lg:top-24">
+                                    <div className="mb-4 rounded-lg border bg-white p-6 shadow-sm">
+                                        <h2 className="mb-3 text-sm font-semibold text-gray-900">
+                                            {d('checkout.coupon.title', 'Discount Code')}
+                                        </h2>
+                                        <CouponInput
+                                            appliedCoupon={appliedCoupon}
+                                            currency="$"
+                                            onApply={() => router.reload({ only: ['cart', 'totals', 'appliedCoupon'] })}
+                                            onRemove={() => router.reload({ only: ['cart', 'totals', 'appliedCoupon'] })}
+                                        />
+                                    </div>
+                                    <div className="rounded-lg border bg-white p-6 shadow-sm">
                                         <h2 className="text-lg font-semibold text-gray-900">
                                             {d('checkout.summary.title', 'Order Summary')}
                                         </h2>
@@ -587,6 +607,7 @@ export default function Index({
                                                 {errors.checkout}
                                             </p>
                                         )}
+                                    </div>
                                     </div>
                                 </div>
                             </div>

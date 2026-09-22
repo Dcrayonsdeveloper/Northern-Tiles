@@ -68,6 +68,9 @@ class CheckoutController extends Controller
                 'phone' => $user->phone ?? null,
             ] : null,
             'savedAddresses' => $user ? $this->getSavedAddresses($user) : [],
+            // Drives the discount box above the order summary, so a code
+            // applied in the cart shows as applied here too.
+            'appliedCoupon' => $this->couponService->getAppliedCoupon($cart),
         ]);
     }
 

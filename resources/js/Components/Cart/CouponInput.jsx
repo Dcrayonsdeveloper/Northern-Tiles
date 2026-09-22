@@ -368,7 +368,7 @@ export default function CouponInput({ appliedCoupon, currency = '$', onApply, on
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Render: Input + Available Offers
+    // Render: the code box only — the offers list was removed
     // ─────────────────────────────────────────────────────────────────────────
     return (
         <div className="space-y-2">
@@ -423,35 +423,10 @@ export default function CouponInput({ appliedCoupon, currency = '$', onApply, on
                 <p className="text-xs text-red-600">{status.msg}</p>
             )}
 
-            {/* Available Offers toggle */}
-            {offers.length > 0 && (
-                <div>
-                    <button
-                        type="button"
-                        onClick={() => setShowOffers(v => !v)}
-                        className="flex w-full items-center justify-between rounded-md px-1 py-1 text-xs font-medium text-gray-500 hover:text-gray-700"
-                    >
-                        <span>Available Offers ({offers.length})</span>
-                        <ChevronIcon className="h-3.5 w-3.5" open={showOffers} />
-                    </button>
-
-                    {showOffers && (
-                        <div className="mt-2 space-y-1.5">
-                            {offers.map((offer) => (
-                                <OfferRow
-                                    key={offer.code}
-                                    coupon={offer}
-                                    currency={currency}
-                                    copiedCode={copiedCode}
-                                    applyingCode={applyingCode}
-                                    onCopy={copyCode}
-                                    onApply={applyFromOffers}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
+            {/* The list of every live coupon used to hang here. Publishing
+                the whole set turns a targeted code into a public one — a
+                customer who qualifies for nothing still sees MEGA25 and asks
+                why they cannot have it. The box stays; the codes do not. */}
         </div>
     );
 }
