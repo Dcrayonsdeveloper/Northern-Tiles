@@ -1,5 +1,6 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 
 /* ── Icons ─────────────────────────────────────────────────────────── */
 const Icon = ({ path, className = 'h-4 w-4' }) => (
@@ -11,6 +12,7 @@ const Icon = ({ path, className = 'h-4 w-4' }) => (
 const CheckPath = 'M5 13l4 4L19 7';
 const TruckPath = 'M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 19a2 2 0 100-4 2 2 0 000 4zM18 19a2 2 0 100-4 2 2 0 000 4z';
 const BoxPath = 'M21 8l-9-5-9 5m18 0l-9 5m9-5v8l-9 5m0-8L3 8m9 5v8M3 8v8l9 5';
+const NotePath = 'M9 12h6M9 16h4M8 4h8a2 2 0 012 2v13l-3-2-3 2-3-2-3 2V6a2 2 0 012-2z';
 const ClockPath = 'M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z';
 const PinPath = 'M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11zM12 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3z';
 const UserPath = 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 20c0-3.3 3.6-6 8-6s8 2.7 8 6';
@@ -281,6 +283,57 @@ function PaymentSummary({ order }) {
     );
 }
 
+/* ── Admin Note ────────────────────────────────────────────────────── */
+/**
+ * Staff-only note. Kept apart from the customer's checkout note, which is
+ * shown in the customer card — merging the two would put internal remarks in
+ * front of whoever reads the order and lose the delivery instruction.
+ */
+function AdminNote({ order }) {
+    const { data, setData, put, processing } = useForm({
+        admin_note: order?.admin_note ?? '',
+    });
+
+    const [saved, setSaved] = useState(false);
+    const dirty = (data.admin_note ?? '') !== (order?.admin_note ?? '');
+
+    const submit = (e) => {
+        e.preventDefault();
+        put(route('admin.orders.update', order.id), {
+            preserveScroll: true,
+            onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 2000); },
+        });
+    };
+
+    return (
+        <div className="admin-card">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Icon path={NotePath} className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm font-semibold text-gray-900">Admin Note</span>
+                </div>
+                {saved ? <span className="text-[11px] text-emerald-600">Saved</span> : null}
+            </div>
+
+            <p className="mt-0.5 text-[11px] text-gray-500">Internal only — the customer never sees this.</p>
+
+            <form onSubmit={submit} className="mt-3">
+                <textarea
+                    value={data.admin_note}
+                    onChange={(e) => setData('admin_note', e.target.value)}
+                    rows={4}
+                    maxLength={2000}
+                    placeholder="Called customer, delivery moved to Friday…"
+                    className="admin-input w-full text-xs"
+                />
+                <button type="submit" disabled={processing || !dirty} className="btn-primary mt-2 w-full disabled:opacity-50">
+                    {processing ? 'Saving…' : data.admin_note ? 'Save note' : 'Add note'}
+                </button>
+            </form>
+        </div>
+    );
+}
+
 /* ── Update Status ─────────────────────────────────────────────────── */
 function UpdateStatus({ order, statuses, paymentStatuses }) {
     const { data, setData, put, processing } = useForm({
@@ -420,6 +473,7 @@ export default function Show({ order, statuses, paymentStatuses }) {
                 </div>
 
                 <div className="space-y-4">
+                    <AdminNote order={order} />
                     <UpdateStatus order={order} statuses={statuses} paymentStatuses={paymentStatuses} />
                     <OrderInfo order={order} />
                 </div>

@@ -20,6 +20,14 @@ class OrderController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        // Whether a note exists, not the note itself — the list only needs to
+        // show an icon, and staff remarks do not belong in a page payload that
+        // wide.
+        $orders->getCollection()->each(function ($order) {
+            $order->setAttribute('has_admin_note', filled($order->admin_note));
+            $order->makeHidden('admin_note');
+        });
+
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
         ]);
@@ -67,6 +75,8 @@ class OrderController extends Controller
         $validated = $request->validate([
             'status' => ['nullable', 'string', Rule::in(['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'])],
             'payment_status' => ['nullable', Rule::in(['pending', 'paid', 'failed', 'refunded'])],
+            // Staff-only. Separate from orders.notes, which is the customer's.
+            'admin_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
         try {
@@ -91,6 +101,12 @@ class OrderController extends Controller
 
             if (!empty($validated['payment_status'])) {
                 $updates['payment_status'] = $validated['payment_status'];
+            }
+
+            // array_key_exists, not empty(): clearing the box has to be able to
+            // erase the note, and "" is empty.
+            if (array_key_exists('admin_note', $validated)) {
+                $updates['admin_note'] = $validated['admin_note'] ?: null;
             }
 
             if (!empty($updates)) {

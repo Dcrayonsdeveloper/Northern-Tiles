@@ -31,6 +31,7 @@ class Order extends Model
         'payment_method',
         'payment_status',
         'notes',
+        'admin_note',
         'shipped_at',
         'delivered_at',
     ];
