@@ -6,6 +6,7 @@ use App\Domain\Cart\Http\Requests\AddToCartRequest;
 use App\Domain\Cart\Services\CartService;
 use App\Domain\Cart\Services\PricingService;
 use App\Domain\Cart\Services\UpsellService;
+use App\Domain\Catalog\Services\ProductUnitResolver;
 use App\Domain\Marketing\Models\Coupon;
 use App\Domain\Marketing\Services\CouponService;
 use App\Http\Controllers\Concerns\HasCartChannel;
@@ -22,7 +23,8 @@ class CartController extends Controller
         protected CartService $cartService,
         protected PricingService $pricingService,
         protected UpsellService $upsellService,
-        protected CouponService $couponService
+        protected CouponService $couponService,
+        protected ProductUnitResolver $unitResolver
     ) {}
 
     public function count(Request $request): JsonResponse
@@ -89,6 +91,10 @@ class CartController extends Controller
             ->map(function ($item) {
                 $product = $item->product;
                 $variant = $item->variant;
+                
+                // Get unit info from resolver
+                $isSoldPerSqm = $this->unitResolver->isSoldPerSquareMetre($product);
+                $unitLabel = $this->unitResolver->unitLabel($product);
 
                 return [
                     'id' => $item->id,
@@ -108,6 +114,8 @@ class CartController extends Controller
                             ?? $product->image_url,
                         'compare_at_price' => $product->compare_at_price,
                         'sqm_per_box' => $product->sqm_per_box,
+                        'is_sold_per_sqm' => $isSoldPerSqm,
+                        'unit_label' => $unitLabel,
                     ],
                     'variant' => $variant ? [
                         'id' => $variant->id,
@@ -198,6 +206,8 @@ class CartController extends Controller
                     'image_url' => $item->product->primaryImage->first(fn ($m) => $m->fileExists())?->url
                         ?? $item->product->image_url,
                     'sqm_per_box' => $item->product->sqm_per_box,
+                    'is_sold_per_sqm' => $this->unitResolver->isSoldPerSquareMetre($item->product),
+                    'unit_label' => $this->unitResolver->unitLabel($item->product),
                 ],
             ],
             'totals' => $totals,

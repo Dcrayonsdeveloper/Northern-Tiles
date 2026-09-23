@@ -36,18 +36,54 @@ function CartLineItem({
     const { product, variant, price, line_total, is_sample } = item;
     const quantity = parseFloat(item.quantity) || 0;
     const sqmPerBox = parseFloat(product?.sqm_per_box) || 0;
+    const isSoldPerSqm = product?.is_sold_per_sqm ?? (sqmPerBox > 0);
+    const unitLabel = product?.unit_label; // 'sqm', 'pcs', or null
     const hasBoxes = sqmPerBox > 0 && !is_sample;
+    
     // Math.round instead of Math.ceil: quantity is always n * sqmPerBox, but floating point
     // makes 8.64 / 1.44 = 6.000000000000001 which Math.ceil turns into 7 (wrong).
     // Math.round corrects the tiny epsilon without affecting genuine non-multiples.
     const boxes = hasBoxes ? Math.max(1, Math.round(quantity / sqmPerBox)) : 0;
-    const stepUp = () => onUpdateQuantity(hasBoxes ? parseFloat(((boxes + 1) * sqmPerBox).toFixed(4)) : Math.max(1, Math.floor(quantity) + 1));
+    
+    const stepUp = () => {
+        if (hasBoxes) {
+            onUpdateQuantity(parseFloat(((boxes + 1) * sqmPerBox).toFixed(4)));
+        } else if (isSoldPerSqm) {
+            // Sold per sqm but no box info - step by 1 sqm
+            onUpdateQuantity(parseFloat((quantity + 1).toFixed(2)));
+        } else {
+            // Sold per unit (bags, pieces, etc.)
+            onUpdateQuantity(Math.max(1, Math.floor(quantity) + 1));
+        }
+    };
+    
     const stepDown = () => {
         if (hasBoxes) {
             onUpdateQuantity(parseFloat((Math.max(1, boxes - 1) * sqmPerBox).toFixed(4)));
+        } else if (isSoldPerSqm) {
+            onUpdateQuantity(parseFloat(Math.max(1, quantity - 1).toFixed(2)));
         } else {
             onUpdateQuantity(Math.max(1, Math.floor(quantity) - 1));
         }
+    };
+
+    // Format quantity display based on unit type
+    const formatQuantityDisplay = () => {
+        if (is_sample) {
+            return `${quantity}`;
+        }
+        if (hasBoxes) {
+            return `${boxes} ${boxes === 1 ? 'Box' : 'Boxes'} = ${quantity.toFixed(2)} m²`;
+        }
+        if (isSoldPerSqm) {
+            return `${quantity.toFixed(2)} m²`;
+        }
+        // Non-sqm products (grout bags, adhesives, etc.)
+        const intQty = Math.floor(quantity);
+        if (unitLabel === 'pcs') {
+            return `Qty: ${intQty} ${intQty === 1 ? 'pc' : 'pcs'}`;
+        }
+        return `Qty: ${intQty}`;
     };
 
     return (
@@ -111,12 +147,8 @@ function CartLineItem({
                         >
                             <MinusIcon className="h-3.5 w-3.5" />
                         </button>
-                        <span className="min-w-[8rem] px-2 text-center text-sm font-medium whitespace-nowrap">
-                            {is_sample
-                                ? `${quantity}`
-                                : hasBoxes
-                                    ? `${boxes} ${boxes === 1 ? 'Box' : 'Boxes'} = ${quantity.toFixed(2)} m²`
-                                    : `${quantity.toFixed(2)} m²`}
+                        <span className="min-w-[6rem] px-2 text-center text-sm font-medium whitespace-nowrap">
+                            {formatQuantityDisplay()}
                         </span>
                         <button
                             type="button"
@@ -137,7 +169,7 @@ function CartLineItem({
                                 <p className="text-sm font-semibold text-gray-900">
                                     {currency}{parseFloat(line_total || 0).toFixed(2)}
                                 </p>
-                                {quantity > 1 && (
+                                {quantity > 1 && isSoldPerSqm && (
                                     <p className="text-xs text-gray-500">
                                         {currency}{parseFloat(price || 0).toFixed(2)} / sqm
                                     </p>

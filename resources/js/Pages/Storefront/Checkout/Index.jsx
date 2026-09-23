@@ -496,7 +496,11 @@ export default function Index({
                                                             )}
                                                             {!item.is_sample && (
                                                                 <p className="text-xs text-gray-500">
-                                                                    ${parseFloat(item.price || 0).toFixed(2)} / sqm × {parseFloat(item.quantity).toFixed(2)} m²
+                                                                    {item.is_sold_per_sqm !== false ? (
+                                                                        <>${parseFloat(item.price || 0).toFixed(2)} / sqm × {parseFloat(item.quantity).toFixed(2)} m²</>
+                                                                    ) : (
+                                                                        <>Qty: {Math.floor(item.quantity)}</>
+                                                                    )}
                                                                 </p>
                                                             )}
                                                         </div>

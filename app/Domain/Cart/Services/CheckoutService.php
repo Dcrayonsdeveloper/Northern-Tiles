@@ -3,6 +3,7 @@
 namespace App\Domain\Cart\Services;
 
 use App\Domain\Cart\Models\Cart;
+use App\Domain\Catalog\Services\ProductUnitResolver;
 use App\Domain\Marketing\Services\CouponService;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -15,7 +16,8 @@ class CheckoutService
     public function __construct(
         protected CartService $cartService,
         protected PricingService $pricingService,
-        protected CouponService $couponService
+        protected CouponService $couponService,
+        protected ProductUnitResolver $unitResolver
     ) {}
 
     /**
@@ -264,6 +266,8 @@ class CheckoutService
         $cart->load(['items.product', 'items.variant']);
 
         $items = $cart->items->map(function ($item) {
+            $isSoldPerSqm = $this->unitResolver->isSoldPerSquareMetre($item->product);
+            
             return [
                 'id' => $item->id,
                 'name' => $item->variant?->name ?? $item->product->name,
@@ -271,6 +275,7 @@ class CheckoutService
                 'price' => $item->price,
                 'line_total' => $item->price * $item->quantity,
                 'is_sample' => (bool) $item->is_sample,
+                'is_sold_per_sqm' => $isSoldPerSqm,
                 'image_url' => $item->product->image_url ?? '/images/placeholder-product.svg',
                 'options' => $item->options_json,
             ];
