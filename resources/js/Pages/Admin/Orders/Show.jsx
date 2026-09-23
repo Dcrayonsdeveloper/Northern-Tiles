@@ -458,7 +458,19 @@ export default function Show({ order, statuses, paymentStatuses }) {
                     </div>
                     <h1 className="mt-0.5 text-base font-semibold text-gray-900">Order {order.order_number}</h1>
                 </div>
-                <Link href={route('admin.orders.index')} className="btn-secondary">Back</Link>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => window.open(route('admin.orders.receipt', order.id), '_blank')}
+                        className="btn-secondary flex items-center gap-1.5"
+                    >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Print Receipt
+                    </button>
+                    <Link href={route('admin.orders.index')} className="btn-secondary">Back</Link>
+                </div>
             </div>
 
             <div className="mt-4">

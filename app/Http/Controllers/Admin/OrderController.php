@@ -123,4 +123,19 @@ class OrderController extends Controller
 
         return redirect()->route('admin.orders.show', $order->id);
     }
+
+    /**
+     * Display a printable receipt for the order.
+     */
+    public function receipt(Order $order)
+    {
+        $order->loadMissing([
+            'user:id,name,email',
+            'items:id,order_id,product_id,name,sku,price,quantity,line_total,is_sample',
+        ]);
+
+        return view('admin.orders.receipt', [
+            'order' => $order,
+        ]);
+    }
 }

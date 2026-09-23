@@ -221,6 +221,7 @@ Route::middleware(['auth', 'verified', AdminMiddleware::class])
         Route::get('/dashboard/layout', [DashboardLayoutController::class, 'edit'])->name('dashboard.layout.edit');
         Route::put('/dashboard/layout', [DashboardLayoutController::class, 'update'])->name('dashboard.layout.update');
         Route::resource('orders', OrderController::class)->only(['index', 'show', 'update']);
+        Route::get('orders/{order}/receipt', [OrderController::class, 'receipt'])->name('orders.receipt');
         Route::resource('categories', CategoryController::class)->except(['show']);
         Route::resource('users', UserController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
         Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
