@@ -195,21 +195,29 @@ export default function Visualizer({ rooms, products, categories }) {
     const [selectedRoom, setSelectedRoom] = useState(rooms[0] || null);
     const [selectedTile, setSelectedTile] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('');
     const [tileScale, setTileScale] = useState(1);
     const [groutColor, setGroutColor] = useState('#d4d4d4');
     const [groutWidth, setGroutWidth] = useState(2);
 
-    // Filter products
-    const filteredProducts = products.filter(product => {
+    // Get products for the selected room only (products assigned to this room)
+    const roomProducts = selectedRoom?.featuredProductIds?.length > 0
+        ? products.filter(p => selectedRoom.featuredProductIds.includes(p.id))
+        : [];
+
+    // Filter by search within room products
+    const filteredProducts = roomProducts.filter(product => {
         const matchesSearch = !searchQuery || 
             product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             product.sku?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = !selectedCategory || 
-            product.category?.slug === selectedCategory ||
-            product.category_id === parseInt(selectedCategory);
-        return matchesSearch && matchesCategory;
+        return matchesSearch;
     });
+
+    // Reset selected tile when room changes
+    const handleRoomChange = (room) => {
+        setSelectedRoom(room);
+        setSelectedTile(null);
+        setSearchQuery('');
+    };
 
     // Download visualization
     const handleDownload = useCallback(() => {
@@ -254,7 +262,7 @@ export default function Visualizer({ rooms, products, categories }) {
                                     <button
                                         key={room.id}
                                         type="button"
-                                        onClick={() => setSelectedRoom(room)}
+                                        onClick={() => handleRoomChange(room)}
                                         className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                                             selectedRoom?.id === room.id
                                                 ? 'bg-brand text-white'
@@ -387,18 +395,6 @@ export default function Visualizer({ rooms, products, categories }) {
                                             className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-4 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                                         />
                                     </div>
-
-                                    {/* Category Filter */}
-                                    <select
-                                        value={selectedCategory}
-                                        onChange={(e) => setSelectedCategory(e.target.value)}
-                                        className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                                    >
-                                        <option value="">All Categories</option>
-                                        {categories.map(cat => (
-                                            <option key={cat.id} value={cat.slug}>{cat.name}</option>
-                                        ))}
-                                    </select>
                                 </div>
 
                                 {/* Tile Grid */}
@@ -417,7 +413,11 @@ export default function Visualizer({ rooms, products, categories }) {
                                     ) : (
                                         <div className="py-8 text-center">
                                             <GridIcon className="mx-auto h-12 w-12 text-gray-300" />
-                                            <p className="mt-2 text-sm text-gray-500">No tiles found</p>
+                                            <p className="mt-2 text-sm text-gray-500">
+                                                {roomProducts.length === 0 
+                                                    ? 'No tiles assigned to this room' 
+                                                    : 'No tiles found'}
+                                            </p>
                                         </div>
                                     )}
                                 </div>
