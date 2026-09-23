@@ -573,12 +573,12 @@ function OurServices() {
    ═══════════════════════════════════════════════════════════════════════ */
 function FeaturedCollections() {
     const items = [
-        { num: '01', name: 'SWARD Collection', desc: 'Premium Italian-inspired porcelain tiles', img: '/storage/stock/photo-1615971677499-5467cbab01c0.jpg' },
-        { num: '02', name: 'Hybrid Flooring', desc: 'Waterproof rigid core in timber oak', img: '/storage/stock/photo-1600566752355-35792bedcfea.jpg' },
-        { num: '03', name: 'BALTIC STONE', desc: 'Natural stone look porcelain', img: '/storage/stock/photo-1600566753190-17f0baa2a6c3.jpg' },
-        { num: '04', name: 'External 20mm', desc: 'Heavy-duty outdoor pavers', img: '/storage/stock/photo-1600210492486-724fe5c67fb0.jpg' },
-        { num: '05', name: 'Solid Oak Timber', desc: 'Sustainably sourced flooring', img: '/storage/stock/photo-1600585154340-be6161a56a0c.jpg' },
-        { num: '06', name: 'Trade Supplies', desc: 'Mapei, ARDEX, Soudal products', img: '/storage/stock/photo-1581858726788-75bc0f6a952d.jpg' },
+        { num: '01', name: 'SWARD Collection', desc: 'Premium Italian-inspired porcelain tiles', img: '/storage/stock/photo-1615971677499-5467cbab01c0.jpg', href: '/shop?category=tiles' },
+        { num: '02', name: 'Hybrid Flooring', desc: 'Waterproof rigid core in timber oak', img: '/storage/stock/photo-1600566752355-35792bedcfea.jpg', href: '/shop?category=hybrid' },
+        { num: '03', name: 'BALTIC STONE', desc: 'Natural stone look porcelain', img: '/storage/stock/photo-1600566753190-17f0baa2a6c3.jpg', href: '/shop?category=stone' },
+        { num: '04', name: 'External 20mm', desc: 'Heavy-duty outdoor pavers', img: '/storage/stock/photo-1600210492486-724fe5c67fb0.jpg', href: '/shop?category=tiles' },
+        { num: '05', name: 'Solid Oak Timber', desc: 'Sustainably sourced flooring', img: '/storage/stock/photo-1600585154340-be6161a56a0c.jpg', href: '/shop?category=timber' },
+        { num: '06', name: 'Trade Supplies', desc: 'Mapei, ARDEX, Soudal products', img: '/storage/stock/photo-1581858726788-75bc0f6a952d.jpg', href: '/shop?category=trade' },
     ];
     const { r, l, rr, ck, go } = useHS(380);
 
@@ -598,7 +598,7 @@ function FeaturedCollections() {
 
                     <div ref={r} onScroll={ck} className="flex gap-5 overflow-x-auto scroll-smooth pb-2" style={{ scrollbarWidth: 'none' }}>
                         {items.map(item => (
-                            <Link key={item.num} href="/shop" className="group relative flex-shrink-0 w-[300px] sm:w-[350px]">
+                            <Link key={item.num} href={item.href} className="group relative flex-shrink-0 w-[300px] sm:w-[350px]">
                                 <div className="aspect-[3/4] bg-[#e8e6e2] overflow-hidden relative">
                                     <img src={item.img} alt={item.name} className="h-full w-full object-cover" loading="lazy" />
                                     {/* Red circle badge */}
