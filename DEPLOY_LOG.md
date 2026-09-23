@@ -187,3 +187,19 @@ Files changed:
    resources/js/Pages/Storefront/Home.jsx | 6 +++++-
    1 file changed, 5 insertions(+), 1 deletion(-)
 ```
+
+## 2026-09-23 11:06 UTC — `3281866`
+
+**Remove white padding inside phone mockup - video now fills entire screen**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (3281866)
+- Server: 4f76bf9 → 3281866
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   resources/js/Pages/Storefront/Home.jsx | 4 ++--
+   1 file changed, 2 insertions(+), 2 deletions(-)
+```
