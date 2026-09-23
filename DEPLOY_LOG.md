@@ -203,3 +203,22 @@ Files changed:
    resources/js/Pages/Storefront/Home.jsx | 4 ++--
    1 file changed, 2 insertions(+), 2 deletions(-)
 ```
+
+## 2026-09-23 11:32 UTC — `ddf173b`
+
+**Add Print Receipt button to order details page with printable receipt view**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (ddf173b)
+- Server: 3281866 → ddf173b
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Http/Controllers/Admin/OrderController.php |  15 ++
+   resources/js/Pages/Admin/Orders/Show.jsx       |  14 +-
+   resources/views/admin/orders/receipt.blade.php | 327 +++++++++++++++++++++++++
+   routes/web.php                                 |   1 +
+   4 files changed, 356 insertions(+), 1 deletion(-)
+```
