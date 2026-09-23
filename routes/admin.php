@@ -143,6 +143,7 @@ Route::prefix('products')->name('products.')->group(function () {
     Route::delete('{product}/media/{media}', [ProductController::class, 'deleteMedia'])->name('media.delete');
     Route::post('{product}/media/reorder', [ProductController::class, 'reorderMedia'])->name('media.reorder');
     Route::post('{product}/media/{media}/primary', [ProductController::class, 'setPrimaryMedia'])->name('media.primary');
+    Route::post('{product}/lifestyle-image', [ProductController::class, 'uploadLifestyleImage'])->name('lifestyle.upload');
 
     // Variants
     Route::post('{product}/variants/generate', [ProductController::class, 'generateVariants'])->name('variants.generate');

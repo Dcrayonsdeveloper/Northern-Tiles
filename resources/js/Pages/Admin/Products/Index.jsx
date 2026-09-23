@@ -35,9 +35,12 @@ function StatusBadge({ status }) {
         archived: 'bg-red-100 text-red-700',
     };
 
+    // "Published" is the stored value; Active is what the editor calls it, and
+    // the two lists must read the same. Scheduled and Archived are kept here
+    // only so an older row still renders a sensible badge.
     const labels = {
         draft: 'Draft',
-        published: 'Published',
+        published: 'Active',
         scheduled: 'Scheduled',
         archived: 'Archived',
     };

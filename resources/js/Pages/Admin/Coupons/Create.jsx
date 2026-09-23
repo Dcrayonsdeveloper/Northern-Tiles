@@ -24,6 +24,7 @@ export default function Create({ types }) {
         expires_at: '',
         is_active: true,
         first_order_only: false,
+        auto_apply: false,
         buy_quantity: '',
         get_quantity: '',
     });
@@ -308,6 +309,24 @@ export default function Create({ types }) {
                                 </label>
                                 <p className="mt-1 ml-7 text-xs text-gray-500">
                                     Only allow customers who haven't placed an order before
+                                </p>
+                            </div>
+
+                            <div className="sm:col-span-2">
+                                <label className="flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.auto_apply}
+                                        onChange={(e) => setData('auto_apply', e.target.checked)}
+                                        className="rounded border-gray-300 text-gray-900 focus:ring-gray-500"
+                                    />
+                                    <span className="text-sm font-medium text-gray-700">
+                                        Apply automatically
+                                    </span>
+                                </label>
+                                <p className="mt-1 ml-7 text-xs text-gray-500">
+                                    Added to every eligible cart without the customer entering the code.
+                                    Leave off for a code you hand out.
                                 </p>
                             </div>
                         </div>

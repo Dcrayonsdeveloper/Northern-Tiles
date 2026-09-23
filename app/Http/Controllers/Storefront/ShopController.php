@@ -91,12 +91,9 @@ class ShopController extends Controller
                     }
                 });
             })
-            ->when($categorySlug, function ($query) use ($categorySlug) {
-                $query->where(function ($q) use ($categorySlug) {
-                    $q->whereHas('category', fn ($inner) => $inner->where('slug', $categorySlug))
-                      ->orWhereHas('categories', fn ($inner) => $inner->where('slug', $categorySlug));
-                });
-            })
+            // inCategoryTree, not an exact slug match: a root category page
+            // lists everything under its children instead of nothing.
+            ->inCategoryTree($categorySlug ?: null)
             ->when($filters['on_sale'], function ($query) {
                 $query->whereColumn('compare_at_price', '>', 'price');
             })
@@ -184,6 +181,11 @@ class ShopController extends Controller
         abort_unless($product->is_active, 404);
 
         $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media', 'variantFamily']);
+
+        // Drop media rows whose file was never synced to disk, or the gallery
+        // renders a blank thumbnail for each one.
+        $product->setRelation('media', $product->media->filter->fileExists()->values());
+
         app(ProductUnitResolver::class)->decorate($product);
 
         // Same-range products (e.g. every ARGILE tile) presented as a variant
@@ -199,9 +201,17 @@ class ShopController extends Controller
             ->pluck('id')
             ->shuffle()
             ->take(8);
+        // category / specifications / inventory are here for the comparison
+        // table: without them it printed "—" for every sibling's category and
+        // had nothing to compare but price.
         $relatedProducts = $relatedIds->isNotEmpty()
             ? Product::whereIn('id', $relatedIds)
-                ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description'])
+                ->with('category:id,name,slug')
+                ->get([
+                    'id', 'category_id', 'name', 'slug', 'price', 'compare_at_price',
+                    'image_url', 'short_description', 'specifications',
+                    'inventory_quantity', 'inventory_policy',
+                ])
                 ->shuffle()->values()
             : collect();
 
@@ -224,6 +234,11 @@ class ShopController extends Controller
 
         return Inertia::render('Storefront/Shop/Show', [
             'product' => $product,
+            // So the heart renders filled on load for a product already saved,
+            // instead of resetting to "Add to Wishlist" on every visit.
+            'isWishlisted' => request()->user()
+                ? \App\Domain\Catalog\Models\Favorite::isFavorite(request()->user()->id, $product->id)
+                : false,
             'relatedProducts' => $relatedProducts,
             'availableCoupons' => $availableCoupons,
             'familyVariants' => $familyVariants,

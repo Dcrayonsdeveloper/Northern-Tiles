@@ -1,10 +1,10 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import CartSidebar from '@/Components/Cart/CartSidebar';
 import Container from '@/Components/Container';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-import { CartIcon, MenuIcon, SearchIcon, UserIcon } from './Icons';
+import { CartIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon } from './Icons';
 import MobileMenu from './MobileMenu';
 
 /* ── Live Search Bar ───────────────────────────────────────────────
@@ -590,6 +590,11 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
     const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
     const [cartCount, setCartCount] = useState(initialCartCount);
 
+    // Shared prop rather than a header prop: every layout renders this header,
+    // and threading it through each one would mean a layout that forgot it
+    // silently showed no badge.
+    const { wishlistCount = 0 } = usePage().props;
+
     useEffect(() => { setCartCount(initialCartCount); }, [initialCartCount]);
 
     useEffect(() => {
@@ -706,6 +711,18 @@ export default function StorefrontHeader({ user, cartCount: initialCartCount = 0
                             <button type="button" onClick={() => setMobileSearchOpen((v) => !v)} className="p-2 text-[#333] hover:text-brand transition-colors sm:hidden" aria-label="Search" aria-expanded={mobileSearchOpen}>
                                 <SearchIcon className="h-[18px] w-[18px]" />
                             </button>
+
+                            {/* Wishlist. Always points at /wishlist, guest or not:
+                                the route is behind `auth`, so a guest is sent to
+                                log in and lands on their wishlist afterwards. */}
+                            <Link href="/wishlist" className="relative p-2 text-[#333] transition-colors hover:text-brand" aria-label="Wishlist">
+                                <HeartIcon className="h-[18px] w-[18px]" />
+                                {wishlistCount > 0 && (
+                                    <span className="absolute -right-0.5 -top-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-slate-900">
+                                        {wishlistCount > 99 ? '99+' : wishlistCount}
+                                    </span>
+                                )}
+                            </Link>
 
                             {/* Cart */}
                             <button type="button" onClick={() => setCartSidebarOpen(true)} className="relative p-2 text-[#333] hover:text-brand transition-colors" aria-label="Cart">

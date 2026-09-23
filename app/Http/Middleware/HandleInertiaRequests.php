@@ -92,7 +92,7 @@ class HandleInertiaRequests extends Middleware
             // nav collapsed to "All Products" everywhere else.
             // Closure + path guard = no query at all outside /builder.
             'builderCategories' => fn () => $request->is('builder', 'builder/*')
-                ? app(\App\Domain\Builder\Services\BuilderNavigationService::class)->categories()
+                ? app(\App\Domain\Builder\Services\BuilderNavigationService::class)->categories($request->user())
                 : [],
             // Cart badges: retail_count and trade_count are computed separately
             // so a builder viewing /shop sees only retail items, and viewing
@@ -121,6 +121,12 @@ class HandleInertiaRequests extends Middleware
                     'count' => $isBuilderSurface ? $tradeCount : $retailCount,
                 ];
             },
+            // Badge on the header's wishlist button. Closure + guest guard so
+            // an anonymous request costs no query; guests have no wishlist at
+            // all, since saving requires an account.
+            'wishlistCount' => fn () => $request->user()
+                ? app(\App\Domain\Catalog\Services\FavoriteService::class)->getCount($request->user()->id)
+                : 0,
             'flash' => [
                 'success'     => fn () => $request->session()->get('success'),
                 'error'       => fn () => $request->session()->get('error'),

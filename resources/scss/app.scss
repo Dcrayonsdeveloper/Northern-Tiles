@@ -601,3 +601,17 @@ input[type="checkbox"] {
     padding: 0.6rem 0.75rem;
     vertical-align: top;
 }
+
+/* Horizontal carousels that scroll by drag/swipe with no visible bar.
+   Used by the home page strips. Deliberately outside @layer: rules inside a
+   layer are dropped when Tailwind cannot see the class in the scanned files,
+   and these are applied from JSX template strings. */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}

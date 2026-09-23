@@ -13,6 +13,13 @@ class HomeController extends Controller
     {
         $homeData = $homeService->getHomeData();
 
+        // Merged rather than folded into getHomeData(): that payload is the
+        // CMS section list, cached for an hour, and the category strip has to
+        // track the catalogue on a shorter leash than the page layout does.
+        $homeData['rootCategories'] = $homeService->rootCategories();
+        $homeData['trendingProducts'] = $homeService->trendingProducts();
+        $homeData['tileFinder'] = $homeService->tileFinder();
+
         return Inertia::render('Storefront/Home', $homeData);
     }
 }

@@ -30,7 +30,25 @@ class UpdateProductRequest extends FormRequest
 
             // Categories (many-to-many)
             'category_id' => ['nullable', 'exists:categories,id'],
+
+            // Which range this product belongs to. Nullable: "no variant" is a
+            // valid choice, and clearing the dropdown has to be able to unset it.
+            'variant_family_id' => ['nullable', 'exists:variant_families,id'],
+
+            // Buy-box display. Blank unit means "show no unit at all", which
+            // is a real choice here, so these stay nullable rather than
+            // falling back to a default.
+            'unit_label' => ['nullable', 'string', 'max:30'],
+            'quantity_label' => ['nullable', 'string', 'max:30'],
+            'show_wastage' => ['nullable', 'boolean'],
+            'show_sample' => ['nullable', 'boolean'],
+            'show_big_sample' => ['nullable', 'boolean'],
             'category_ids' => ['nullable', 'array'],
+
+            // The storefront's colour / space / size / material / finish /
+            // style filters are collections; the editor sets them per product.
+            'collection_ids' => ['nullable', 'array'],
+            'collection_ids.*' => ['integer', 'exists:collections,id'],
             'category_ids.*' => ['exists:categories,id'],
 
             // Vendor/seller

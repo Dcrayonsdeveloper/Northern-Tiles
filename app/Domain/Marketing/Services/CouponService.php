@@ -102,6 +102,8 @@ class CouponService
         // Apply coupon to cart
         $cart->update([
             'coupon_id' => $coupon->id,
+            // Entering a code is opting back in.
+            'auto_coupon_declined' => false,
             'discount_amount' => $discount,
         ]);
 
@@ -129,6 +131,10 @@ class CouponService
         $cart->update([
             'coupon_id' => null,
             'discount_amount' => 0,
+            // Remember the decision. autoApplyBestCoupon runs on every cart
+            // change and on every checkout render, so without this the coupon
+            // the customer just removed reappeared on the next page load.
+            'auto_coupon_declined' => true,
         ]);
 
         return [
@@ -254,6 +260,12 @@ class CouponService
             return;
         }
 
+        // The customer removed the automatic discount; putting it back on the
+        // next render is what made the remove button look broken.
+        if ($cart->auto_coupon_declined) {
+            return;
+        }
+
         $subtotal = $cart->getSubtotal();
 
         if ($subtotal <= 0) {
@@ -266,7 +278,11 @@ class CouponService
         $userId = $cart->user_id;
         $email = $cart->email;
 
+        // Only coupons that opted in. Every active coupon used to be a
+        // candidate, so a code meant to be given out privately was applied to
+        // every cart on the site unasked.
         $coupons = Coupon::active()
+            ->where('auto_apply', true)
             ->where(function ($q) {
                 $q->whereNull('usage_limit')->orWhereColumn('times_used', '<', 'usage_limit');
             })
@@ -280,7 +296,12 @@ class CouponService
         $bestDiscount = -1.0;
 
         if ($cart->coupon_id) {
-            $applied = $coupons->firstWhere('id', $cart->coupon_id);
+            // Looked up separately, not taken from the candidate list: a code
+            // the customer typed is usually NOT an auto-apply coupon, and
+            // reading it from that list would drop their discount the moment
+            // this ran.
+            $applied = $coupons->firstWhere('id', $cart->coupon_id)
+                ?? Coupon::active()->find($cart->coupon_id);
             if ($applied
                 && $applied->canBeUsedBy($userId, $email)
                 && (!$applied->minimum_purchase || $subtotal >= (float) $applied->minimum_purchase)

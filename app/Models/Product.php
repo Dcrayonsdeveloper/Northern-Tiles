@@ -70,6 +70,11 @@ class Product extends Model
         'width_mm',
         'height_mm',
         'sqm_per_box',
+        'unit_label',
+        'quantity_label',
+        'show_wastage',
+        'show_sample',
+        'show_big_sample',
         'requires_shipping',
         'image_url',
         'lifestyle_image_url',
@@ -92,6 +97,9 @@ class Product extends Model
         'width_mm' => 'integer',
         'height_mm' => 'integer',
         'sqm_per_box' => 'decimal:4',
+        'show_wastage' => 'boolean',
+        'show_sample' => 'boolean',
+        'show_big_sample' => 'boolean',
         'is_active' => 'boolean',
         'is_digital' => 'boolean',
         'requires_shipping' => 'boolean',
@@ -104,8 +112,28 @@ class Product extends Model
 
     protected static function booted(): void
     {
+        // One control, two columns. The editor offers Active or Draft, but the
+        // storefront gates on is_active in most places and on status in a few
+        // (the range selector, for one). Kept in lockstep here rather than in
+        // the form, so a bulk action, an import or an older screen cannot
+        // leave a product half-hidden — as one already had: a draft that was
+        // still is_active and therefore still listed and sellable.
+        static::saving(function (self $product) {
+            if ($product->isDirty('status')) {
+                $product->is_active = $product->status === self::STATUS_PUBLISHED;
+            } elseif ($product->isDirty('is_active')) {
+                $product->status = $product->is_active
+                    ? self::STATUS_PUBLISHED
+                    : self::STATUS_DRAFT;
+            }
+        });
+
         static::saved(function (self $product) {
             Cache::forget("product.{$product->slug}");
+            // The home strips are hand-picked from product flags, so ticking
+            // "Trending" has to show up without waiting out a cache window.
+            Cache::forget('home.trending_products');
+            Cache::forget('home.root_categories');
             // Reindex automated collections when product attributes change
             ReindexCollectionsForProductJob::dispatch($product->id)->onQueue('collections');
         });
@@ -170,6 +198,37 @@ class Product extends Model
         }
 
         return $query->whereHas('builderListing', fn ($q) => $q->where('is_active', true));
+    }
+
+    /**
+     * Products in a category, including everything under its children.
+     *
+     * Matching the slug alone made a root category an empty page: since the
+     * category rebuild every product hangs off a sub-category, so /shop?category=tiles
+     * returned nothing while Tiles' five children held hundreds. Roots are no
+     * longer linked in the nav, but a bookmark, a search result or a typed URL
+     * still lands here and must show the range rather than "0 products".
+     */
+    public function scopeInCategoryTree($query, ?string $slug)
+    {
+        if (! $slug) {
+            return $query;
+        }
+
+        $slugs = [$slug];
+
+        $category = \App\Models\Category::where('slug', $slug)->first(['id']);
+        if ($category) {
+            $slugs = array_merge(
+                $slugs,
+                \App\Models\Category::where('parent_id', $category->id)->pluck('slug')->all(),
+            );
+        }
+
+        return $query->where(function ($q) use ($slugs) {
+            $q->whereHas('category', fn ($inner) => $inner->whereIn('slug', $slugs))
+                ->orWhereHas('categories', fn ($inner) => $inner->whereIn('slug', $slugs));
+        });
     }
 
     public function seller(): BelongsTo

@@ -66,7 +66,18 @@ export default function Index({ orders }) {
                                 orders.data.map((o) => (
                                     <tr key={o.id} className="hover:bg-gray-50/50">
                                         <td className="px-4 py-2 text-xs font-medium text-gray-900">
-                                            #{o.id}
+                                            <span className="inline-flex items-center gap-1.5">
+                                                #{o.id}
+                                                {/* Marks orders carrying a staff note, so one
+                                                    can be spotted without opening every row. */}
+                                                {o.has_admin_note ? (
+                                                    <span title="Has an admin note" className="text-amber-500">
+                                                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                                            <path d="M9 12h6M9 16h4M8 4h8a2 2 0 012 2v13l-3-2-3 2-3-2-3 2V6a2 2 0 012-2z" />
+                                                        </svg>
+                                                    </span>
+                                                ) : null}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-2 text-xs text-gray-700">
                                             <div className="font-medium text-gray-900">{o.customer_name}</div>

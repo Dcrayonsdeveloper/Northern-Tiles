@@ -293,7 +293,7 @@ export default function MobileMenu({ open, onClose, navItems = [], user }) {
                 {navigationStack.length === 0 && (
                     <div className="px-4 pt-2 pb-3">
                         <MenuLink href="/shop" onClick={onClose} className="block relative overflow-hidden rounded-xl">
-                            <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=240&fit=crop&q=80" alt="Shop our collections" className="w-full h-[120px] object-cover" loading="lazy" />
+                            <img src="/storage/stock/photo-1600607687939-ce8a6c25118c.jpg" alt="Shop our collections" className="w-full h-[120px] object-cover" loading="lazy" />
                             <div className="absolute inset-0 bg-black/40 flex items-center px-5">
                                 <div>
                                     <p className="text-[10px] font-semibold uppercase tracking-[2px] text-white/80">New Season</p>

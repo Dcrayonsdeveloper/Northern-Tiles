@@ -12,7 +12,10 @@ class CartService
 {
     public function getOrCreate(?int $userId, ?string $sessionId, string $channel = Cart::CHANNEL_RETAIL): Cart
     {
-        return Cart::getOrCreate($userId, $sessionId, $channel);
+        // touchActivity records the owner's email and the time, which is what
+        // abandoned-cart detection reads. Without it every cart looked
+        // anonymous and idle-since-never.
+        return Cart::getOrCreate($userId, $sessionId, $channel)->touchActivity();
     }
 
     public function getCart(?int $userId, ?string $sessionId, string $channel = Cart::CHANNEL_RETAIL): ?Cart

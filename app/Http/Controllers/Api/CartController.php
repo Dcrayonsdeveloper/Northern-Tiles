@@ -102,7 +102,10 @@ class CartController extends Controller
                         'id' => $product->id,
                         'name' => $product->name,
                         'slug' => $product->slug,
-                        'image_url' => $product->primaryImage->first()?->url ?? $product->image_url,
+                        // first(fileExists): a media row whose file was never
+                        // synced would otherwise blank the cart thumbnail.
+                        'image_url' => $product->primaryImage->first(fn ($m) => $m->fileExists())?->url
+                            ?? $product->image_url,
                         'compare_at_price' => $product->compare_at_price,
                         'sqm_per_box' => $product->sqm_per_box,
                     ],
@@ -192,7 +195,8 @@ class CartController extends Controller
                     'id' => $item->product->id,
                     'name' => $item->product->name,
                     'slug' => $item->product->slug,
-                    'image_url' => $item->product->primaryImage->first()?->url ?? $item->product->image_url,
+                    'image_url' => $item->product->primaryImage->first(fn ($m) => $m->fileExists())?->url
+                        ?? $item->product->image_url,
                     'sqm_per_box' => $item->product->sqm_per_box,
                 ],
             ],

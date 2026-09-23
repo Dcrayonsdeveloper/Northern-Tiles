@@ -24,6 +24,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -53,11 +55,12 @@ class ProductController extends Controller
             'filters' => $filters,
             'categories' => $categories,
             'vendors' => $vendors,
+            // Two states only: Active is on sale, Draft is hidden everywhere.
+            // Scheduled and Archived are gone from the UI — nothing in the
+            // catalogue used them and each was another way to be half-visible.
             'statuses' => [
+                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Active'],
                 ['value' => Product::STATUS_DRAFT, 'label' => 'Draft'],
-                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Published'],
-                ['value' => Product::STATUS_SCHEDULED, 'label' => 'Scheduled'],
-                ['value' => Product::STATUS_ARCHIVED, 'label' => 'Archived'],
             ],
         ]);
     }
@@ -73,12 +76,18 @@ class ProductController extends Controller
 
         return Inertia::render('Admin/Products/Create', [
             'categories' => $this->buildCategoryTree($categories),
+            'collections' => Collection::query()
+                ->where('is_active', true)
+                ->orderBy('title')
+                ->get(['id', 'title', 'handle', 'type']),
             'vendors' => $vendors,
             'popularTags' => $popularTags,
+            // Two states only: Active is on sale, Draft is hidden everywhere.
+            // Scheduled and Archived are gone from the UI — nothing in the
+            // catalogue used them and each was another way to be half-visible.
             'statuses' => [
+                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Active'],
                 ['value' => Product::STATUS_DRAFT, 'label' => 'Draft'],
-                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Published'],
-                ['value' => Product::STATUS_SCHEDULED, 'label' => 'Scheduled'],
             ],
         ]);
     }
@@ -86,12 +95,42 @@ class ProductController extends Controller
     /**
      * Store a new product.
      */
+
+    /**
+     * Put the product in exactly the collections the editor selected.
+     *
+     * These are the storefront's filter dimensions, so the pivot has to end up
+     * matching the form exactly — sync, not attach. products_count is kept in
+     * step because the collections list reads that column rather than counting
+     * rows each time.
+     */
+    private function syncCollections(Product $product, ?array $collectionIds): void
+    {
+        if ($collectionIds === null) {
+            return;   // field absent — leave existing membership alone
+        }
+
+        $before = $product->collections()->pluck('collections.id')->all();
+        $product->collections()->sync(array_map('intval', $collectionIds));
+        $after = $product->collections()->pluck('collections.id')->all();
+
+        $touched = array_unique(array_merge($before, $after));
+
+        if ($touched) {
+            \App\Domain\Catalog\Models\Collection::whereIn('id', $touched)
+                ->get()
+                ->each(fn ($c) => $c->update(['products_count' => $c->products()->count()]));
+        }
+    }
+
     public function store(StoreProductRequest $request): RedirectResponse
     {
         $product = $this->productService->createProduct(
             $request->validated(),
             $request->user()
         );
+
+        $this->syncCollections($product, $request->input('collection_ids'));
 
         // Handle options and variants
         if ($request->has('options') && !empty($request->options)) {
@@ -115,28 +154,35 @@ class ProductController extends Controller
         $popularTags = $this->tagService->getPopularTags(30);
 
         // Get all collections for the dropdown
+        // handle carries the dimension prefix (colour-, space-, finish-…) the
+        // editor groups these by, so it has to come through.
         $collections = Collection::query()
             ->where('is_active', true)
             ->orderBy('title')
-            ->get(['id', 'title', 'type']);
+            ->get(['id', 'title', 'handle', 'type']);
 
         // Get collections this product belongs to
         $productCollections = $product->collections()
-            ->select(['collections.id', 'title', 'type'])
+            ->select(['collections.id', 'title', 'collections.handle', 'type'])
             ->get();
 
         return Inertia::render('Admin/Products/Edit', [
             'product' => $this->transformProductForEditor($product),
             'categories' => $this->buildCategoryTree($categories),
+            // Ranges this product can be filed under. Empty until families are
+            // created on the Variant Families page, which the picker says.
+            'variantFamilies' => \App\Domain\Catalog\Models\VariantFamily::orderBy('name')
+                ->get(['id', 'name', 'is_active']),
             'vendors' => $vendors,
             'popularTags' => $popularTags,
             'collections' => $collections,
             'productCollections' => $productCollections,
+            // Two states only: Active is on sale, Draft is hidden everywhere.
+            // Scheduled and Archived are gone from the UI — nothing in the
+            // catalogue used them and each was another way to be half-visible.
             'statuses' => [
+                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Active'],
                 ['value' => Product::STATUS_DRAFT, 'label' => 'Draft'],
-                ['value' => Product::STATUS_PUBLISHED, 'label' => 'Published'],
-                ['value' => Product::STATUS_SCHEDULED, 'label' => 'Scheduled'],
-                ['value' => Product::STATUS_ARCHIVED, 'label' => 'Archived'],
             ],
         ]);
     }
@@ -147,6 +193,8 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product): RedirectResponse
     {
         $this->productService->updateProduct($product, $request->validated(), $request->user());
+
+        $this->syncCollections($product, $request->input('collection_ids'));
 
         // Handle options and variants updates
         if ($request->has('options')) {
@@ -234,6 +282,44 @@ class ProductController extends Controller
         $this->mediaService->deleteMedia($media);
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Upload the lifestyle (room-set) image.
+     *
+     * Kept out of product_media on purpose: that table is the gallery, and a
+     * lifestyle shot is a single styled photo the storefront reads from
+     * products.lifestyle_image_url. Adding it to the gallery would put a
+     * room-set photo in the middle of the tile close-ups.
+     *
+     * The field stays a URL as well, so an externally hosted image still
+     * works; this just means nobody has to host one themselves.
+     */
+    public function uploadLifestyleImage(Request $request, Product $product): JsonResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:10240'],
+        ]);
+
+        $old = $product->lifestyle_image_url;
+
+        $path = $request->file('file')->storeAs(
+            "products/{$product->id}/lifestyle",
+            Str::uuid() . '.' . $request->file('file')->getClientOriginalExtension(),
+            'public',
+        );
+
+        $url = '/storage/' . $path;
+
+        $product->forceFill(['lifestyle_image_url' => $url])->save();
+
+        // Only delete a file we own. An external URL, or one shared with
+        // another product, is left alone.
+        if ($old && str_starts_with($old, '/storage/products/' . $product->id . '/lifestyle/')) {
+            Storage::disk('public')->delete(ltrim(substr($old, strlen('/storage/')), '/'));
+        }
+
+        return response()->json(['success' => true, 'url' => $url]);
     }
 
     /**
@@ -448,6 +534,11 @@ class ProductController extends Controller
             'width_mm' => $product->width_mm,
             'height_mm' => $product->height_mm,
             'sqm_per_box' => $product->sqm_per_box,
+            'unit_label' => $product->unit_label,
+            'quantity_label' => $product->quantity_label,
+            'show_wastage' => (bool) $product->show_wastage,
+            'show_sample' => (bool) $product->show_sample,
+            'show_big_sample' => (bool) $product->show_big_sample,
 
             // Images
             'lifestyle_image_url' => $product->lifestyle_image_url,
@@ -470,6 +561,8 @@ class ProductController extends Controller
 
             // Relations
             'category_id' => $product->category_id,
+            // Current range, so the picker opens on what is already set.
+            'variant_family_id' => $product->variant_family_id,
             'category_ids' => $product->categories->pluck('id'),
             'categories' => $product->categories,
             'seller_id' => $product->seller_id,

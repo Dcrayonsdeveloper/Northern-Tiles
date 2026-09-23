@@ -71,9 +71,14 @@ export default function BlogPost({ post, relatedPosts = [], seoMeta, articleSche
 
                     {/* Meta */}
                     <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                        {post.author && (
+                        {/* blog.author, not author.show — the route lives in the
+                            blog group so that is its registered name, and Ziggy
+                            threw on every post page rather than the link simply
+                            not working. A post without an author slug is shown
+                            as plain text instead of a link to nowhere. */}
+                        {post.author && post.author.slug ? (
                             <Link
-                                href={route('author.show', post.author.slug)}
+                                href={route('blog.author', post.author.slug)}
                                 className="flex items-center gap-2 hover:text-brand"
                             >
                                 {post.author.avatar_url && (
@@ -85,7 +90,18 @@ export default function BlogPost({ post, relatedPosts = [], seoMeta, articleSche
                                 )}
                                 <span className="font-medium">{post.author.name}</span>
                             </Link>
-                        )}
+                        ) : post.author ? (
+                            <span className="flex items-center gap-2">
+                                {post.author.avatar_url && (
+                                    <img
+                                        src={post.author.avatar_url}
+                                        alt={post.author.name}
+                                        className="h-8 w-8 rounded-full object-cover"
+                                    />
+                                )}
+                                <span className="font-medium">{post.author.name}</span>
+                            </span>
+                        ) : null}
                         {publishedAt && (
                             <time dateTime={post.published_at}>
                                 Published {publishedAt}

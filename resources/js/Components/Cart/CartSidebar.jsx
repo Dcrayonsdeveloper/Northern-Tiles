@@ -4,7 +4,6 @@ import { router } from '@inertiajs/react';
 import CartLineItem from './CartLineItem';
 import CartSummary from './CartSummary';
 import CartUpsells from './CartUpsells';
-import CouponInput from './CouponInput';
 import { d } from '@/Support/dictionary';
 
 // Icons
@@ -385,36 +384,11 @@ export default function CartSidebar({ open, onClose, scope = 'retail' }) {
                                         {/* Footer */}
                                         {!isEmpty && !loading && (
                                             <div className="border-t border-gray-200 px-4 py-4">
-                                                {/* Coupon Input — retail only.
-                                                    Trade orders don't take retail coupon codes; without
-                                                    this guard a trade user could apply WELCOME10 and
-                                                    double-discount trade pricing. */}
-                                                {!isTrade && (
-                                                <div className="mb-4">
-                                                    <CouponInput
-                                                        appliedCoupon={cart.coupon}
-                                                        currency={cart.totals.currency_symbol}
-                                                        onApply={(data) => {
-                                                            setCart(prev => ({
-                                                                ...prev,
-                                                                coupon: data.coupon
-                                                                    ? { ...data.coupon, discount_amount: data.discount_amount ?? data.coupon.discount_amount ?? 0 }
-                                                                    : null,
-                                                                totals: data.totals ?? prev.totals,
-                                                                shipping_estimate: data.shipping_estimate ?? prev.shipping_estimate,
-                                                            }));
-                                                        }}
-                                                        onRemove={(data) => {
-                                                            setCart(prev => ({
-                                                                ...prev,
-                                                                coupon: data?.coupon ?? null,
-                                                                totals: data?.totals ?? prev.totals,
-                                                                shipping_estimate: data?.shipping_estimate ?? prev.shipping_estimate,
-                                                            }));
-                                                        }}
-                                                    />
-                                                </div>
-                                                )}
+                                                {/* The discount box lives on the checkout
+                                                    page now, directly above the order summary,
+                                                    so the total it changes is visible in the
+                                                    same glance. Two places to enter the same
+                                                    code was one too many. */}
 
                                                 <CartSummary
                                                     totals={cart.totals}

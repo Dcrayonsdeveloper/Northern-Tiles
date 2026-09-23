@@ -1,17 +1,27 @@
 import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 
 export default function Contact() {
+    const { auth } = usePage().props;
+    const user = auth?.user;
+
+    // Sending requires an account (the route is behind auth). Prefilling the
+    // known details saves retyping them, and a guest is told before writing a
+    // message rather than after.
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: '',
-        email: '',
+        name: user?.name ?? '',
+        email: user?.email ?? '',
         subject: '',
         message: '',
     });
 
     const submit = (e) => {
         e.preventDefault();
+        if (!user) {
+            window.location.href = '/login';
+            return;
+        }
         post(route('contact.store'), {
             onSuccess: () => reset('subject', 'message'),
         });
@@ -106,13 +116,28 @@ export default function Contact() {
                                     )}
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="inline-flex rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
-                                >
-                                    Send Message
-                                </button>
+                                {user ? (
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="inline-flex rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
+                                    >
+                                        {processing ? 'Sending…' : 'Send Message'}
+                                    </button>
+                                ) : (
+                                    <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+                                        <p className="text-sm font-medium text-gray-900">Sign in to send a message</p>
+                                        <p className="mt-1 text-xs text-gray-600">
+                                            We reply to your account's email address, so messages come from a signed-in account.
+                                        </p>
+                                        <Link
+                                            href="/login"
+                                            className="mt-3 inline-flex rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+                                        >
+                                            Sign in
+                                        </Link>
+                                    </div>
+                                )}
                             </form>
                         </div>
 

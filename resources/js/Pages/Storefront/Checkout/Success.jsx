@@ -154,6 +154,18 @@ export default function Success({ order }) {
                             </div>
                         )}
 
+                        {/* What the customer typed at checkout. Shown back to
+                            them so they can see the instruction was recorded —
+                            it was stored and then never displayed anywhere. */}
+                        {order.notes ? (
+                            <div className="border-b border-gray-200 px-6 py-4">
+                                <h3 className="mb-2 text-sm font-semibold text-gray-900">
+                                    {d('checkout.success.notes', 'Order Notes')}
+                                </h3>
+                                <p className="whitespace-pre-line text-sm text-gray-600">{order.notes}</p>
+                            </div>
+                        ) : null}
+
                         {/* Payment Method */}
                         <div className="px-6 py-4">
                             <h3 className="text-sm font-semibold text-gray-900 mb-2">

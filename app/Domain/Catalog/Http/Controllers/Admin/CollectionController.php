@@ -50,9 +50,10 @@ class CollectionController extends Controller
             });
         }
 
-        $collections = $query->orderBy('title')
-            ->paginate(20)
-            ->withQueryString();
+        // Not paginated: the page groups these into the six storefront filter
+        // dimensions and lets you switch between them, which a page-at-a-time
+        // list cannot do. There are a few dozen collections, not thousands.
+        $collections = $query->orderBy('title')->get();
 
         return Inertia::render('Admin/Collections/Index', [
             'collections' => $collections,
@@ -94,7 +95,10 @@ class CollectionController extends Controller
             'product_ids.*' => ['exists:products,id'],
             'image' => ['nullable', 'image', 'max:2048'],
             'brochure' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'redirect_to' => ['nullable', 'string', 'in:index'],
         ]);
+
+        unset($validated['redirect_to']);
 
         // Generate handle if not provided
         if (empty($validated['handle'])) {
@@ -127,6 +131,15 @@ class CollectionController extends Controller
             ReindexCollectionsJob::dispatch($collection->id);
         }
 
+        // Created from the collections list, where the job is filing products
+        // into an existing dimension — send them back to the tab they were on
+        // rather than to a full edit form they did not ask for.
+        if ($request->input('redirect_to') === 'index') {
+            return redirect()
+                ->route('admin.collections.index')
+                ->with('success', "Created \"{$collection->title}\".");
+        }
+
         return redirect()
             ->route('admin.collections.edit', $collection)
             ->with('success', 'Collection created successfully.');
@@ -134,16 +147,26 @@ class CollectionController extends Controller
 
     public function edit(Collection $collection): Response
     {
+        // No limit: the editor lists what is in the collection so it can be
+        // managed, and a cap of 100 silently hid the rest of a large one.
         $collection->load(['products' => function ($q) {
-            $q->select('products.id', 'name', 'slug', 'price', 'image_url')
-                ->orderBy('collection_products.sort_order')
-                ->limit(100);
+            $q->select('products.id', 'name', 'slug', 'sku', 'price', 'image_url')
+                ->orderBy('collection_products.sort_order');
         }]);
 
         return Inertia::render('Admin/Collections/Edit', [
             'collection' => [
                 ...$collection->toArray(),
                 'product_ids' => $collection->products->pluck('id'),
+                // The picker had ids only, so it could say "24 products
+                // selected" but not show which 24.
+                'products' => $collection->products->map(fn ($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'sku' => $p->sku,
+                    'price' => $p->price,
+                    'image_url' => $p->image_url,
+                ])->values(),
                 'image_url' => $collection->image_url,
                 'brochure_url' => $collection->brochure_url,
             ],

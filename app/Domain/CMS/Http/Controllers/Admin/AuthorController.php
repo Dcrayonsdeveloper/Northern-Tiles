@@ -49,10 +49,17 @@ class AuthorController extends Controller
             'bio' => 'nullable|string',
             'avatar' => 'nullable|image|max:2048',
             'job_title' => 'nullable|string|max:100',
+            // The form posts social_links; 'social' is kept for anything older
+            // that still sends it.
             'social' => 'nullable|array',
-            'social.twitter' => 'nullable|url',
-            'social.linkedin' => 'nullable|url',
-            'social.website' => 'nullable|url',
+            'social_links' => 'nullable|array',
+            'social_links.twitter' => 'nullable|string|max:255',
+            'social_links.linkedin' => 'nullable|string|max:255',
+            'social_links.website' => 'nullable|string|max:255',
+            'credentials' => 'nullable|string|max:1000',
+            'expertise_areas' => 'nullable|array',
+            'expertise_areas.*' => 'string|max:100',
+            'is_verified' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -68,7 +75,10 @@ class AuthorController extends Controller
             'bio_json' => ['content' => $validated['bio'] ?? null],
             'avatar_file' => $avatarPath,
             'job_title' => $validated['job_title'] ?? null,
-            'social_json' => $validated['social'] ?? null,
+            'social_json' => $validated['social_links'] ?? $validated['social'] ?? null,
+            'credentials' => $validated['credentials'] ?? null,
+            'expertise_json' => $validated['expertise_areas'] ?? [],
+            'is_verified' => $validated['is_verified'] ?? false,
             'is_active' => $validated['is_active'] ?? true,
         ]);
 
@@ -98,10 +108,17 @@ class AuthorController extends Controller
             'bio' => 'nullable|string',
             'avatar' => 'nullable|image|max:2048',
             'job_title' => 'nullable|string|max:100',
+            // The form posts social_links; 'social' is kept for anything older
+            // that still sends it.
             'social' => 'nullable|array',
-            'social.twitter' => 'nullable|url',
-            'social.linkedin' => 'nullable|url',
-            'social.website' => 'nullable|url',
+            'social_links' => 'nullable|array',
+            'social_links.twitter' => 'nullable|string|max:255',
+            'social_links.linkedin' => 'nullable|string|max:255',
+            'social_links.website' => 'nullable|string|max:255',
+            'credentials' => 'nullable|string|max:1000',
+            'expertise_areas' => 'nullable|array',
+            'expertise_areas.*' => 'string|max:100',
+            'is_verified' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -119,8 +136,13 @@ class AuthorController extends Controller
             'slug' => $validated['slug'] ?? Str::slug($validated['name']),
             'bio_json' => ['content' => $validated['bio'] ?? null],
             'avatar_file' => $avatarPath,
-            'job_title' => $validated['job_title'] ?? null,
-            'social_json' => $validated['social'] ?? null,
+            // The edit form does not carry job_title, so ?? null would wipe
+            // it on every save. Keep what is there unless a value is sent.
+            'job_title' => $validated['job_title'] ?? $author->job_title,
+            'social_json' => $validated['social_links'] ?? $validated['social'] ?? null,
+            'credentials' => $validated['credentials'] ?? null,
+            'expertise_json' => $validated['expertise_areas'] ?? [],
+            'is_verified' => $validated['is_verified'] ?? false,
             'is_active' => $validated['is_active'] ?? true,
         ]);
 

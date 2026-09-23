@@ -52,16 +52,22 @@ Route::get('/visualizer', [VisualizerController::class, 'index'])->name('visuali
 
 // Cart routes (Inertia pages)
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('/cart', [CartController::class, 'store'])->name('cart.store')->middleware(EnsureUserIsActive::class);
-Route::patch('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
+// Buying requires an account. Enforced here rather than in the UI: the
+// buttons are on a dozen pages and an unguarded endpoint is still an
+// unguarded endpoint. A guest posting is redirected to login, and Laravel
+// returns them to the page they came from afterwards.
+Route::post('/cart', [CartController::class, 'store'])->name('cart.store')->middleware(['auth', EnsureUserIsActive::class]);
+Route::patch('/cart/{item}', [CartController::class, 'update'])->name('cart.update')->middleware('auth');
+Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.destroy')->middleware('auth');
 
 // Cart API routes (JSON endpoints for AJAX - must be in web routes for session access)
 Route::prefix('api/cart')->name('api.cart.')->group(function () {
     Route::get('count', [\App\Http\Controllers\Api\CartController::class, 'count'])->name('count');
     Route::get('/', [\App\Http\Controllers\Api\CartController::class, 'index'])->name('index');
-    Route::post('add', [\App\Http\Controllers\Api\CartController::class, 'add'])->name('add')->middleware(EnsureUserIsActive::class);
-    Route::post('buy-now', [\App\Http\Controllers\Api\CartController::class, 'buyNow'])->name('buy-now')->middleware(EnsureUserIsActive::class);
+    // Same gate as the Inertia routes — these answer JSON, so a guest gets
+    // a 401 the caller turns into a trip to the login page.
+    Route::post('add', [\App\Http\Controllers\Api\CartController::class, 'add'])->name('add')->middleware(['auth', EnsureUserIsActive::class]);
+    Route::post('buy-now', [\App\Http\Controllers\Api\CartController::class, 'buyNow'])->name('buy-now')->middleware(['auth', EnsureUserIsActive::class]);
 
     // Coupon routes — MUST be declared before the {item} wildcard routes.
     // If placed after, DELETE api/cart/coupon would match {item}="coupon" (string)
@@ -107,9 +113,9 @@ Route::prefix('api/reviews')->name('api.reviews.')->group(function () {
     Route::post('{reviewId}/helpful', [\App\Http\Controllers\Api\ReviewController::class, 'markHelpful'])->name('helpful');
 });
 
-// Checkout routes (guest checkout allowed)
-Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.index');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store')->middleware(EnsureUserIsActive::class);
+// Guest checkout is off: an order must belong to an account.
+Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.index')->middleware('auth');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store')->middleware(['auth', EnsureUserIsActive::class]);
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])
     ->middleware('throttle:20,1')
     ->name('checkout.success');
@@ -134,7 +140,9 @@ Route::get('/about', [PublicPageController::class, 'show'])
     ->defaults('slug', 'about')
     ->name('pages.about');
 Route::get('/contact', [PageController::class, 'contact'])->name('pages.contact');
-Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+// The form itself stays public so the page still reads as a contact page;
+// only sending requires an account.
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store')->middleware('auth');
 
 // Blog Routes
 Route::prefix('blog')->name('blog.')->group(function () {
@@ -301,6 +309,16 @@ Route::middleware('auth')->group(function () {
         ->name('orders.index');
     Route::get('/orders/{order}', [\App\Http\Controllers\User\OrderHistoryController::class, 'show'])
         ->name('orders.show');
+
+    // Wishlist. Behind `auth` on purpose — that is what forces a sign-in
+    // before anything can be saved, and Laravel returns the guest to the
+    // product page they came from once they have logged in.
+    Route::get('/wishlist', [\App\Http\Controllers\Storefront\WishlistController::class, 'index'])
+        ->name('wishlist.index');
+    Route::post('/wishlist', [\App\Http\Controllers\Storefront\WishlistController::class, 'toggle'])
+        ->name('wishlist.toggle');
+    Route::delete('/wishlist/{product}', [\App\Http\Controllers\Storefront\WishlistController::class, 'destroy'])
+        ->name('wishlist.destroy');
 });
 
 require __DIR__.'/auth.php';

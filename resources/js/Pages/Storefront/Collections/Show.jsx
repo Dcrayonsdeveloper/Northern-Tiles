@@ -60,57 +60,45 @@ function ProductCard({ product }) {
 }
 
 export default function Show({ collection, products }) {
+
     return (
         <PublicLayout>
             <Head title={collection.meta_title || collection.title} />
 
-            {/* Collection Banner */}
-            <section
-                className="relative flex min-h-[360px] items-center overflow-hidden bg-gray-900 md:min-h-[420px]"
-                style={
-                    collection.image_url
-                        ? { backgroundImage: `url(${collection.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-                        : undefined
-                }
-            >
-                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70" />
-
-                <Container className="relative z-10 py-16 text-center">
-                    <nav className="mb-6 flex items-center justify-center gap-2 text-xs text-white/80">
-                        <Link href={route('home')} className="hover:text-white">Home</Link>
+            {/* Collection header.
+                Always this — no photo background, whether the collection has an
+                uploaded image or not. These are filter dimensions (Bathroom,
+                Beige, 300x300), and a full-bleed tile close-up behind the title
+                made every one of them look like a different page and swallowed
+                the breadcrumb. The uploaded image is still used on the home
+                page card; it just does not become a wall here. */}
+            <section className="border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
+                <Container className="py-10 text-center">
+                    <nav className="mb-5 flex items-center justify-center gap-2 text-xs text-gray-500">
+                        <Link href={route('home')} className="hover:text-brand">Home</Link>
                         <span>/</span>
-                        <Link href={route('collections.index')} className="hover:text-white">Collections</Link>
+                        <Link href={route('collections.index')} className="hover:text-brand">Collections</Link>
                         <span>/</span>
-                        <span className="text-white">{collection.title}</span>
+                        <span className="text-gray-900">{collection.title}</span>
                     </nav>
 
-                    <p className="text-[11px] font-semibold uppercase tracking-[3px] text-white/80">Collection</p>
-                    <h1 className="mt-3 text-3xl font-light uppercase tracking-[2px] text-white md:text-5xl">
+                    <p className="text-[11px] font-semibold uppercase tracking-[3px] text-brand">Collection</p>
+                    <h1 className="mt-2 text-2xl font-light uppercase tracking-[2px] text-gray-900 md:text-4xl">
                         {collection.title}
                     </h1>
                     <div className="mx-auto mt-4 h-[2px] w-12 bg-brand" />
 
                     {collection.description && (
-                        <p className="mx-auto mt-5 max-w-2xl text-sm text-white/85 md:text-base">
+                        <p className="mx-auto mt-4 max-w-2xl text-sm text-gray-600 md:text-base">
                             {collection.description}
                         </p>
                     )}
 
-                    {collection.brochure_url && (
-                        <div className="mt-7">
-                            <a
-                                href={collection.brochure_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 rounded-full bg-brand px-7 py-3 text-xs font-semibold uppercase tracking-[2px] text-white shadow-md transition hover:bg-brand/90"
-                            >
-                                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-                                </svg>
-                                Download Brochure
-                            </a>
-                        </div>
-                    )}
+                    {products?.total ? (
+                        <p className="mt-3 text-xs text-gray-500">
+                            {products.total} product{products.total === 1 ? '' : 's'}
+                        </p>
+                    ) : null}
                 </Container>
             </section>
 

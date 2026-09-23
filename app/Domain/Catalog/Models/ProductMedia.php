@@ -63,6 +63,27 @@ class ProductMedia extends Model
         return $this->poster_path ? Storage::disk('public')->url($this->poster_path) : null;
     }
 
+    /**
+     * Whether the file this row points at is actually there.
+     *
+     * Older imports left rows referencing files that were never synced to
+     * disk — 103 products carry one — and anything that rendered them blind
+     * produced a broken image. Remote urls are taken on trust: only local
+     * paths can be checked, and only those have gone missing.
+     */
+    public function fileExists(): bool
+    {
+        if (! $this->path) {
+            return false;
+        }
+
+        if (str_starts_with($this->path, 'http://') || str_starts_with($this->path, 'https://')) {
+            return true;
+        }
+
+        return Storage::disk('public')->exists($this->path);
+    }
+
     public function isImage(): bool
     {
         return $this->type === 'image';

@@ -31,6 +31,7 @@ class Cart extends Model
         'currency',
         'coupon_id',
         'discount_amount',
+        'auto_coupon_declined',
         'expires_at',
         'abandoned_at',
         'recovered_order_id',
@@ -128,6 +129,19 @@ class Cart extends Model
             return $existing;
         }
 
+        // An EXPIRED cart still occupies the (user_id, channel) unique key, so
+        // creating a replacement collides with a row the lookup above filtered
+        // out — and "Add to cart" 500s for that customer forever. Nine accounts
+        // on production were stuck this way. Revive the row instead: it is the
+        // only cart this user is allowed to have on this channel.
+        if ($userId) {
+            $stale = static::where('user_id', $userId)->where('channel', $channel)->first();
+
+            if ($stale) {
+                return $stale->revive($sessionId);
+            }
+        }
+
         try {
             return static::create([
                 'user_id' => $userId,
@@ -144,9 +158,62 @@ class Cart extends Model
                 if ($again) {
                     return $again;
                 }
+
+                // Expiry is not part of the unique key, so the winning row may
+                // be an expired one the lookup skips.
+                if ($userId) {
+                    $stale = static::where('user_id', $userId)->where('channel', $channel)->first();
+
+                    if ($stale) {
+                        return $stale->revive($sessionId);
+                    }
+                }
             }
             throw $e;
         }
+    }
+
+    /**
+     * Bring an expired cart back into use.
+     *
+     * Its lines are dropped: the cart lapsed, so the prices on it are stale
+     * and silently reviving month-old items would be worse than starting
+     * clean. The row itself is reused because the unique key allows only one
+     * cart per user per channel.
+     */
+    public function revive(?string $sessionId = null): self
+    {
+        if ($this->expires_at && $this->expires_at->isPast()) {
+            $this->items()->delete();
+            $this->setRelation('items', $this->items()->getRelated()->newCollection());
+        }
+
+        $this->forceFill([
+            'session_id' => $sessionId ?: $this->session_id,
+            'expires_at' => now()->addDays(30),
+        ])->save();
+
+        return $this;
+    }
+
+    /**
+     * Stamp the cart as active, and remember who it belongs to.
+     *
+     * eligibleForAbandonment() requires both an email and a last_activity_at
+     * older than the flow's threshold. Nothing ever wrote either column, so no
+     * cart could ever qualify and the abandoned-carts screen was permanently
+     * empty however many carts existed.
+     */
+    public function touchActivity(): self
+    {
+        $email = $this->email ?: $this->user?->email;
+
+        $this->forceFill([
+            'email' => $email,
+            'last_activity_at' => now(),
+        ])->save();
+
+        return $this;
     }
 
     public function getSubtotal(): float

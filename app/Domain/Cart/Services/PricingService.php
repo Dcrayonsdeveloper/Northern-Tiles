@@ -18,13 +18,16 @@ class PricingService
      * Compute all totals for a cart (server-authoritative).
      * Never trust client totals - always recalculate on server.
      */
-    public function computeTotals(Cart $cart, array $shippingData = []): array
+    public const SHIPPING_STANDARD = 'standard';
+    public const SHIPPING_EXPRESS = 'express';
+
+    public function computeTotals(Cart $cart, array $shippingData = [], ?string $shippingMethod = null): array
     {
         $subtotal = $this->calculateSubtotal($cart);
         $discount = $this->calculateDiscount($cart, $subtotal);
 
         $sampleShipping = $this->calculateSampleShipping($cart);
-        $nonSampleShipping = $this->calculateNonSampleShipping($cart, $shippingData);
+        $nonSampleShipping = $this->nonSampleShippingFor($cart, $shippingMethod ?: self::SHIPPING_STANDARD);
         $shipping = $sampleShipping + $nonSampleShipping;
 
         $taxableAmount = $subtotal - $discount;
@@ -106,7 +109,7 @@ class PricingService
      * Calculate non-sample shipping (regular products) using the existing
      * flat-rate / free-threshold logic, but operating on the non-sample subtotal only.
      */
-    protected function calculateNonSampleShipping(Cart $cart, array $shippingData): float
+    public function nonSampleShippingFor(Cart $cart, string $method = self::SHIPPING_STANDARD): float
     {
         if ($cart->isEmpty()) {
             return 0;
@@ -125,6 +128,13 @@ class PricingService
             if ($coupon && $coupon->givesFreeShipping()) {
                 return 0;
             }
+        }
+
+        // Express is a paid upgrade: it is never covered by the free-shipping
+        // threshold, or picking it above the threshold would cost the customer
+        // nothing and the courier plenty.
+        if ($method === self::SHIPPING_EXPRESS) {
+            return (float) Setting::getValue('shipping.express_rate', 150);
         }
 
         $freeShippingThreshold = (float) Setting::getValue('shipping.free_threshold', 999);
@@ -152,9 +162,10 @@ class PricingService
     /**
      * Kept for back-compat — returns the combined shipping.
      */
-    protected function calculateShipping(Cart $cart, array $shippingData): float
+    protected function calculateShipping(Cart $cart, array $shippingData, ?string $method = null): float
     {
-        return $this->calculateSampleShipping($cart) + $this->calculateNonSampleShipping($cart, $shippingData);
+        return $this->calculateSampleShipping($cart)
+            + $this->nonSampleShippingFor($cart, $method ?: self::SHIPPING_STANDARD);
     }
 
     /**

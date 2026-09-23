@@ -22,6 +22,213 @@ class HomeService
     ];
 
     /**
+     * The home page's "Trending Products" strip.
+     *
+     * Hand-picked: whatever the admin has ticked as trending, in catalogue
+     * order. It used to be "the 8 most recently created products", which is
+     * not trending and could not be influenced from the admin at all — the
+     * only way to change it was to add products in a different order.
+     *
+     * Falls back to the newest products when nothing is ticked, so the strip
+     * never renders empty while the list is being set up.
+     *
+     * Draft products are excluded by is_active, so unticking is not the only
+     * way to pull something out of here — setting it to Draft does too.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function trendingProducts(int $limit = 12): array
+    {
+        return Cache::remember('home.trending_products', 600, function () use ($limit) {
+            $columns = [
+                'id', 'name', 'slug', 'short_description',
+                'price', 'compare_at_price', 'image_url', 'sqm_per_box', 'category_id',
+            ];
+
+            $picked = Product::query()
+                ->where('is_active', true)
+                ->where('is_featured', true)
+                ->orderBy('name')
+                ->limit($limit)
+                ->get($columns);
+
+            if ($picked->isEmpty()) {
+                $picked = Product::query()
+                    ->where('is_active', true)
+                    ->orderByDesc('created_at')
+                    ->limit(8)
+                    ->get($columns);
+            }
+
+            return $picked->all();
+        });
+    }
+
+    /**
+     * The home page's "Find your perfect tile" filters.
+     *
+     * Built from the collections the admin maintains, grouped by the dimension
+     * their handle encodes — colour-white, space-bathroom, finish-matt. The
+     * section used to be hardcoded literals linking at ?color=white, which read
+     * a separate set of import tags nobody could edit; the collections page
+     * existed to drive this and was never wired to it.
+     *
+     * Only collections holding products are offered: a swatch that lands on an
+     * empty page is worse than one less swatch. Dimensions with nothing in them
+     * drop out entirely, which is what makes an unused "By Size" disappear
+     * rather than render an empty tab.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function tileFinder(): array
+    {
+        return Cache::remember('home.tile_finder', 600, function () {
+            $dimensions = [
+                'colour' => ['label' => 'By Colour', 'prefix' => 'colour-'],
+                'space' => ['label' => 'By Space', 'prefix' => 'space-'],
+                'size' => ['label' => 'By Size', 'prefix' => 'size-'],
+                'material' => ['label' => 'By Material', 'prefix' => 'material-'],
+                'finish' => ['label' => 'By Finish', 'prefix' => 'finish-'],
+                'style' => ['label' => 'By Style', 'prefix' => 'style-'],
+            ];
+
+            $collections = \App\Domain\Catalog\Models\Collection::query()
+                ->where('is_active', true)
+                ->orderBy('title')
+                ->get(['id', 'title', 'handle', 'image_path']);
+
+            $out = [];
+
+            foreach ($dimensions as $key => $dimension) {
+                $items = $collections
+                    ->filter(fn ($c) => str_starts_with((string) $c->handle, $dimension['prefix']))
+                    ->map(fn ($c) => [
+                        'title' => $c->title,
+                        'handle' => $c->handle,
+                        'url' => '/collections/' . $c->handle,
+                        'count' => $c->products()->where('is_active', true)->count(),
+                        'image' => $c->image_url,
+                        // Last-resort artwork: a tile that is actually in the
+                        // collection, so a card is never blank even before
+                        // anyone uploads a photo for it.
+                        'product_image' => $c->products()
+                            ->where('is_active', true)
+                            ->whereNotNull('image_url')
+                            ->where('image_url', '!=', '')
+                            ->value('products.image_url'),
+                    ])
+                    ->filter(fn ($item) => $item['count'] > 0)
+                    ->values();
+
+                if ($items->isEmpty()) {
+                    continue;
+                }
+
+                $out[] = [
+                    'key' => $key,
+                    'label' => $dimension['label'],
+                    'items' => $items->all(),
+                ];
+            }
+
+            return $out;
+        });
+    }
+
+    /**
+     * Root categories for the "Shop by Category" strip.
+     *
+     * Was six hardcoded cards with stock photography, invented counts
+     * ("120+ Products") and slugs that no longer exist — ?category=external
+     * and ?category=trade-products both resolve to nothing since the category
+     * rebuild. Now it is the real tree: each root, its true product count
+     * counted across its children, and a picture taken from a product inside
+     * it rather than a stock photo of somebody else's tiles.
+     *
+     * Roots holding no products are left out. A card advertising a range and
+     * landing on "No products found" is worse than no card, and the moment
+     * one gets products it appears here on its own.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function rootCategories(): array
+    {
+        return Cache::remember('home.root_categories', 600, function () {
+            $roots = Category::query()
+                ->whereNull('parent_id')
+                ->where('is_active', true)
+                ->with(['children' => fn ($q) => $q->where('is_active', true)->orderBy('sort')->orderBy('name')])
+                ->orderBy('sort')
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug', 'image_path', 'sort']);
+
+            $cards = [];
+
+            foreach ($roots as $root) {
+                $count = Product::query()
+                    ->where('is_active', true)
+                    ->inCategoryTree($root->slug)
+                    ->count();
+
+                if ($count === 0) {
+                    continue;
+                }
+
+                $children = $root->children->pluck('name');
+
+                $cards[] = [
+                    'id' => $root->id,
+                    'name' => $root->name,
+                    'slug' => $root->slug,
+                    'href' => "/shop?category={$root->slug}",
+                    'count' => $count,
+                    // The sub-categories are the honest description of a root,
+                    // and they update themselves when the tree changes.
+                    'desc' => $children->isNotEmpty()
+                        ? $children->take(3)->implode(', ') . ($children->count() > 3 ? ' & more' : '')
+                        : null,
+                    'image' => $root->image_path
+                        ? '/storage/' . ltrim($root->image_path, '/')
+                        : $this->sampleImageFor($root->slug),
+                ];
+            }
+
+            return $cards;
+        });
+    }
+
+    /**
+     * A picture of something actually in this part of the catalogue.
+     *
+     * Walks a few candidates rather than taking the first: image_url is
+     * sometimes set to a local path whose file was never synced, and a card
+     * with a broken image is worse than one with none.
+     */
+    private function sampleImageFor(string $slug): ?string
+    {
+        $candidates = Product::query()
+            ->where('is_active', true)
+            ->inCategoryTree($slug)
+            ->whereNotNull('image_url')
+            ->where('image_url', '!=', '')
+            ->orderByDesc('is_featured')
+            ->limit(12)
+            ->pluck('image_url');
+
+        foreach ($candidates as $url) {
+            if (! str_starts_with($url, '/storage')) {
+                return $url;    // remote CDN url — taken on trust
+            }
+
+            if (is_file(storage_path('app/public' . substr($url, strlen('/storage'))))) {
+                return $url;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Get all home page data with caching.
      * Data is pulled from a Page with template='home'.
      */

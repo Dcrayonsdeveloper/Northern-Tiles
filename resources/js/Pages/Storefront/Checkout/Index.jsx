@@ -1,6 +1,7 @@
+import CouponInput from '@/Components/Cart/CouponInput';
 import PublicLayout from '@/Layouts/PublicLayout';
 import Container from '@/Components/Container';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { d } from '@/Support/dictionary';
 
@@ -42,6 +43,7 @@ export default function Index({
     items = [],
     totals = {},
     shippingMethods = [],
+    appliedCoupon = null,
     paymentMethods = [],
     isGuest = true,
     user = null,
@@ -107,8 +109,12 @@ export default function Index({
     };
 
     const selectedShipping = shippingMethods.find(m => m.id === data.shipping_method);
-    const shippingCost = selectedShipping?.price || 0;
-    const grandTotal = (totals.subtotal || 0) + shippingCost + (totals.tax || 0) - (totals.discount || 0);
+    const shippingCost = parseFloat(selectedShipping?.price ?? 0);
+    // Sample shipping is charged on top of the chosen method and was missing
+    // here, so a cart with samples showed a total lower than it was billed.
+    const sampleShipping = parseFloat(totals.sample_shipping || 0);
+    const grandTotal = (parseFloat(totals.subtotal || 0) - parseFloat(totals.discount || 0))
+        + shippingCost + sampleShipping + parseFloat(totals.tax || 0);
 
     const isEmpty = items.length === 0;
 
@@ -434,7 +440,25 @@ export default function Index({
 
                                 {/* Right Column - Order Summary */}
                                 <div className="lg:col-span-1">
-                                    <div className="lg:sticky lg:top-24 rounded-lg border bg-white p-6 shadow-sm">
+                                    {/* Discount code, above the summary so the
+                                        total underneath visibly reflects it.
+                                        Same component the cart uses, so a code
+                                        applied in either place behaves the same
+                                        and the totals come back from the server
+                                        rather than being guessed here. */}
+                                    <div className="lg:sticky lg:top-24">
+                                    <div className="mb-4 rounded-lg border bg-white p-6 shadow-sm">
+                                        <h2 className="mb-3 text-sm font-semibold text-gray-900">
+                                            {d('checkout.coupon.title', 'Discount coupon')}
+                                        </h2>
+                                        <CouponInput
+                                            appliedCoupon={appliedCoupon}
+                                            currency="$"
+                                            onApply={() => router.reload({ only: ['cart', 'totals', 'appliedCoupon'] })}
+                                            onRemove={() => router.reload({ only: ['cart', 'totals', 'appliedCoupon'] })}
+                                        />
+                                    </div>
+                                    <div className="rounded-lg border bg-white p-6 shadow-sm">
                                         <h2 className="text-lg font-semibold text-gray-900">
                                             {d('checkout.summary.title', 'Order Summary')}
                                         </h2>
@@ -507,10 +531,12 @@ export default function Index({
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-600">{d('checkout.summary.shipping', 'Shipping')}</span>
                                                 <span className="font-medium text-gray-900">
+                                                    {/* The rate for the method actually selected. This read
+                                                        the server's page-load total instead, so choosing
+                                                        Express moved the Total but left this line on $50. */}
                                                     {(() => {
-                                                        const nonSampleShipping = Math.max(0, parseFloat(totals.shipping || 0) - parseFloat(totals.sample_shipping || 0));
-                                                        if (nonSampleShipping > 0) {
-                                                            return `$${nonSampleShipping.toFixed(2)}`;
+                                                        if (shippingCost > 0) {
+                                                            return `$${shippingCost.toFixed(2)}`;
                                                         }
                                                         if (parseFloat(totals.subtotal || 0) > 0) {
                                                             return <span className="text-green-600">{d('checkout.free', 'Free')}</span>;
@@ -581,6 +607,7 @@ export default function Index({
                                                 {errors.checkout}
                                             </p>
                                         )}
+                                    </div>
                                     </div>
                                 </div>
                             </div>

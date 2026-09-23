@@ -58,6 +58,14 @@ class Collection extends Model
                 $collection->handle = Str::slug($collection->title);
             }
         });
+
+        // The home page's "Find your perfect tile" section is built from these,
+        // so adding a product to one has to show there without waiting out a
+        // cache window. addProduct/removeProduct both write products_count,
+        // which lands here.
+        $flush = fn () => \Illuminate\Support\Facades\Cache::forget('home.tile_finder');
+        static::saved($flush);
+        static::deleted($flush);
     }
 
     // Relationships

@@ -1,4 +1,5 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { groupCollections } from '@/Utils/collectionGroups';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import debounce from 'lodash/debounce';
@@ -7,10 +8,115 @@ import SpecListInput from '@/Components/Admin/SpecListInput';
 import { COLOUR_NAMES, SPEC_LIST_FORMATS } from '@/Support/colours';
 
 // Media Upload Component
+/* ── Lifestyle image: upload or paste a URL ──────────────────────────
+   Deliberately not part of the Media gallery above. That gallery is the
+   tile close-ups; a room-set shot dropped in among them reads as a
+   mistake, and the storefront reads this one from its own column. */
+function LifestyleImageUploader({ product, value, onChange }) {
+    const inputRef = useRef(null);
+    const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const upload = async (file) => {
+        if (!file) return;
+        setUploading(true);
+        setError(null);
+
+        const body = new FormData();
+        body.append('file', file);
+
+        try {
+            const res = await fetch(route('admin.products.lifestyle.upload', product.id), {
+                method: 'POST',
+                body,
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content },
+            });
+
+            const result = await res.json().catch(() => ({}));
+
+            // The old uploader assumed success and showed nothing when the
+            // request failed. Surface the reason instead.
+            if (!res.ok || !result.success) {
+                setError(result.message || `Upload failed (${res.status})`);
+                return;
+            }
+
+            onChange(result.url);
+        } catch (e) {
+            setError('Upload failed — check the connection and try again.');
+        } finally {
+            setUploading(false);
+            if (inputRef.current) inputRef.current.value = '';
+        }
+    };
+
+    return (
+        <div>
+            <div className="flex items-start gap-3">
+                {value ? (
+                    <img
+                        src={value}
+                        alt="Lifestyle"
+                        className="h-24 w-32 rounded border border-gray-200 object-cover"
+                    />
+                ) : (
+                    <div className="flex h-24 w-32 items-center justify-center rounded border border-dashed border-gray-300 text-[11px] text-gray-400">
+                        No image
+                    </div>
+                )}
+
+                <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => inputRef.current?.click()}
+                            disabled={uploading}
+                            className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            {uploading ? 'Uploading…' : (value ? 'Replace image' : 'Upload image')}
+                        </button>
+
+                        {value && (
+                            <button
+                                type="button"
+                                onClick={() => onChange('')}
+                                className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                            >
+                                Remove
+                            </button>
+                        )}
+                    </div>
+
+                    <input
+                        ref={inputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => upload(e.target.files?.[0])}
+                    />
+
+                    <input
+                        value={value || ''}
+                        onChange={(e) => onChange(e.target.value)}
+                        className="admin-input mt-2 w-full"
+                        placeholder="https://example.com/lifestyle.jpg"
+                    />
+
+                    {error && <p className="mt-1 text-[12px] text-red-600">{error}</p>}
+                    <p className="mt-1 text-[11px] text-gray-400">
+                        An upload saves immediately. A pasted URL saves with the product.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function MediaUploader({ product, media = [], onUpdate }) {
     const fileInputRef = useRef(null);
     const [uploading, setUploading] = useState(false);
     const [dragOver, setDragOver] = useState(false);
+    const [error, setError] = useState(null);
 
     const handleUpload = async (files) => {
         if (!files?.length) return;
@@ -27,13 +133,25 @@ function MediaUploader({ product, media = [], onUpdate }) {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 },
             });
-            const result = await response.json();
-            if (result.success) {
-                onUpdate?.(result.media);
-                router.reload({ only: ['product'] });
+            const result = await response.json().catch(() => ({}));
+
+            // A failed upload used to leave the panel looking untouched: the
+            // response was assumed to be JSON and assumed to have succeeded,
+            // so a 500 or a validation error showed nothing at all.
+            if (!response.ok || !result.success) {
+                setError(
+                    result.message
+                    || (result.errors ? Object.values(result.errors).flat().join(' ') : null)
+                    || `Upload failed (${response.status})`
+                );
+                return;
             }
+
+            setError(null);
+            onUpdate?.(result.media);
+            router.reload({ only: ['product'] });
         } catch (error) {
-            console.error('Upload failed:', error);
+            setError('Upload failed — check the connection and try again.');
         } finally {
             setUploading(false);
         }
@@ -153,148 +271,102 @@ function MediaUploader({ product, media = [], onUpdate }) {
                     </>
                 )}
             </div>
+
+            {error && <p className="mt-2 text-[12px] text-red-600">{error}</p>}
         </div>
     );
 }
 
 // Collections Display Component
-function CollectionsCard({ productCollections = [], allCollections = [], productId, onUpdate }) {
-    const [isAdding, setIsAdding] = useState(false);
-    const [selectedCollection, setSelectedCollection] = useState('');
+function CollectionsCard({ value = [], allCollections = [], onChange }) {
+    // One dropdown per storefront filter dimension, because that is what these
+    // collections are: colour-white, space-bathroom, finish-matt. A single flat
+    // "Select collection…" list of 36 gave no clue which dimension you were
+    // setting, and the storefront reads them per dimension.
+    const groups = groupCollections(allCollections.filter((c) => c.type === 'manual'));
+    const selected = new Set((value ?? []).map(Number));
 
-    const availableCollections = allCollections.filter(
-        c => c.type === 'manual' && !productCollections.some(pc => pc.id === c.id)
-    );
-
-    const handleAddToCollection = async () => {
-        if (!selectedCollection) return;
-
-        try {
-            const response = await fetch(route('admin.collections.add-product', selectedCollection), {
-                method: 'POST',
-                body: JSON.stringify({ product_id: productId }),
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
-                    'Content-Type': 'application/json',
-                },
-            });
-            if (response.ok) {
-                onUpdate?.();
-            }
-        } catch (error) {
-            console.error('Failed to add to collection:', error);
-        }
-        setSelectedCollection('');
-        setIsAdding(false);
+    const add = (id) => {
+        if (!id) return;
+        onChange?.([...selected, Number(id)]);
     };
 
-    const handleRemoveFromCollection = async (collectionId) => {
-        if (!confirm('Remove product from this collection?')) return;
-
-        try {
-            const response = await fetch(route('admin.collections.remove-product', collectionId), {
-                method: 'POST',
-                body: JSON.stringify({ product_id: productId }),
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
-                    'Content-Type': 'application/json',
-                },
-            });
-            if (response.ok) {
-                onUpdate?.();
-            }
-        } catch (error) {
-            console.error('Failed to remove from collection:', error);
-        }
+    const remove = (id) => {
+        const next = new Set(selected);
+        next.delete(Number(id));
+        onChange?.([...next]);
     };
+
+    const byId = new Map(allCollections.map((c) => [Number(c.id), c]));
 
     return (
         <div className="admin-card">
-            <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-semibold text-gray-900">Collections</h3>
-                {!isAdding && availableCollections.length > 0 && (
-                    <button
-                        type="button"
-                        onClick={() => setIsAdding(true)}
-                        className="text-xs text-brand hover:text-brand/80"
-                    >
-                        Add to collection
-                    </button>
-                )}
+            <h3 className="mb-1 text-xs font-semibold text-gray-900">Collections</h3>
+            <p className="mb-3 text-[10px] text-gray-400">
+                Where this product appears under “Find your perfect tile”
+            </p>
+
+            <div className="space-y-3">
+                {groups.map((group) => {
+                    const chosen = group.items.filter((c) => selected.has(Number(c.id)));
+                    const available = group.items.filter((c) => !selected.has(Number(c.id)));
+
+                    return (
+                        <div key={group.key}>
+                            <label className="block text-xs font-medium text-gray-700">{group.label}</label>
+
+                            {/* Already chosen, each removable. A tile can be two
+                                colours, so this is not a single-value picker. */}
+                            {chosen.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                    {chosen.map((c) => (
+                                        <span key={c.id} className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800">
+                                            {c.title}
+                                            <button
+                                                type="button"
+                                                onClick={() => remove(c.id)}
+                                                className="text-blue-400 transition hover:text-red-600"
+                                                aria-label={`Remove ${c.title}`}
+                                            >
+                                                ×
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            <select
+                                value=""
+                                onChange={(e) => add(e.target.value)}
+                                disabled={available.length === 0}
+                                className="mt-1 admin-select w-full text-xs disabled:opacity-50"
+                            >
+                                <option value="">
+                                    {group.items.length === 0
+                                        ? 'None set up yet'
+                                        : available.length === 0
+                                            ? 'All selected'
+                                            : `Add ${group.label.replace('By ', '').toLowerCase()}…`}
+                                </option>
+                                {available.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.title}</option>
+                                ))}
+                            </select>
+                        </div>
+                    );
+                })}
             </div>
 
-            {isAdding && (
-                <div className="mb-3 flex gap-2">
-                    <select
-                        value={selectedCollection}
-                        onChange={(e) => setSelectedCollection(e.target.value)}
-                        className="admin-select flex-1 text-xs"
-                    >
-                        <option value="">Select collection...</option>
-                        {availableCollections.map((c) => (
-                            <option key={c.id} value={c.id}>{c.title}</option>
-                        ))}
-                    </select>
-                    <button
-                        type="button"
-                        onClick={handleAddToCollection}
-                        className="btn-primary text-xs px-2"
-                        disabled={!selectedCollection}
-                    >
-                        Add
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setIsAdding(false)}
-                        className="btn-secondary text-xs px-2"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            )}
-
-            {productCollections.length > 0 ? (
-                <div className="space-y-2">
-                    {productCollections.map((collection) => (
-                        <div
-                            key={collection.id}
-                            className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs"
-                        >
-                            <div className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${collection.type === 'automated' ? 'bg-blue-500' : 'bg-green-500'}`} />
-                                <span className="font-medium">{collection.title}</span>
-                                <span className="text-gray-400 text-[10px]">
-                                    ({collection.type})
-                                </span>
-                            </div>
-                            {collection.type === 'manual' && (
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveFromCollection(collection.id)}
-                                    className="text-gray-400 hover:text-red-500"
-                                >
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <p className="text-xs text-gray-500">Not in any collections</p>
-            )}
-
-            {productCollections.some(c => c.type === 'automated') && (
-                <p className="mt-2 text-[10px] text-gray-400">
-                    Automated collections are managed by rules
+            {/* Anything selected that is no longer in an active collection —
+                shown so it can be cleared rather than silently persisting. */}
+            {[...selected].filter((id) => !byId.has(id)).length > 0 && (
+                <p className="mt-3 text-[10px] text-amber-700">
+                    {[...selected].filter((id) => !byId.has(id)).length} selected collection(s) are inactive or deleted.
                 </p>
             )}
         </div>
     );
 }
-
-// Tag Input Component
 function TagInput({ tags = [], onChange, popularTags = [] }) {
     const [input, setInput] = useState('');
     const [suggestions, setSuggestions] = useState([]);
@@ -367,101 +439,117 @@ function TagInput({ tags = [], onChange, popularTags = [] }) {
 }
 
 // Variants Editor Component
-function VariantsEditor({ options = [], variants = [], onChange, onGenerateVariants, onVariantUpdate }) {
-    const [localOptions, setLocalOptions] = useState(options);
+//
+// "Add Option" used to open a Shopify-style option builder — name a Size or
+// Colour, add its values, press Generate Variants. This product range is not
+// sold that way: a colour is its own product with its own SKU, and the ranges
+// are modelled as variant families instead. So the button now opens one field:
+// which family this product belongs to.
+function VariantsEditor({ variants = [], variantFamilies = [], variantFamilyId = '', onVariantFamilyChange, onVariantUpdate }) {
+    const [picking, setPicking] = useState(false);
+    const [draft, setDraft] = useState(variantFamilyId ?? '');
 
-    const addOption = () => {
-        setLocalOptions([...localOptions, { name: '', values: [] }]);
+    const selected = variantFamilies.find((f) => String(f.id) === String(variantFamilyId));
+
+    const open = () => {
+        setDraft(variantFamilyId ?? '');
+        setPicking(true);
     };
 
-    const updateOption = (index, field, value) => {
-        const updated = [...localOptions];
-        updated[index] = { ...updated[index], [field]: value };
-        setLocalOptions(updated);
-    };
-
-    const removeOption = (index) => {
-        setLocalOptions(localOptions.filter((_, i) => i !== index));
-    };
-
-    const addOptionValue = (optionIndex, value) => {
-        if (!value.trim()) return;
-        const updated = [...localOptions];
-        updated[optionIndex].values = [...(updated[optionIndex].values || []), value.trim()];
-        setLocalOptions(updated);
-    };
-
-    const removeOptionValue = (optionIndex, valueIndex) => {
-        const updated = [...localOptions];
-        updated[optionIndex].values = updated[optionIndex].values.filter((_, i) => i !== valueIndex);
-        setLocalOptions(updated);
-    };
-
-    const handleGenerateVariants = () => {
-        onGenerateVariants?.(localOptions);
+    const confirm = () => {
+        onVariantFamilyChange?.(draft === '' ? '' : parseInt(draft, 10));
+        setPicking(false);
     };
 
     return (
         <div className="admin-card">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-semibold text-gray-900">Options & Variants</h3>
-                <button type="button" onClick={addOption} className="btn-secondary text-xs">
+                <button type="button" onClick={open} className="btn-secondary text-xs">
                     Add Option
                 </button>
             </div>
 
-            {/* Options */}
-            {localOptions.map((option, optIdx) => (
-                <div key={optIdx} className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                        <input
-                            type="text"
-                            value={option.name}
-                            onChange={(e) => updateOption(optIdx, 'name', e.target.value)}
-                            placeholder="Option name (e.g., Size, Color)"
+            {picking && (
+                <div className="mb-4 rounded-lg bg-gray-50 p-3">
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="variant-family" className="whitespace-nowrap text-xs font-medium text-gray-700">
+                            Variant :
+                        </label>
+                        <select
+                            id="variant-family"
+                            value={draft}
+                            onChange={(e) => setDraft(e.target.value)}
                             className="admin-input flex-1 text-xs"
-                        />
+                        >
+                            <option value="">— None —</option>
+                            {variantFamilies.map((family) => (
+                                <option key={family.id} value={family.id}>
+                                    {family.name}{family.is_active ? '' : ' (inactive)'}
+                                </option>
+                            ))}
+                        </select>
                         <button
                             type="button"
-                            onClick={() => removeOption(optIdx)}
-                            className="text-red-500 hover:text-red-700 p-1"
+                            onClick={confirm}
+                            title="Apply"
+                            aria-label="Apply variant"
+                            className="rounded-md bg-brand p-1.5 text-white transition hover:bg-brand-dark"
                         >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setPicking(false)}
+                            title="Cancel"
+                            aria-label="Cancel"
+                            className="p-1.5 text-gray-400 transition hover:text-gray-600"
+                        >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
-                    <div className="flex flex-wrap gap-1">
-                        {option.values?.map((val, valIdx) => (
-                            <span key={valIdx} className="inline-flex items-center gap-1 bg-white border text-gray-700 text-[11px] px-2 py-0.5 rounded">
-                                {typeof val === 'string' ? val : val.value}
-                                <button type="button" onClick={() => removeOptionValue(optIdx, valIdx)} className="text-gray-400 hover:text-gray-600">
-                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </span>
-                        ))}
-                        <input
-                            type="text"
-                            placeholder="Add value"
-                            className="admin-input text-xs w-24"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    addOptionValue(optIdx, e.target.value);
-                                    e.target.value = '';
-                                }
-                            }}
-                        />
-                    </div>
-                </div>
-            ))}
 
-            {localOptions.length > 0 && (
-                <button type="button" onClick={handleGenerateVariants} className="btn-primary text-xs w-full">
-                    Generate Variants
-                </button>
+                    {/* The list is empty until families are created, and an
+                        empty dropdown with no explanation reads as a bug. */}
+                    {variantFamilies.length === 0 && (
+                        <p className="mt-2 text-[11px] text-gray-500">
+                            No variant families yet —{' '}
+                            <a href="/admin/variant-families" className="font-medium text-brand hover:underline">
+                                create one first
+                            </a>
+                            .
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {/* Current assignment, so the answer is visible without opening the picker. */}
+            {!picking && (
+                <div className="mb-3 flex items-center gap-2 text-xs">
+                    <span className="font-medium text-gray-700">Variant :</span>
+                    {selected ? (
+                        <>
+                            <span className="rounded bg-blue-50 px-2 py-0.5 font-medium text-blue-800">{selected.name}</span>
+                            <button
+                                type="button"
+                                onClick={() => onVariantFamilyChange?.('')}
+                                className="text-gray-400 transition hover:text-red-600"
+                                title="Remove from this variant"
+                                aria-label="Remove variant"
+                            >
+                                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </>
+                    ) : (
+                        <span className="text-gray-400">None</span>
+                    )}
+                </div>
             )}
 
             {/* Variants Table — Editable */}
@@ -547,7 +635,7 @@ function SeoPreview({ title, description, slug }) {
 }
 
 // Main Edit Component
-export default function Edit({ product, categories, vendors, popularTags, statuses, collections = [], productCollections = [] }) {
+export default function Edit({ product, categories, vendors, popularTags, statuses, collections = [], productCollections = [], variantFamilies = [] }) {
     const { data, setData, put, processing, errors, isDirty } = useForm({
         name: product?.name ?? '',
         slug: product?.slug ?? '',
@@ -557,6 +645,13 @@ export default function Edit({ product, categories, vendors, popularTags, status
         brand: product?.brand ?? '',
         product_type: product?.product_type ?? '',
         category_ids: product?.category_ids ?? [],
+        variant_family_id: product?.variant_family_id ?? '',
+        collection_ids: (productCollections ?? []).map((c) => Number(c.id)),
+        unit_label: product?.unit_label ?? '',
+        quantity_label: product?.quantity_label ?? '',
+        show_wastage: product?.show_wastage ?? true,
+        show_sample: product?.show_sample ?? true,
+        show_big_sample: product?.show_big_sample ?? true,
         seller_id: product?.seller_id ?? '',
         price: product?.price ?? '',
         compare_at_price: product?.compare_at_price ?? '',
@@ -630,22 +725,6 @@ export default function Edit({ product, categories, vendors, popularTags, status
 
     const updateStatus = (status, publishAt = null) => {
         router.post(route('admin.products.status', product.id), { status, published_at: publishAt });
-    };
-
-    const handleGenerateVariants = async (options) => {
-        try {
-            await fetch(route('admin.products.variants.generate', product.id), {
-                method: 'POST',
-                body: JSON.stringify({ options }),
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
-                    'Content-Type': 'application/json',
-                },
-            });
-            router.reload({ only: ['product'] });
-        } catch (error) {
-            console.error('Generate variants failed:', error);
-        }
     };
 
     const handleVariantUpdate = async (variantId, field, value) => {
@@ -750,17 +829,16 @@ export default function Edit({ product, categories, vendors, popularTags, status
 
                         {/* Lifestyle Image */}
                         <div className="admin-card">
-                            <h3 className="text-xs font-semibold text-gray-900 mb-1">Lifestyle Image URL</h3>
-                            <p className="text-[10px] text-gray-400 mb-2">Optional external image URL shown in lifestyle/room-set contexts.</p>
-                            <input
+                            <h3 className="text-xs font-semibold text-gray-900 mb-1">Lifestyle Image</h3>
+                            <p className="text-[10px] text-gray-400 mb-2">
+                                The styled room-set shot. Upload a file, or paste a URL if it is hosted elsewhere.
+                            </p>
+
+                            <LifestyleImageUploader
+                                product={product}
                                 value={data.lifestyle_image_url}
-                                onChange={(e) => setData('lifestyle_image_url', e.target.value)}
-                                className="admin-input w-full"
-                                placeholder="https://example.com/lifestyle.jpg"
+                                onChange={(url) => setData('lifestyle_image_url', url)}
                             />
-                            {data.lifestyle_image_url && (
-                                <img src={data.lifestyle_image_url} alt="Lifestyle preview" className="mt-2 h-24 w-auto rounded object-cover border border-gray-200" />
-                            )}
                         </div>
 
                         {/* Pricing */}
@@ -979,9 +1057,10 @@ export default function Edit({ product, categories, vendors, popularTags, status
 
                         {/* Variants */}
                         <VariantsEditor
-                            options={product?.options}
                             variants={product?.variants}
-                            onGenerateVariants={handleGenerateVariants}
+                            variantFamilies={variantFamilies}
+                            variantFamilyId={data.variant_family_id}
+                            onVariantFamilyChange={(id) => setData('variant_family_id', id)}
                             onVariantUpdate={handleVariantUpdate}
                         />
 
@@ -1052,7 +1131,14 @@ export default function Edit({ product, categories, vendors, popularTags, status
                             <h3 className="text-xs font-semibold text-gray-900 mb-3">Status</h3>
                             <select
                                 value={data.status}
-                                onChange={(e) => setData('status', e.target.value)}
+                                onChange={(e) => setData((d) => ({
+                                    ...d,
+                                    status: e.target.value,
+                                    // is_active is what nearly every storefront
+                                    // query gates on; the server keeps the two in
+                                    // step as well, this just keeps the form honest.
+                                    is_active: e.target.value === 'published',
+                                }))}
                                 className="admin-select w-full"
                             >
                                 {statuses?.map((s) => (
@@ -1061,44 +1147,156 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     </option>
                                 ))}
                             </select>
-                            {data.status === 'scheduled' && (
-                                <div className="mt-3">
-                                    <label className="block text-xs font-medium text-gray-700">Publish date</label>
+                            {/* One control, two states. The Active toggle and this
+                                dropdown used to be separate, which allowed a draft
+                                that was still active — and that product stayed
+                                listed and sellable. Setting the status now sets
+                                both, so Draft means hidden everywhere. */}
+                            <p className="mt-2 text-[11px] text-gray-500">
+                                {data.status === 'published'
+                                    ? 'Live on the website and available to buy.'
+                                    : 'Hidden everywhere — shop, search, categories and its own page.'}
+                            </p>
+
+                            {/* Hand-picks the home page strip. Only meaningful
+                                while the product is Active — a draft is hidden
+                                everywhere, this section included — so the box is
+                                disabled rather than silently ignored. */}
+                            <label className="mt-4 flex cursor-pointer items-start gap-2 border-t border-gray-100 pt-3">
+                                <input
+                                    type="checkbox"
+                                    checked={Boolean(data.is_featured)}
+                                    disabled={data.status !== 'published'}
+                                    onChange={(e) => setData('is_featured', e.target.checked)}
+                                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand disabled:opacity-40"
+                                />
+                                <span>
+                                    <span className="block text-xs font-medium text-gray-700">Trending product</span>
+                                    <span className="block text-[10px] text-gray-400">
+                                        {data.status === 'published'
+                                            ? 'Shows in Trending Products on the home page'
+                                            : 'Set the product to Active to use this'}
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+
+
+                        {/* Samples. Sits under Status because it is the same
+                            kind of decision: what this product offers on its
+                            page. Both default on; Trade lines and Quads/Scotia
+                            ship with the free sample off, since neither is
+                            something a customer takes a sample of. */}
+                        <div className="admin-card">
+                            <h3 className="mb-1 text-xs font-semibold text-gray-900">Samples</h3>
+                            <p className="mb-3 text-[10px] text-gray-400">
+                                Which sample buttons appear on the product page
+                            </p>
+
+                            <div className="space-y-3">
+                                <label className="flex items-start gap-2 cursor-pointer">
                                     <input
-                                        type="datetime-local"
-                                        value={data.published_at ? data.published_at.slice(0, 16) : ''}
-                                        onChange={(e) => setData('published_at', e.target.value)}
-                                        className="mt-1 admin-input w-full"
+                                        type="checkbox"
+                                        checked={Boolean(data.show_sample)}
+                                        onChange={(e) => setData('show_sample', e.target.checked)}
+                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
                                     />
-                                </div>
+                                    <span>
+                                        <span className="block text-xs font-medium text-gray-700">Get a Sample</span>
+                                        <span className="block text-[10px] text-gray-400">
+                                            Free sample · max 5 per order · flat $9.99 shipping
+                                        </span>
+                                    </span>
+                                </label>
+
+                                <label className="flex items-start gap-2 cursor-pointer border-t border-gray-100 pt-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(data.show_big_sample)}
+                                        onChange={(e) => setData('show_big_sample', e.target.checked)}
+                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                                    />
+                                    <span>
+                                        <span className="block text-xs font-medium text-gray-700">Get a Big Sample</span>
+                                        <span className="block text-[10px] text-gray-400">
+                                            Full-size tile · sends the customer to the contact page
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            {!data.show_sample && !data.show_big_sample && (
+                                <p className="mt-3 text-[10px] text-amber-700">
+                                    No sample buttons will show on this product.
+                                </p>
                             )}
-                            <div className="mt-4 space-y-3 border-t border-gray-100 pt-3">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-700">Active (visible on site)</p>
-                                        <p className="text-[10px] text-gray-400">Inactive products return 404</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setData('is_active', !data.is_active)}
-                                        className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${data.is_active ? 'bg-green-500' : 'bg-gray-300'}`}
-                                    >
-                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.is_active ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
-                                    </button>
+                        </div>
+
+                        {/* Buy box */}
+                        <div className="admin-card">
+                            <h3 className="mb-1 text-xs font-semibold text-gray-900">Buy box</h3>
+                            <p className="mb-3 text-[10px] text-gray-400">
+                                How this product is bought on its page
+                            </p>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700">Unit</label>
+                                    <input
+                                        value={data.unit_label}
+                                        onChange={(e) => setData('unit_label', e.target.value)}
+                                        className="mt-1 admin-input w-full"
+                                        placeholder="e.g. sqm, pcs, box"
+                                        maxLength={30}
+                                    />
+                                    <p className="mt-1 text-[10px] text-gray-400">
+                                        Shown after the price and in the quantity box. Leave empty to show no unit.
+                                    </p>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-700">Featured product</p>
-                                        <p className="text-[10px] text-gray-400">Highlights product across the site</p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setData('is_featured', !data.is_featured)}
-                                        className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${data.is_featured ? 'bg-brand' : 'bg-gray-300'}`}
-                                    >
-                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${data.is_featured ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
-                                    </button>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700">Quantity label</label>
+                                    <input
+                                        value={data.quantity_label}
+                                        onChange={(e) => setData('quantity_label', e.target.value)}
+                                        className="mt-1 admin-input w-full"
+                                        placeholder="e.g. Area, Qty"
+                                        maxLength={30}
+                                    />
+                                    <p className="mt-1 text-[10px] text-gray-400">
+                                        The word before the − 1 + box. Leave empty for just the stepper.
+                                    </p>
                                 </div>
+
+                                {/* Live preview — the two fields are easier to
+                                    judge against the real thing than a label. */}
+                                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Preview</p>
+                                    <p className="text-sm font-bold text-gray-900">
+                                        ${parseFloat(data.price || 0).toFixed(2)}
+                                        {data.unit_label ? <span className="ml-1 text-[11px] font-normal text-gray-500">/ {data.unit_label}</span> : null}
+                                    </p>
+                                    <div className="mt-2 inline-flex items-center gap-2 rounded border border-gray-300 bg-white px-2.5 py-1.5 text-xs">
+                                        {data.quantity_label ? <span className="font-semibold text-gray-700">{data.quantity_label}</span> : null}
+                                        <span className="text-gray-400">−</span>
+                                        <span className="font-bold text-gray-900">1</span>
+                                        {data.unit_label ? <span className="text-gray-500">{data.unit_label}</span> : null}
+                                        <span className="text-gray-400">+</span>
+                                    </div>
+                                </div>
+
+                                <label className="flex cursor-pointer items-start gap-2 border-t border-gray-100 pt-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean(data.show_wastage)}
+                                        onChange={(e) => setData('show_wastage', e.target.checked)}
+                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                                    />
+                                    <span>
+                                        <span className="block text-xs font-medium text-gray-700">Show wastage &amp; box calculator</span>
+                                        <span className="block text-[10px] text-gray-400">
+                                            The “add 10% wastage” toggle, “we round up to the full box”, and the box subtotal line
+                                        </span>
+                                    </span>
+                                </label>
                             </div>
                         </div>
 
@@ -1106,15 +1304,6 @@ export default function Edit({ product, categories, vendors, popularTags, status
                         <div className="admin-card">
                             <h3 className="text-xs font-semibold text-gray-900 mb-3">Organization</h3>
                             <div className="space-y-3">
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700">Product type</label>
-                                    <input
-                                        value={data.product_type}
-                                        onChange={(e) => setData('product_type', e.target.value)}
-                                        className="mt-1 admin-input w-full"
-                                        placeholder="e.g., Shoes, Electronics"
-                                    />
-                                </div>
                                 <div>
                                     <label className="block text-xs font-medium text-gray-700">Vendor</label>
                                     <select
@@ -1146,30 +1335,14 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     </select>
                                     <div className="mt-1 text-[10px] text-gray-500">Hold Ctrl/Cmd to select multiple</div>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700">Brand</label>
-                                    <input
-                                        value={data.brand}
-                                        onChange={(e) => setData('brand', e.target.value)}
-                                        className="mt-1 admin-input w-full"
-                                    />
-                                </div>
                             </div>
                         </div>
 
-                        {/* Tags */}
-                        <TagInput
-                            tags={data.tags}
-                            onChange={(tags) => setData('tags', tags)}
-                            popularTags={popularTags}
-                        />
-
                         {/* Collections */}
                         <CollectionsCard
-                            productCollections={productCollections}
+                            value={data.collection_ids}
                             allCollections={collections}
-                            productId={product?.id}
-                            onUpdate={() => router.reload({ only: ['productCollections'] })}
+                            onChange={(ids) => setData('collection_ids', ids)}
                         />
                     </div>
                 </div>

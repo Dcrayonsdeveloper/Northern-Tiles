@@ -28,7 +28,7 @@ function SB({ d, off, fn }) {
    ═══════════════════════════════════════════════════════════════════════ */
 const FALLBACK_SLIDES = [
     {
-        image_url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&h=1080&fit=crop&q=80',
+        image_url: '/storage/stock/photo-1600607687939-ce8a6c25118c.jpg',
         image_alt_key: 'Modern tiled living space',
         h1_key: 'Premium Tiles & Flooring',
         p_key: 'Melbourne\'s trusted wholesale supplier of tiles, stone, timber and hybrid flooring.',
@@ -40,7 +40,7 @@ const FALLBACK_SLIDES = [
         align: 'left',
     },
     {
-        image_url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1920&h=1080&fit=crop&q=80',
+        image_url: '/storage/stock/photo-1600210492486-724fe5c67fb0.jpg',
         image_alt_key: 'Luxury bathroom tile design',
         h1_key: 'New Season Collections',
         p_key: 'Discover our latest range of porcelain, ceramic and natural stone tiles.',
@@ -50,7 +50,7 @@ const FALLBACK_SLIDES = [
         align: 'left',
     },
     {
-        image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&h=1080&fit=crop&q=80',
+        image_url: '/storage/stock/photo-1600585154340-be6161a56a0c.jpg',
         image_alt_key: 'Contemporary home interior with premium flooring',
         h1_key: 'Trade & Wholesale Pricing',
         p_key: 'Exclusive rates for builders, architects and designers. Open to the public.',
@@ -211,171 +211,198 @@ function TileVisualizer() {
 /* ═══════════════════════════════════════════════════════════════════════
    4. CHOOSE BY — tabbed filter section with color circles/cards
    ═══════════════════════════════════════════════════════════════════════ */
-function ChooseBy() {
+/* Scroll arrow pinned to the edge of a rail. Hidden below sm: a phone swipes,
+   and a 44px button over the first card would cover it. */
+function Arrow({ side, off, fn }) {
+    return (
+        <button
+            type="button"
+            onClick={fn}
+            disabled={off}
+            aria-label={side === 'l' ? 'Previous' : 'Next'}
+            className={`absolute top-1/2 z-10 hidden h-[44px] w-[44px] -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-[#333] shadow-md transition hover:border-brand hover:text-brand disabled:pointer-events-none disabled:opacity-0 sm:flex ${
+                side === 'l' ? '-left-3' : '-right-3'
+            }`}
+        >
+            {side === 'l' ? <CL c="h-5 w-5" /> : <CR c="h-5 w-5" />}
+        </button>
+    );
+}
+
+/* Swatch colours for the By Colour tab. Collections carry a name, not a hex,
+   so the shade is matched by name and anything unknown falls back to a neutral
+   chip rather than rendering nothing. */
+const SWATCHES = {
+    white: '#f5f5f5', cream: '#f0e6d2', ivory: '#fffff0', beige: '#d4c5a9', sand: '#dcd0b4',
+    tan: '#c9a227', taupe: '#b8a894', 'light grey': '#c8c8c8', grey: '#a0a0a0', gray: '#a0a0a0',
+    'mid grey': '#8a8a8a', 'dark grey': '#555555', charcoal: '#36454f', black: '#222222',
+    brown: '#8b6b3d', chocolate: '#6b4423', terracotta: '#c75b39', orange: '#d2703a',
+    red: '#b23b2e', pink: '#d49aa4', purple: '#7b5ea7', blue: '#4a7c9b', navy: '#2c4a6b',
+    green: '#6b8e6b', moss: '#7a8b5a', yellow: '#e0c060', gold: '#c8a951',
+    multicolour: 'linear-gradient(135deg,#c75b39,#4a7c9b,#6b8e6b)',
+};
+
+const swatchFor = (title) => SWATCHES[String(title ?? '').trim().toLowerCase()] ?? '#d9d9d9';
+
+/* Interior photography per collection, keyed on handle. A collection's own
+   uploaded image always wins; this is the fallback so the strip looks finished
+   before anyone has uploaded anything, and a product shot is the last resort. */
+const STOCK = {
+    'space-bathroom': 'photo-1600210492486-724fe5c67fb0',
+    'space-kitchen': 'photo-1600607687939-ce8a6c25118c',
+    'space-living-room': 'photo-1600585154340-be6161a56a0c',
+    'space-outdoor': 'photo-1600596542815-ffad4c1539a9',
+    'space-pool': 'photo-1600047509807-ba8f99d2cdde',
+    'space-pool-area': 'photo-1600047509807-ba8f99d2cdde',
+    'space-commercial': 'photo-1600585153490-76fb20a32601',
+    'space-shower': 'photo-1584622650111-993a426fbf0a',
+    'space-splashback': 'photo-1556909212-d5b604d0c90d',
+    'space-floor': 'photo-1600566752355-35792bedcfea',
+    'space-wall': 'photo-1615971677499-5467cbab01c0',
+    'space-feature': 'photo-1600566753190-17f0baa2a6c3',
+    'space-feature-wall': 'photo-1600573472592-401b489a3cdc',
+    'space-vanity-feature': 'photo-1552321554-5fefe8c9ef14',
+    'material-porcelain': 'photo-1615971677499-5467cbab01c0',
+    'material-ceramic': 'photo-1600566753190-17f0baa2a6c3',
+    'material-natural-stone': 'photo-1552321554-5fefe8c9ef14',
+    'material-hybrid': 'photo-1600566752355-35792bedcfea',
+    'material-timber': 'photo-1600585154340-be6161a56a0c',
+    'material-engineered': 'photo-1618220179428-22790b461013',
+    'finish-matt': 'photo-1600210492486-724fe5c67fb0',
+    'finish-gloss': 'photo-1584622650111-993a426fbf0a',
+    'finish-honed': 'photo-1600573472592-401b489a3cdc',
+    'finish-textured': 'photo-1552321554-5fefe8c9ef14',
+    'finish-polish': 'photo-1600607687939-ce8a6c25118c',
+    'finish-polished': 'photo-1600607687939-ce8a6c25118c',
+    'finish-lappato': 'photo-1615971677499-5467cbab01c0',
+    'finish-satin': 'photo-1600566753190-17f0baa2a6c3',
+    'finish-handmade': 'photo-1600047509807-ba8f99d2cdde',
+    'finish-smooth': 'photo-1618220179428-22790b461013',
+    'finish-smooth-matt': 'photo-1600210492486-724fe5c67fb0',
+    'finish-dimpled': 'photo-1556909212-d5b604d0c90d',
+    'finish-wave': 'photo-1600596542815-ffad4c1539a9',
+    'style-subway': 'photo-1615971677499-5467cbab01c0',
+    'style-marble-look': 'photo-1600573472592-401b489a3cdc',
+    'style-wood-look': 'photo-1600585154340-be6161a56a0c',
+    'style-concrete-look': 'photo-1600585153490-76fb20a32601',
+    'style-stone-look': 'photo-1552321554-5fefe8c9ef14',
+    'style-terrazzo-look': 'photo-1600566753190-17f0baa2a6c3',
+    'style-travertinelook': 'photo-1600566753190-17f0baa2a6c3',
+    'style-geometric': 'photo-1556909212-d5b604d0c90d',
+};
+
+const artFor = (item) => {
+    if (item.image) return item.image;
+    if (STOCK[item.handle]) return '/storage/stock/' + STOCK[item.handle] + '.jpg';
+    return item.product_image || null;
+};
+
+function ChooseBy({ dimensions = [] }) {
     const [tab, setTab] = useState(0);
-    const tabs = ['By Colour', 'By Space', 'By Size', 'By Material', 'By Finish', 'By Style'];
+    // Same scroller the other home strips use. Arrows are a desktop nicety —
+    // on a phone the rail is swiped, so they stay hidden there.
+    const { r, l, rr, ck, go } = useHS(320);
 
-    const colors = [
-        { name: 'White', hex: '#f5f5f5', q: 'white' },
-        { name: 'Beige', hex: '#d4c5a9', q: 'beige' },
-        { name: 'Grey', hex: '#a0a0a0', q: 'grey' },
-        { name: 'Dark Grey', hex: '#555555', q: 'dark-grey' },
-        { name: 'Black', hex: '#222222', q: 'black' },
-        { name: 'Brown', hex: '#8b6b3d', q: 'brown' },
-        { name: 'Blue', hex: '#4a7c9b', q: 'blue' },
-        { name: 'Green', hex: '#6b8e6b', q: 'green' },
-        { name: 'Terracotta', hex: '#c75b39', q: 'terracotta' },
-        { name: 'Pink', hex: '#d49aa4', q: 'pink' },
-        { name: 'Cream', hex: '#f0e6d2', q: 'cream' },
-    ];
+    const activeIndex = Math.min(tab, Math.max(dimensions.length - 1, 0));
 
-    const spaces = [
-        { name: 'Bathroom', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=300&fit=crop&q=80', q: 'bathroom' },
-        { name: 'Kitchen', img: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop&q=80', q: 'kitchen' },
-        { name: 'Living Room', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop&q=80', q: 'living-room' },
-        { name: 'Outdoor', img: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop&q=80', q: 'outdoor' },
-        { name: 'Pool Area', img: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=400&h=300&fit=crop&q=80', q: 'pool' },
-        { name: 'Commercial', img: 'https://images.unsplash.com/photo-1600585153490-76fb20a32601?w=400&h=300&fit=crop&q=80', q: 'commercial' },
-    ];
+    // Switching tab swaps the rail's contents, so what can be scrolled to
+    // changes; without re-checking, the arrows keep the previous tab's state.
+    useEffect(() => { ck(); }, [ck, activeIndex, dimensions.length]);
 
-    const sizes = [
-        { name: '300x300', label: '300×300mm', img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=300&h=300&fit=crop&q=80', q: '300x300' },
-        { name: '300x600', label: '300×600mm', img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=300&h=300&fit=crop&q=80', q: '300x600' },
-        { name: '600x600', label: '600×600mm', img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=300&h=300&fit=crop&q=80', q: '600x600' },
-        { name: '600x900', label: '600×900mm', img: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=300&h=300&fit=crop&q=80', q: '600x900' },
-        { name: '600x1200', label: '600×1200mm', img: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=300&h=300&fit=crop&q=80', q: '600x1200' },
-        { name: '800x800', label: '800×800mm', img: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=300&h=300&fit=crop&q=80', q: '800x800' },
-    ];
+    if (!dimensions.length) return null;
 
-    const materials = [
-        { name: 'Porcelain', img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400&h=300&fit=crop&q=80', q: 'porcelain', desc: 'Durable, low maintenance' },
-        { name: 'Ceramic', img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop&q=80', q: 'ceramic', desc: 'Classic & versatile' },
-        { name: 'Natural Stone', img: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=400&h=300&fit=crop&q=80', q: 'natural-stone', desc: 'Unique natural beauty' },
-        { name: 'Hybrid', img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=400&h=300&fit=crop&q=80', q: 'hybrid', desc: 'Waterproof rigid core' },
-        { name: 'Timber', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop&q=80', q: 'timber', desc: 'Warm natural wood' },
-        { name: 'Engineered', img: 'https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=400&h=300&fit=crop&q=80', q: 'engineered', desc: 'Stable & sustainable' },
-    ];
+    const current = dimensions[activeIndex];
+    const isColour = current?.key === 'colour';
 
-    const finishes = [
-        { name: 'Matt', img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400&h=300&fit=crop&q=80', q: 'matt', desc: 'Subtle & contemporary' },
-        { name: 'Gloss', img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=400&h=300&fit=crop&q=80', q: 'gloss', desc: 'Sleek & reflective' },
-        { name: 'Honed', img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop&q=80', q: 'honed', desc: 'Smooth satin feel' },
-        { name: 'Textured', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop&q=80', q: 'textured', desc: 'Grip & character' },
-        { name: 'Polished', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=300&fit=crop&q=80', q: 'polished', desc: 'Mirror-like shine' },
-        { name: 'Lappato', img: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop&q=80', q: 'lappato', desc: 'Semi-polished finish' },
-    ];
-
-    const styles = [
-        { name: 'Marble Look', img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=400&h=300&fit=crop&q=80', q: 'marble-look', desc: 'Luxurious veining' },
-        { name: 'Wood Look', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop&q=80', q: 'wood-look', desc: 'Natural timber grain' },
-        { name: 'Concrete Look', img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop&q=80', q: 'concrete-look', desc: 'Industrial aesthetic' },
-        { name: 'Stone Look', img: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=400&h=300&fit=crop&q=80', q: 'stone-look', desc: 'Natural elegance' },
-        { name: 'Terrazzo Look', img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400&h=300&fit=crop&q=80', q: 'terrazzo-look', desc: 'Retro & modern' },
-        { name: 'Geometric', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=400&h=300&fit=crop&q=80', q: 'geometric', desc: 'Bold patterns' },
-    ];
+    // One row that scrolls sideways, with no bar and no arrows — the cards are
+    // dragged or swiped. A grid wrapped onto three rows on a wide screen and
+    // buried the later options below the fold.
+    const rail = 'flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 scrollbar-hide';
 
     return (
-        <section className="py-10 sm:py-16 bg-white">
+        <section className="bg-white py-12 sm:py-16">
             <Container>
-                <div className="text-center mb-8">
-                    <h2 className="text-[28px] font-light text-[#222] tracking-[2px] uppercase font-heading">Find Your <span className="font-semibold">Perfect Tile</span></h2>
+                <div className="mb-8 text-center">
+                    <h2 className="font-heading text-[28px] font-light uppercase tracking-[2px] text-[#222]">
+                        Find your <span className="font-semibold">perfect tile</span>
+                    </h2>
                     <div className="mx-auto mt-3 h-[2px] w-12 bg-brand" />
                 </div>
-                {/* Tabs */}
-                <div className="flex flex-wrap justify-center gap-0 mb-10 border-b border-gray-200">
-                    {tabs.map((t, idx) => (
-                        <button key={idx} type="button" onClick={() => setTab(idx)} className={`px-6 py-3.5 text-[12px] font-semibold uppercase tracking-[1px] transition-all border-b-2 ${idx === tab ? 'border-brand text-brand' : 'border-transparent text-[#4a4a4a] hover:text-[#333]'}`}>{t}</button>
+
+                <div className={`mb-8 border-b border-gray-200 ${rail} justify-start sm:justify-center`}>
+                    {dimensions.map((d, i) => (
+                        <button
+                            key={d.key}
+                            type="button"
+                            onClick={() => setTab(i)}
+                            className={`-mb-px flex-shrink-0 border-b-2 px-4 py-3 text-[12px] font-semibold uppercase tracking-[1px] transition-colors ${
+                                i === activeIndex
+                                    ? 'border-brand text-brand'
+                                    : 'border-transparent text-gray-500 hover:text-gray-800'
+                            }`}
+                        >
+                            {d.label}
+                        </button>
                     ))}
                 </div>
 
-                {/* Tab 0: Colours */}
-                {tab === 0 && (
-                    <div className="flex flex-wrap justify-center gap-6">
-                        {colors.map(c => (
-                            <Link key={c.name} href={`/shop?color=${c.q}`} className="group flex flex-col items-center gap-2 w-[80px]">
-                                <div className="h-[60px] w-[60px] rounded-full shadow-md border-2 border-white transition-transform duration-300 group-hover:scale-110 group-hover:shadow-lg" style={{ backgroundColor: c.hex }} />
-                                <span className="text-[11px] font-medium text-[#4a4a4a] group-hover:text-brand transition-colors">{c.name}</span>
+                {isColour ? (
+                    <div className="relative">
+                        <Arrow side="l" off={!l} fn={() => go('l')} />
+                        <Arrow side="r" off={!rr} fn={() => go('r')} />
+                        <div ref={r} onScroll={ck} className={`${rail} px-1`}>
+                        {current.items.map((item) => (
+                            <Link
+                                key={item.handle}
+                                href={item.url}
+                                className="group flex w-[84px] flex-shrink-0 snap-start flex-col items-center gap-2"
+                            >
+                                <span
+                                    className="h-[62px] w-[62px] rounded-full border border-gray-200 shadow-sm transition-transform group-hover:scale-110"
+                                    style={swatchFor(item.title).startsWith('linear')
+                                        ? { backgroundImage: swatchFor(item.title) }
+                                        : { backgroundColor: swatchFor(item.title) }}
+                                />
+                                <span className="text-center text-[12px] leading-tight text-gray-600 group-hover:text-brand">
+                                    {item.title}
+                                </span>
                             </Link>
                         ))}
+                        </div>
                     </div>
-                )}
-
-                {/* Tab 1: Spaces — image cards */}
-                {tab === 1 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {spaces.map(s => (
-                            <Link key={s.name} href={`/shop?space=${s.q}`} className="group relative overflow-hidden rounded-lg aspect-[4/3]">
-                                <img src={s.img} alt={s.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent transition-opacity duration-300 group-hover:from-black/70" />
-                                <div className="absolute bottom-0 left-0 right-0 p-3">
-                                    <span className="text-[13px] font-semibold text-white">{s.name}</span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-
-                {/* Tab 2: Sizes — image cards with size overlay */}
-                {tab === 2 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {sizes.map(s => (
-                            <Link key={s.name} href={`/shop?size=${s.q}`} className="group relative overflow-hidden rounded-lg aspect-square">
-                                <img src={s.img} alt={s.label} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-black/40 transition-all duration-300 group-hover:bg-black/50" />
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-[18px] font-bold text-white">{s.name}</span>
-                                    <span className="text-[11px] text-white/80 mt-1">mm</span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-
-                {/* Tab 3: Materials — image cards with description */}
-                {tab === 3 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {materials.map(m => (
-                            <Link key={m.name} href={`/shop?material=${m.q}`} className="group relative overflow-hidden rounded-lg aspect-[3/4]">
-                                <img src={m.img} alt={m.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-300 group-hover:from-black/80" />
-                                <div className="absolute bottom-0 left-0 right-0 p-3">
-                                    <span className="text-[14px] font-bold text-white block">{m.name}</span>
-                                    <span className="text-[11px] text-white/70 mt-0.5 block">{m.desc}</span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-
-                {/* Tab 4: Finishes — image cards with description */}
-                {tab === 4 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {finishes.map(f => (
-                            <Link key={f.name} href={`/shop?finish=${f.q}`} className="group relative overflow-hidden rounded-lg aspect-[3/4]">
-                                <img src={f.img} alt={f.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-300 group-hover:from-black/80" />
-                                <div className="absolute bottom-0 left-0 right-0 p-3">
-                                    <span className="text-[14px] font-bold text-white block">{f.name}</span>
-                                    <span className="text-[11px] text-white/70 mt-0.5 block">{f.desc}</span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-
-                {/* Tab 5: Styles — image cards with description */}
-                {tab === 5 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {styles.map(st => (
-                            <Link key={st.name} href={`/shop?style=${st.q}`} className="group relative overflow-hidden rounded-lg aspect-[3/4]">
-                                <img src={st.img} alt={st.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-300 group-hover:from-black/80" />
-                                <div className="absolute bottom-0 left-0 right-0 p-3">
-                                    <span className="text-[14px] font-bold text-white block">{st.name}</span>
-                                    <span className="text-[11px] text-white/70 mt-0.5 block">{st.desc}</span>
-                                </div>
-                            </Link>
-                        ))}
+                ) : (
+                    <div className="relative">
+                        <Arrow side="l" off={!l} fn={() => go('l')} />
+                        <Arrow side="r" off={!rr} fn={() => go('r')} />
+                        <div ref={r} onScroll={ck} className={rail}>
+                        {current.items.map((item) => {
+                            const art = artFor(item);
+                            return (
+                                <Link
+                                    key={item.handle}
+                                    href={item.url}
+                                    className="group relative block w-[260px] flex-shrink-0 snap-start overflow-hidden rounded-lg bg-gray-900 sm:w-[290px]"
+                                    style={{ aspectRatio: '4/3' }}
+                                >
+                                    {art ? (
+                                        <img
+                                            src={art}
+                                            alt={item.title}
+                                            loading="lazy"
+                                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                        />
+                                    ) : (
+                                        <div className="absolute inset-0 bg-gradient-to-br from-slate-600 to-slate-800" />
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                                        <div className="text-[15px] font-semibold text-white">{item.title}</div>
+                                        <div className="text-[11px] text-white/75">{item.count} products</div>
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                        </div>
                     </div>
                 )}
             </Container>
@@ -546,12 +573,12 @@ function OurServices() {
    ═══════════════════════════════════════════════════════════════════════ */
 function FeaturedCollections() {
     const items = [
-        { num: '01', name: 'SWARD Collection', desc: 'Premium Italian-inspired porcelain tiles', img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=600&h=800&fit=crop&q=80' },
-        { num: '02', name: 'Hybrid Flooring', desc: 'Waterproof rigid core in timber oak', img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=600&h=800&fit=crop&q=80' },
-        { num: '03', name: 'BALTIC STONE', desc: 'Natural stone look porcelain', img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&h=800&fit=crop&q=80' },
-        { num: '04', name: 'External 20mm', desc: 'Heavy-duty outdoor pavers', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&h=800&fit=crop&q=80' },
-        { num: '05', name: 'Solid Oak Timber', desc: 'Sustainably sourced flooring', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=800&fit=crop&q=80' },
-        { num: '06', name: 'Trade Supplies', desc: 'Mapei, ARDEX, Soudal products', img: 'https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?w=600&h=800&fit=crop&q=80' },
+        { num: '01', name: 'SWARD Collection', desc: 'Premium Italian-inspired porcelain tiles', img: '/storage/stock/photo-1615971677499-5467cbab01c0.jpg' },
+        { num: '02', name: 'Hybrid Flooring', desc: 'Waterproof rigid core in timber oak', img: '/storage/stock/photo-1600566752355-35792bedcfea.jpg' },
+        { num: '03', name: 'BALTIC STONE', desc: 'Natural stone look porcelain', img: '/storage/stock/photo-1600566753190-17f0baa2a6c3.jpg' },
+        { num: '04', name: 'External 20mm', desc: 'Heavy-duty outdoor pavers', img: '/storage/stock/photo-1600210492486-724fe5c67fb0.jpg' },
+        { num: '05', name: 'Solid Oak Timber', desc: 'Sustainably sourced flooring', img: '/storage/stock/photo-1600585154340-be6161a56a0c.jpg' },
+        { num: '06', name: 'Trade Supplies', desc: 'Mapei, ARDEX, Soudal products', img: '/storage/stock/photo-1581858726788-75bc0f6a952d.jpg' },
     ];
     const { r, l, rr, ck, go } = useHS(380);
 
@@ -604,55 +631,18 @@ function FeaturedCollections() {
 /* ═══════════════════════════════════════════════════════════════════════
    8. SHOP BY COLLECTION — horizontal carousel
    ═══════════════════════════════════════════════════════════════════════ */
-function ShopByCollection() {
-    const collections = [
-        {
-            name: 'Tiles',
-            desc: 'Porcelain, subway, terrazzo & more',
-            img: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=tiles',
-            count: '120+',
-        },
-        {
-            name: 'External',
-            desc: 'Outdoor pavers & alfresco surfaces',
-            img: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=external',
-            count: '40+',
-        },
-        {
-            name: 'Timber',
-            desc: 'Engineered & solid oak flooring',
-            img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=timber',
-            count: '45+',
-        },
-        {
-            name: 'Hybrid',
-            desc: 'Waterproof rigid core planks',
-            img: 'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=hybrid',
-            count: '80+',
-        },
-        {
-            name: 'Trade Products',
-            desc: 'Adhesives, grout & installation gear',
-            img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=trade-products',
-            count: '60+',
-        },
-        {
-            name: 'Subway',
-            desc: 'Classic subway & metro tiles',
-            img: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=800&h=600&fit=crop&q=80',
-            href: '/shop?category=subway',
-            count: '50+',
-        },
-    ];
+function ShopByCollection({ categories = [] }) {
+    // Comes from the category tree now. It used to be six literals with stock
+    // photos, made-up counts and two slugs that stopped existing at the
+    // category rebuild, so the External and Trade Products cards both landed
+    // on an empty shop page.
+    const collections = categories;
 
     const { r, l, rr, ck, go } = useHS(320);
 
     useEffect(() => { ck(); }, [ck]);
+
+    if (!collections.length) return null;
 
     return (
         <section className="py-12 sm:py-20 bg-white">
@@ -676,18 +666,24 @@ function ShopByCollection() {
                 >
                     {collections.map((c) => (
                         <Link
-                            key={c.name}
+                            key={c.slug}
                             href={c.href}
                             className="group relative block flex-shrink-0 snap-start overflow-hidden bg-gray-900 w-[280px] sm:w-[300px]"
                             style={{ aspectRatio: '3/4' }}
                         >
-                            {/* Image with zoom on hover */}
-                            <img
-                                src={c.img}
-                                alt={c.name}
-                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                                loading="lazy"
-                            />
+                            {/* A product from inside the category. Falls back to a
+                                plain ground rather than a broken image when the
+                                range has no usable picture yet. */}
+                            {c.image ? (
+                                <img
+                                    src={c.image}
+                                    alt={c.name}
+                                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900" />
+                            )}
 
                             {/* Dark overlay — lighter on hover */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-500 group-hover:from-black/80 group-hover:via-black/40" />
@@ -695,14 +691,16 @@ function ShopByCollection() {
                             {/* Product count badge */}
                             <div className="absolute top-4 right-4 z-10">
                                 <span className="rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 text-[11px] font-semibold text-white border border-white/20">
-                                    {c.count} Products
+                                    {c.count} {c.count === 1 ? 'Product' : 'Products'}
                                 </span>
                             </div>
 
                             {/* Content — slides up on hover */}
                             <div className="absolute bottom-0 left-0 right-0 p-6 z-10 transition-transform duration-500 ease-out group-hover:-translate-y-2">
                                 <h3 className="text-[22px] font-bold text-white tracking-wide">{c.name}</h3>
-                                <p className="mt-1 text-[13px] text-white/70 transition-colors duration-300 group-hover:text-white/90">{c.desc}</p>
+                                {c.desc ? (
+                                    <p className="mt-1 text-[13px] text-white/70 transition-colors duration-300 group-hover:text-white/90">{c.desc}</p>
+                                ) : null}
 
                                 {/* Explore link — fades in on hover */}
                                 <div className="mt-4 flex items-center gap-2 opacity-0 translate-y-3 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0">
@@ -1003,16 +1001,20 @@ function CustomerReviews() {
 /* ═══════════════════════════════════════════════════════════════════════
    MAIN HOME
    ═══════════════════════════════════════════════════════════════════════ */
-export default function Home({ hero_slider, category_carousel, new_arrivals, video_section, discount_tile_carousel, gallery }) {
-    const products = new_arrivals?.products || discount_tile_carousel?.products || [];
+export default function Home({ hero_slider, category_carousel, new_arrivals, video_section, discount_tile_carousel, gallery, rootCategories = [], trendingProducts = [], tileFinder = [] }) {
+    // Trending is hand-picked in admin now; the old new_arrivals feed stays
+    // as a fallback so the strip is never empty if that prop is missing.
+    const products = trendingProducts.length
+        ? trendingProducts
+        : (new_arrivals?.products || discount_tile_carousel?.products || []);
     return (
         <PublicLayout>
             <Head title="Home" />
             <HeroSlider heroSlider={hero_slider} />
-            <ShopByCollection />
+            <ShopByCollection categories={rootCategories} />
             <TrendingProducts products={products} />
             <TileVisualizer />
-            <ChooseBy />
+            <ChooseBy dimensions={tileFinder} />
             <OurShowroom />
             <OurServices />
             <FeaturedCollections />

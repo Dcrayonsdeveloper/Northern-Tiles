@@ -30,6 +30,7 @@ export default function Edit({ coupon, types, usageStats }) {
         expires_at: formatDateTime(coupon.expires_at),
         is_active: coupon.is_active ?? true,
         first_order_only: coupon.first_order_only ?? false,
+        auto_apply: coupon.auto_apply ?? false,
         buy_quantity: coupon.buy_quantity || '',
         get_quantity: coupon.get_quantity || '',
     });
@@ -329,6 +330,25 @@ export default function Edit({ coupon, types, usageStats }) {
                                     />
                                     <span className="text-sm font-medium text-gray-700">
                                         First order only
+                                    </span>
+                                </label>
+                            </div>
+                            <div className="sm:col-span-2">
+                                <label className="flex items-start gap-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.auto_apply}
+                                        onChange={(e) => setData('auto_apply', e.target.checked)}
+                                        className="mt-0.5 rounded border-gray-300 text-gray-900 focus:ring-gray-500"
+                                    />
+                                    <span>
+                                        <span className="block text-sm font-medium text-gray-700">
+                                            Apply automatically
+                                        </span>
+                                        <span className="block text-xs text-gray-500">
+                                            Added to every eligible cart without the customer entering the code.
+                                            Leave off for a code you hand out.
+                                        </span>
                                     </span>
                                 </label>
                             </div>

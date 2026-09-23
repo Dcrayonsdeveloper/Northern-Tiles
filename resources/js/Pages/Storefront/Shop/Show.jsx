@@ -289,107 +289,6 @@ function SBtn({ dir, disabled, onClick }) {
 }
 
 /* ── Available Coupons ────────────────────────────────────────────── */
-function AvailableCoupons({ coupons = [] }) {
-    const [copiedCode, setCopiedCode] = useState(null);
-    const [open, setOpen] = useState(false);
-
-    const copyCode = useCallback(async (text) => {
-        try {
-            if (navigator.clipboard?.writeText) {
-                await navigator.clipboard.writeText(text);
-            } else {
-                const el = document.createElement('textarea');
-                el.value = text;
-                el.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-            }
-            setCopiedCode(text);
-            setTimeout(() => setCopiedCode(null), 2000);
-        } catch {}
-    }, []);
-
-    if (!coupons?.length) return null;
-    return (
-        <div className="mt-6 rounded-lg border border-dashed border-green-300 bg-green-50 p-4">
-            <button
-                type="button"
-                onClick={() => setOpen(o => !o)}
-                aria-expanded={open}
-                className={`flex w-full items-center gap-2 text-left focus:outline-none ${open ? 'mb-3' : ''}`}
-            >
-                <Tag c="h-5 w-5 text-green-600" />
-                <span className="text-sm font-semibold text-green-800">Available Offers</span>
-                <span className="rounded-full bg-green-200 px-2 py-0.5 text-[10px] font-bold text-green-800">{coupons.length}</span>
-                <svg
-                    className={`ml-auto h-4 w-4 text-green-700 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-                    aria-hidden="true"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
-            {open && (
-            <div className="space-y-2">
-                {coupons.map((coupon, i) => {
-                    const isCopied = copiedCode === coupon.code;
-                    return (
-                        <div key={coupon.code || i} className="flex items-start gap-2">
-                            <div className="flex-1">
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                    <code className="rounded bg-green-100 px-2 py-0.5 text-xs font-bold text-green-800">{coupon.code}</code>
-                                    <button
-                                        type="button"
-                                        onClick={() => copyCode(coupon.code)}
-                                        title={isCopied ? 'Copied!' : 'Copy code'}
-                                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all active:scale-90 touch-manipulation ${
-                                            isCopied
-                                                ? 'border-green-400 bg-green-100'
-                                                : 'border-green-300 bg-white hover:border-green-500 hover:bg-green-50'
-                                        }`}
-                                    >
-                                        {isCopied ? (
-                                            <svg className="h-3 w-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        ) : (
-                                            <svg className="h-3 w-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                            </svg>
-                                        )}
-                                    </button>
-                                    {isCopied && (
-                                        <span className="text-[10px] font-medium text-green-600">Copied!</span>
-                                    )}
-                                    {coupon.type === 'free_shipping' && (
-                                        <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">Free Shipping</span>
-                                    )}
-                                    {coupon.first_order_only && (
-                                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">First order</span>
-                                    )}
-                                </div>
-                                <p className="mt-1 text-xs text-green-700">
-                                    {coupon.title || coupon.description || (
-                                        coupon.type === 'percentage' ? `Get ${coupon.value}% off` :
-                                        coupon.type === 'fixed_amount' ? `Get $${coupon.value} off` :
-                                        coupon.type === 'free_shipping' ? 'Free shipping' :
-                                        `Save with ${coupon.code}`
-                                    )}
-                                    {coupon.minimum_purchase > 0 && (
-                                        <span className="text-green-600"> (Min. ${parseFloat(coupon.minimum_purchase).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
-                                    )}
-                                </p>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-            )}
-        </div>
-    );
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    SECTION: Image Gallery with Thumbnails
@@ -472,7 +371,18 @@ function FrequentlyBoughtTogether({ products, currentProduct }) {
         const ids = [currentProduct.id, ...selectedItems.map(p => p.id)];
         const addNext = (i) => {
             if (i >= ids.length) { setAdding(false); window.dispatchEvent(new CustomEvent('cart-updated')); window.dispatchEvent(new CustomEvent('open-cart-sidebar')); return; }
-            fetch('/api/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content }, credentials: 'same-origin', body: JSON.stringify({ product_id: ids[i], quantity: 1 }) }).then(() => addNext(i + 1)).catch(() => addNext(i + 1));
+            fetch('/api/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content }, credentials: 'same-origin', body: JSON.stringify({ product_id: ids[i], quantity: 1 }) })
+                .then((res) => {
+                    // Buying needs an account; the endpoint answers 401 to a
+                    // guest, which would otherwise fail silently here.
+                    if (res.status === 401 || res.status === 419) {
+                        setAdding(false);
+                        window.location.href = '/login';
+                        return;
+                    }
+                    addNext(i + 1);
+                })
+                .catch(() => addNext(i + 1));
         };
         addNext(0);
     };
@@ -483,38 +393,45 @@ function FrequentlyBoughtTogether({ products, currentProduct }) {
                 <h2 className="text-lg font-bold text-gray-900 mb-6 font-heading">Frequently Bought Together</h2>
                 <div className="rounded-xl border border-gray-200 bg-white p-6">
                     <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8">
-                        {/* Product cards with + signs */}
-                        <div className="flex flex-wrap items-center gap-2">
+                        {/* Two columns on a phone, a single "a + b + c" row once
+                            there is width for it. The + used to be glued to the
+                            left of every card, so a wrapped row began with a
+                            dangling +; it is a separator between cards on one
+                            line, so it is hidden in the stacked layout. Cards
+                            top-align and the name block is a fixed two lines, so
+                            a long name can no longer push one card's price out of
+                            line with its neighbour's. */}
+                        <div className="grid w-full grid-cols-2 gap-x-3 gap-y-6 sm:flex sm:w-auto sm:flex-wrap sm:items-start sm:gap-2">
                             {/* This item */}
-                            <div className="text-center w-[130px]">
+                            <div className="w-full text-center sm:w-[130px]">
                                 <div className="aspect-square overflow-hidden rounded-lg border-2 border-brand bg-gray-50">
                                     <ProductImage src={currentProduct.image_url} alt={currentProduct.name} className="h-full w-full object-cover" />
                                 </div>
-                                <p className="mt-2 text-[11px] text-gray-500">This item</p>
-                                <p className="text-[12px] font-medium text-gray-900 line-clamp-2">{currentProduct.name}</p>
+                                <p className="mt-2 text-[11px] leading-5 text-gray-500">This item</p>
+                                <p className="line-clamp-2 min-h-[32px] text-[12px] font-medium text-gray-900">{currentProduct.name}</p>
                                 <p className="text-[13px] font-bold text-gray-900 mt-1">${parseFloat(currentProduct.price || 0).toFixed(2)} <span className="text-[10px] text-gray-400 font-normal">/ sqm</span></p>
                             </div>
 
                             {items.map((p) => (
-                                <div key={p.id} className="flex items-center gap-2">
-                                    <span className="text-3xl font-extralight text-gray-300">+</span>
-                                    <div className="text-center w-[130px]">
+                                <div key={p.id} className="flex w-full items-start gap-2 sm:w-auto">
+                                    <span className="hidden h-[130px] items-center text-3xl font-extralight text-gray-300 sm:flex">+</span>
+                                    <div className="w-full text-center sm:w-[130px]">
                                         <button type="button" onClick={() => toggle(p.id)} className={`aspect-square w-full overflow-hidden rounded-lg border-2 bg-gray-50 transition ${selected.includes(p.id) ? 'border-brand' : 'border-gray-200 opacity-40'}`}>
                                             <ProductImage src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
                                         </button>
-                                        <label className="mt-2 flex items-center justify-center gap-1 cursor-pointer">
+                                        <label className="mt-2 flex cursor-pointer items-center justify-center gap-1 leading-5">
                                             <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggle(p.id)} className="h-3.5 w-3.5 rounded border-gray-300 text-brand focus:ring-brand" />
                                             <span className="text-[11px] text-gray-500">Add this</span>
                                         </label>
-                                        <p className="text-[12px] font-medium text-gray-900 line-clamp-2">{p.name}</p>
-                                        <p className="text-[13px] font-bold text-gray-900 mt-0.5">${parseFloat(p.price || 0).toFixed(2)} <span className="text-[10px] text-gray-400 font-normal">/ sqm</span></p>
+                                        <p className="line-clamp-2 min-h-[32px] text-[12px] font-medium text-gray-900">{p.name}</p>
+                                        <p className="text-[13px] font-bold text-gray-900 mt-1">${parseFloat(p.price || 0).toFixed(2)} <span className="text-[10px] text-gray-400 font-normal">/ sqm</span></p>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
                         {/* Total + Add all */}
-                        <div className="flex-shrink-0 lg:ml-auto text-center lg:text-left">
+                        <div className="w-full flex-shrink-0 border-t border-gray-100 pt-5 text-center lg:ml-auto lg:w-auto lg:border-0 lg:pt-0 lg:text-left">
                             <p className="text-sm text-gray-500">Total price</p>
                             <p className="text-2xl font-bold text-gray-900 mt-1">${total.toFixed(2)}</p>
                             <button type="button" onClick={addAll} disabled={adding || selected.length === 0} className="mt-3 rounded-lg bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark transition disabled:opacity-50 whitespace-nowrap">
@@ -536,6 +453,36 @@ function CompareWithSimilar({ currentProduct, products }) {
 
     const compareItems = [currentProduct, ...products.slice(0, 3)];
 
+    // A comparison row earns its place only if the products actually differ on
+    // it. Brand used to sit here printing "Northern Tile" four times — every
+    // product in the catalogue has an empty brand — which told a shopper
+    // nothing. Size, finish and colour come from the same specifications the
+    // product page shows above, and are what a tile is actually chosen on.
+    const spec = (p, ...keys) => {
+        for (const k of keys) {
+            const v = p?.specifications?.[k];
+            if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+        }
+        return null;
+    };
+
+    const inStock = (p) => {
+        if (parseFloat(p.price || 0) <= 0) return false;
+        return (p.inventory_quantity ?? 0) > 0 || p.inventory_policy === 'continue';
+    };
+
+    const specRows = [
+        { label: 'Category', value: (p) => p.category?.name || p.product_type || null },
+        // The importer writes size under size_nominal; 'size' proper is rare.
+        { label: 'Size', value: (p) => spec(p, 'size_nominal', 'size', 'size(_nominal)', 'size_actual') },
+        { label: 'Finish', value: (p) => spec(p, 'finish') },
+        { label: 'Colour', value: (p) => spec(p, 'colour', 'color') },
+        { label: 'Material', value: (p) => spec(p, 'material') },
+        { label: 'Thickness', value: (p) => spec(p, 'thickness') },
+    // Drop any row that is blank everywhere, so a range with no finish
+    // recorded doesn't render an empty band across the table.
+    ].filter((row) => compareItems.some((p) => row.value(p)));
+
     const addToCart = (productId) => {
         router.post(route('cart.store'), { product_id: productId, quantity: 1 }, {
             preserveScroll: true,
@@ -547,14 +494,21 @@ function CompareWithSimilar({ currentProduct, products }) {
         <section className="py-10 border-t border-gray-200">
             <Container>
                 <h2 className="text-lg font-bold text-gray-900 mb-6 font-heading">Compare with Similar Items</h2>
+                {/* Label in its own left column, one column per product, one row
+                    per attribute. The labels used to sit in a full-width band
+                    above their own values, so nothing lined up with the thing it
+                    described and the eye had to jump a row to read the table. */}
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[600px] table-fixed">
+                    <table className="w-full min-w-[760px] table-fixed border-collapse">
                         <colgroup>
-                            {compareItems.map(p => <col key={p.id} style={{ width: `${100 / compareItems.length}%` }} />)}
+                            <col className="w-[150px]" />
+                            {compareItems.map((p) => (
+                                <col key={p.id} style={{ width: `${100 / compareItems.length}%` }} />
+                            ))}
                         </colgroup>
-                        {/* Images row */}
                         <thead>
                             <tr>
+                                <th className="p-3" />
                                 {compareItems.map((p, i) => (
                                     <th key={p.id} className="p-3 align-top">
                                         <div className="flex flex-col items-center">
@@ -570,60 +524,52 @@ function CompareWithSimilar({ currentProduct, products }) {
                                 ))}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody>
                             {/* Price */}
-                            <tr className="bg-gray-50/50">
-                                {compareItems.map((p, i) => (
-                                    <td key={p.id} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">{i === 0 ? 'Price' : ''}</td>
-                                ))}
-                            </tr>
-                            <tr>
-                                {compareItems.map(p => (
-                                    <td key={p.id} className="p-3 text-center">
+                            <tr className="border-t border-gray-100 bg-gray-50/50">
+                                <th scope="row" className="px-3 py-2.5 text-left align-middle text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                                    Price
+                                </th>
+                                {compareItems.map((p) => (
+                                    <td key={p.id} className="px-3 py-2.5 text-center align-middle">
                                         <span className="text-[15px] font-bold text-gray-900">${parseFloat(p.price || 0).toFixed(2)}</span>
                                         {p.compare_at_price > p.price && <span className="ml-1 text-[12px] text-gray-400 line-through">${parseFloat(p.compare_at_price || 0).toFixed(2)}</span>}
                                     </td>
                                 ))}
                             </tr>
-                            {/* Brand */}
-                            <tr className="bg-gray-50/50">
-                                {compareItems.map((p, i) => (
-                                    <td key={p.id} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">{i === 0 ? 'Brand' : ''}</td>
-                                ))}
-                            </tr>
-                            <tr>
-                                {compareItems.map(p => (
-                                    <td key={p.id} className="p-3 text-center text-[13px] text-gray-700">{p.brand || 'Northern Tile'}</td>
-                                ))}
-                            </tr>
-                            {/* Category */}
-                            <tr className="bg-gray-50/50">
-                                {compareItems.map((p, i) => (
-                                    <td key={p.id} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">{i === 0 ? 'Category' : ''}</td>
-                                ))}
-                            </tr>
-                            <tr>
-                                {compareItems.map(p => (
-                                    <td key={p.id} className="p-3 text-center text-[13px] text-gray-700">{p.category?.name || p.product_type || '—'}</td>
-                                ))}
-                            </tr>
+                            {/* One row per attribute the products differ on */}
+                            {specRows.map((row, i) => (
+                                <tr key={row.label} className={`border-t border-gray-100 ${i % 2 ? 'bg-gray-50/50' : ''}`}>
+                                    <th scope="row" className="px-3 py-2.5 text-left align-middle text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                                        {row.label}
+                                    </th>
+                                    {compareItems.map((p) => (
+                                        <td key={p.id} className="px-3 py-2.5 text-center align-middle text-[13px] text-gray-700">
+                                            {row.value(p) || '—'}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
                             {/* Availability */}
-                            <tr className="bg-gray-50/50">
-                                {compareItems.map((p, i) => (
-                                    <td key={p.id} className="px-3 py-2 text-[12px] font-semibold text-gray-500 uppercase tracking-wide">{i === 0 ? 'Availability' : ''}</td>
-                                ))}
-                            </tr>
-                            <tr>
-                                {compareItems.map(p => (
-                                    <td key={p.id} className="p-3 text-center">
-                                        <span className="text-[13px] font-medium text-green-600">In Stock</span>
+                            <tr className={`border-t border-gray-100 ${specRows.length % 2 ? 'bg-gray-50/50' : ''}`}>
+                                <th scope="row" className="px-3 py-2.5 text-left align-middle text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                                    Availability
+                                </th>
+                                {compareItems.map((p) => (
+                                    <td key={p.id} className="px-3 py-2.5 text-center align-middle">
+                                        {/* Was hardcoded "In Stock" for every column, so a
+                                            sold-out tile still read as available. */}
+                                        <span className={`text-[13px] font-medium ${inStock(p) ? 'text-green-600' : 'text-gray-400'}`}>
+                                            {inStock(p) ? 'In Stock' : 'Out of Stock'}
+                                        </span>
                                     </td>
                                 ))}
                             </tr>
                             {/* Add to Cart */}
-                            <tr>
+                            <tr className="border-t border-gray-100">
+                                <th scope="row" className="px-3 py-3" />
                                 {compareItems.map((p, i) => (
-                                    <td key={p.id} className="p-3 text-center">
+                                    <td key={p.id} className="px-3 py-3 text-center align-middle">
                                         <button type="button" onClick={() => addToCart(p.id)} className={`rounded-none px-4 py-2 text-[13px] font-semibold transition ${i === 0 ? 'bg-brand text-white hover:bg-brand-dark' : 'border border-brand text-brand hover:bg-brand hover:text-white'}`}>
                                             Add to Cart
                                         </button>
@@ -742,7 +688,13 @@ function VariantFamilySelector({ familyVariants }) {
                                     />
                                 )}
                             </div>
-                            <span className="line-clamp-2 min-h-[2rem] text-[11px] font-medium leading-tight text-gray-800">
+                            {/* Two lines, fixed height, ellipsis past that — so a
+                                long name never makes one card taller than its
+                                neighbours. Full name on hover. */}
+                            <span
+                                title={v.name}
+                                className="line-clamp-2 h-[2rem] text-[11px] font-medium leading-tight text-gray-800"
+                            >
                                 {v.label}
                             </span>
                             <span className="mt-0.5 text-[13px] font-bold text-gray-900">
@@ -784,8 +736,8 @@ function VariantFamilySelector({ familyVariants }) {
 /* ═══════════════════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════════════════ */
-export default function Show({ product, relatedProducts, availableCoupons = [], familyVariants = null }) {
-    const { settings } = usePage().props;
+export default function Show({ product, relatedProducts, availableCoupons = [], familyVariants = null, isWishlisted = false }) {
+    const { settings, auth } = usePage().props;
     const [quantity, setQuantity] = useState(1);
     const [area, setArea] = useState(1);
     const [wastage, setWastage] = useState(true);
@@ -794,7 +746,70 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
     const [addingToCart, setAddingToCart] = useState(false);
     const [addingSample, setAddingSample] = useState(false);
     const [buyingNow, setBuyingNow] = useState(false);
-    const [wishlisted, setWishlisted] = useState(false);
+    const [wishlisted, setWishlisted] = useState(isWishlisted);
+    const [savingWishlist, setSavingWishlist] = useState(false);
+    const [shareNote, setShareNote] = useState('');
+
+    // Saving needs an account. A guest still posts: the route is behind `auth`,
+    // so Laravel bounces them to the login page and — because this is a POST —
+    // stores THIS product page as the intended url, returning them here once
+    // they have signed in. Flipping the heart optimistically would be a lie for
+    // a guest, so the state only changes on a confirmed save.
+    const toggleWishlist = () => {
+        if (savingWishlist) return;
+        setSavingWishlist(true);
+        router.post(route('wishlist.toggle'), { product_id: product.id }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => { if (auth?.user) setWishlisted((w) => !w); },
+            onFinish: () => setSavingWishlist(false),
+        });
+    };
+
+    // navigator.share and navigator.clipboard both require a secure context,
+    // and this site is served over plain HTTP — so on the live box both are
+    // undefined and the old one-liner silently did nothing at all. Falls back
+    // through the share sheet, the async clipboard, then execCommand, which
+    // still works on HTTP.
+    const shareProduct = async () => {
+        const url = window.location.href;
+        const note = (text) => { setShareNote(text); setTimeout(() => setShareNote(''), 2000); };
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: product.name, url });
+                return;
+            } catch (err) {
+                // A cancelled share sheet is not a failure — say nothing.
+                if (err?.name === 'AbortError') return;
+            }
+        }
+
+        if (navigator.clipboard?.writeText) {
+            try {
+                await navigator.clipboard.writeText(url);
+                note('Link copied');
+                return;
+            } catch {
+                // fall through to the execCommand path
+            }
+        }
+
+        try {
+            const field = document.createElement('textarea');
+            field.value = url;
+            field.setAttribute('readonly', '');
+            field.style.position = 'fixed';
+            field.style.opacity = '0';
+            document.body.appendChild(field);
+            field.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(field);
+            note(ok ? 'Link copied' : 'Press Ctrl+C to copy');
+        } catch {
+            note('Copy the address bar link');
+        }
+    };
 
     // Selectable colour + finish parsed from the spec strings.
     // "Black, Charcoal, Carbon", "Matt / Soft Touch" and "White + Cloud" all
@@ -844,6 +859,14 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
 
     const sqmPerBox = parseFloat(product?.sqm_per_box) || 0;
     const hasBoxes = sqmPerBox > 0;
+    // Per-product buy-box copy. Blank means "show nothing there", which is a
+    // deliberate setting, so these are read straight through without defaults.
+    const unitLabel = (product?.unit_label ?? '').trim();
+    const quantityLabel = (product?.quantity_label ?? '').trim();
+    const showWastage = product?.show_wastage !== false;
+    // Absent means on — an older payload should not silently hide a button.
+    const showSample = product?.show_sample !== false;
+    const showBigSample = product?.show_big_sample !== false;
     const requiredArea = wastage ? area * 1.1 : area;
     const boxCount = hasBoxes ? Math.max(1, Math.ceil(requiredArea / sqmPerBox)) : 0;
     // Boxed products round up to the nearest full box; sold-by-m² products
@@ -1045,28 +1068,37 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 </div>
                             </div>
 
-                            {/* Area Calculator */}
+                            {/* Quantity. The label and the unit are set per
+                                product in admin: a bag of grout is not bought
+                                by "Area" in "M²", and both were hardcoded. */}
                             <div className="mt-5">
                                 <div className="flex flex-wrap items-center gap-4">
                                     <div className="flex items-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5">
-                                        <span className="text-[13px] font-semibold text-gray-700">Area</span>
+                                        {quantityLabel ? (
+                                            <span className="text-[13px] font-semibold text-gray-700">{quantityLabel}</span>
+                                        ) : null}
                                         <button type="button" onClick={() => adjustArea(-1)} disabled={area <= 1 || !inStock} className="text-gray-500 hover:text-brand disabled:opacity-30 transition"><Minus c="h-4 w-4" /></button>
                                         <span className="min-w-[2rem] text-center text-[15px] font-bold text-gray-900">{area}</span>
-                                        <span className="text-[13px] text-gray-500">M<sup>2</sup></span>
+                                        {unitLabel ? (
+                                            <span className="text-[13px] text-gray-500">{unitLabel}</span>
+                                        ) : null}
                                         <button type="button" onClick={() => adjustArea(1)} disabled={!inStock} className="text-gray-500 hover:text-brand disabled:opacity-30 transition"><Plus c="h-4 w-4" /></button>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[12px] font-semibold text-brand">Please add 10% wastage</span>
-                                        <button type="button" onClick={() => { if (wastage) { setShowWastageModal(true); } else { setWastage(true); } }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${wastage ? 'bg-brand' : 'bg-gray-300'}`}>
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${wastage ? 'translate-x-6' : 'translate-x-1'}`} />
-                                        </button>
-                                    </div>
+                                    {showWastage ? (
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[12px] font-semibold text-brand">Please add 10% wastage</span>
+                                            <button type="button" onClick={() => { if (wastage) { setShowWastageModal(true); } else { setWastage(true); } }} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${wastage ? 'bg-brand' : 'bg-gray-300'}`}>
+                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${wastage ? 'translate-x-6' : 'translate-x-1'}`} />
+                                            </button>
+                                        </div>
+                                    ) : null}
                                 </div>
-                                {hasBoxes && <p className="mt-1.5 text-[11px] text-gray-400">We round up to the full box</p>}
+                                {showWastage && hasBoxes && <p className="mt-1.5 text-[11px] text-gray-400">We round up to the full box</p>}
                             </div>
 
-                            {/* Subtotal line */}
-                            {hasBoxes ? (
+                            {/* Subtotal line — part of the same box calculator,
+                                so it is hidden by the same switch. */}
+                            {!showWastage ? null : hasBoxes ? (
                                 <div className="mt-3 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-[13px] text-gray-700">
                                     <span className="font-semibold text-gray-900">{boxCount} {boxCount === 1 ? 'Box' : 'Boxes'}</span>
                                     <span className="text-gray-500"> = {billedSqm.toFixed(2)} m²</span>
@@ -1081,8 +1113,14 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 </div>
                             )}
 
-                            {/* Get a Sample */}
+                            {/* Samples. Both buttons are per-product now: a bag of
+                                grout offered a free tile sample and a showroom
+                                visit to see it full size, which neither applies to.
+                                The wrapper only renders when at least one is on, so
+                                nothing leaves an empty gap. */}
+                            {(showSample || showBigSample) && (
                             <div className="mt-2">
+                                {showSample && (
                                 <button type="button" onClick={addSample} disabled={addingSample} className="group w-full rounded-lg border-2 border-gray-800 px-8 py-1.5 hover:bg-gray-800 transition disabled:opacity-50">
                                     <span className="block text-sm font-bold uppercase tracking-wide leading-tight text-gray-800 group-hover:text-white">
                                         {addingSample ? 'Adding...' : 'Get a Sample'}
@@ -1091,7 +1129,9 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                         Free samples · Max 5 per order · Flat $9.99 shipping
                                     </span>
                                 </button>
+                                )}
 
+                                {showBigSample && (
                                 <Link
                                     href={route('pages.contact')}
                                     className="group mt-2 block w-full rounded-lg border-2 border-brand px-8 py-1.5 text-center transition hover:bg-brand"
@@ -1103,25 +1143,31 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                         Full-size tiles · Visit our showroom
                                     </span>
                                 </Link>
+                                )}
                             </div>
+                            )}
 
                             {/* Product Specifications */}
                             <div className="mt-4">
                                 <SpecificationsBlock specifications={product.specifications} description={product.description} />
                             </div>
 
-                            {/* Coupons */}
-                            <AvailableCoupons coupons={availableCoupons} />
 
                             {/* Wishlist + Share */}
                             <div className="mt-4 flex items-center gap-4">
-                                <button type="button" onClick={() => setWishlisted(!wishlisted)} className="flex items-center gap-1.5 text-[13px] text-gray-600 hover:text-brand transition">
+                                <button
+                                    type="button"
+                                    onClick={toggleWishlist}
+                                    disabled={savingWishlist}
+                                    aria-pressed={wishlisted}
+                                    className={`flex items-center gap-1.5 text-[13px] transition disabled:opacity-60 ${wishlisted ? 'text-brand' : 'text-gray-600 hover:text-brand'}`}
+                                >
                                     <Heart c="h-5 w-5" filled={wishlisted} />
-                                    {wishlisted ? 'Wishlisted' : 'Add to Wishlist'}
+                                    {wishlisted ? 'Saved to Wishlist' : 'Add to Wishlist'}
                                 </button>
-                                <button type="button" onClick={() => navigator.share?.({ title: product.name, url: window.location.href }).catch(() => {})} className="flex items-center gap-1.5 text-[13px] text-gray-600 hover:text-brand transition">
+                                <button type="button" onClick={shareProduct} className="flex items-center gap-1.5 text-[13px] text-gray-600 transition hover:text-brand">
                                     <Share c="h-5 w-5" />
-                                    Share
+                                    {shareNote || 'Share'}
                                 </button>
                             </div>
 

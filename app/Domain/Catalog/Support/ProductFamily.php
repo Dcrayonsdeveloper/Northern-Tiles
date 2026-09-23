@@ -100,13 +100,11 @@ class ProductFamily
     {
         $specs = is_array($product->specifications) ? $product->specifications : [];
 
-        $label = '';
-        foreach (['name', 'colour', 'color', 'model', 'style'] as $key) {
-            if (! empty($specs[$key]) && is_string($specs[$key])) {
-                $label = $specs[$key];
-                break;
-            }
-        }
+        // Only specifications.name — the importer's clean product name. The
+        // old list also fell back to colour/model/style, which are shared
+        // across a whole range: every card in Resiplank 9.7mm Hybrid read
+        // "Straight Boards", so the selector offered ten identical choices.
+        $label = (! empty($specs['name']) && is_string($specs['name'])) ? $specs['name'] : '';
 
         if ($label === '') {
             // "ARGILE ICE MATT 60X246MM - Premium Spanish Porcelain…" -> "ARGILE ICE MATT 60X246MM"
@@ -125,12 +123,26 @@ class ProductFamily
         return $label;
     }
 
-    private static function imageUrl(Product $product): ?string
+    /**
+     * First image that is actually there.
+     *
+     * Older imports left product_media rows pointing at files that were never
+     * synced to disk — 103 products carry one. Returning the first row blind
+     * handed the range selector a dead .jpg and every swatch rendered as a
+     * broken image, even though products.image_url held a perfectly good .webp
+     * and the main gallery showed it. So each candidate is checked, and the
+     * first that resolves wins.
+     *
+     * Public because the admin lists render the same thumbnails and were
+     * showing the same broken images.
+     */
+    public static function imageUrl(Product $product): ?string
     {
         if ($product->relationLoaded('media')) {
-            $first = $product->media->first();
-            if ($first) {
-                return $first->url;
+            foreach ($product->media as $media) {
+                if ($media->fileExists()) {
+                    return $media->url;
+                }
             }
         }
 
