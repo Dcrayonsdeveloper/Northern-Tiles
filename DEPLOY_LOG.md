@@ -34,3 +34,19 @@ Files changed:
    routes/admin.php                                   |   1 +
    9 files changed, 462 insertions(+), 86 deletions(-)
 ```
+
+## 2026-09-23 08:29 UTC — `072d8b2`
+
+**Fix: Ensure featured products from visualizer rooms are always loaded even when >500 products exist**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (072d8b2)
+- Server: 577e8f3 → 072d8b2
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   .../Storefront/VisualizerController.php            | 59 +++++++++++++++++-----
+   1 file changed, 46 insertions(+), 13 deletions(-)
+```
