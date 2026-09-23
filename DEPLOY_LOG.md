@@ -154,3 +154,20 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Index.jsx |  6 ++-
    5 files changed, 67 insertions(+), 12 deletions(-)
 ```
+
+## 2026-09-23 10:59 UTC — `aae2d3e`
+
+**Add video demo to phone mockup in Tile Visualizer section on homepage**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (aae2d3e)
+- Server: 8444393 → aae2d3e
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   public/images/visualizerimg/visualizer-demo.mp4 | Bin 0 -> 3121219 bytes
+   resources/js/Pages/Storefront/Home.jsx          |  13 ++++++++++---
+   2 files changed, 10 insertions(+), 3 deletions(-)
+```
