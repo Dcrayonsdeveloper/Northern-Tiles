@@ -188,7 +188,7 @@ function TileVisualizer() {
                         <p className="mt-5 text-[14px] leading-[1.8] text-[#4a4a4a]">
                             Experience how our tiles, flooring and stone products look in your home with our interactive visualiser. Browse hundreds of options and preview them in realistic room settings before you purchase.
                         </p>
-                        <Link href="/visualizer" className="mt-8 inline-block bg-brand px-8 py-3 text-[12px] font-semibold uppercase tracking-[1.5px] text-white transition hover:bg-brand-dark">
+                        <Link href="/shop" className="mt-8 inline-block bg-brand px-8 py-3 text-[12px] font-semibold uppercase tracking-[1.5px] text-white transition hover:bg-brand-dark">
                             Open Tile View
                         </Link>
                     </div>
