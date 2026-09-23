@@ -99,3 +99,22 @@ Files changed:
    resources/js/Pages/Storefront/Home.jsx | 14 +++++++-------
    1 file changed, 7 insertions(+), 7 deletions(-)
 ```
+
+## 2026-09-23 10:00 UTC — `2e4f187`
+
+**Add role selection to User Create/Edit pages - replace Admin checkbox with role dropdown (Create) and role checkboxes (Edit), show role badges in Users list**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (2e4f187)
+- Server: 6ee8b7b → 2e4f187
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Http/Controllers/Admin/UserController.php | 50 ++++++++++++++++++-----
+   resources/js/Pages/Admin/Users/Create.jsx     | 36 ++++++++++-------
+   resources/js/Pages/Admin/Users/Edit.jsx       | 57 ++++++++++++++++++++-------
+   resources/js/Pages/Admin/Users/Index.jsx      | 31 +++++++++++++--
+   4 files changed, 131 insertions(+), 43 deletions(-)
+```
