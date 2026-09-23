@@ -15,6 +15,7 @@ use App\Http\Controllers\Storefront\ContactController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\PageController;
 use App\Http\Controllers\Storefront\ShopController;
+use App\Http\Controllers\Storefront\VisualizerController;
 use App\Http\Controllers\Public\BlogController;
 use App\Http\Controllers\Public\PageController as PublicPageController;
 use App\Http\Controllers\Public\ShopController as PublicShopController;
@@ -45,6 +46,9 @@ Route::get('/products/{product}', [ShopController::class, 'show'])->name('produc
 // Collections routes
 Route::get('/collections', [CollectionController::class, 'index'])->name('collections.index');
 Route::get('/collections/{handle}', [CollectionController::class, 'show'])->name('collections.show');
+
+// Tile Visualizer
+Route::get('/visualizer', [VisualizerController::class, 'index'])->name('visualizer.index');
 
 // Cart routes (Inertia pages)
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
