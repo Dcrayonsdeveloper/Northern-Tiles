@@ -41,13 +41,50 @@ class Post extends Model
         'view_count' => 'integer',
     ];
 
-    protected $appends = ['featured_image_url'];
+    protected $appends = ['featured_image_url', 'content'];
 
     public function getFeaturedImageUrlAttribute(): ?string
     {
         return $this->featured_image
             ? \Illuminate\Support\Facades\Storage::url($this->featured_image)
             : null;
+    }
+
+    /**
+     * Get the HTML content from body_json for display.
+     */
+    public function getContentAttribute(): ?string
+    {
+        $bodyJson = $this->body_json;
+        
+        if (!$bodyJson) {
+            return null;
+        }
+        
+        // If it's a string, return as-is
+        if (is_string($bodyJson)) {
+            return $bodyJson;
+        }
+        
+        // If it's an array with 'content' key (old format)
+        if (is_array($bodyJson) && isset($bodyJson[0]['content'])) {
+            return $bodyJson[0]['content'];
+        }
+        
+        // If it has 'description' key
+        if (is_array($bodyJson) && isset($bodyJson['description'])) {
+            return $bodyJson['description'];
+        }
+        
+        // If it has 'blocks' key, concatenate block contents
+        if (is_array($bodyJson) && isset($bodyJson['blocks'])) {
+            return collect($bodyJson['blocks'])
+                ->pluck('content')
+                ->filter()
+                ->implode("\n");
+        }
+        
+        return null;
     }
 
     public function category(): BelongsTo

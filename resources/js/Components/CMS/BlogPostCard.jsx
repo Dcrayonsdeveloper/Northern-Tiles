@@ -1,5 +1,14 @@
 import { Link } from '@inertiajs/react';
 
+// Helper to strip HTML and get plain text preview
+function getContentPreview(html, maxLength = 150) {
+    if (!html) return null;
+    // Strip HTML tags
+    const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + '...';
+}
+
 export default function BlogPostCard({ post, variant = 'default' }) {
     const publishedAt = post.published_at
         ? new Date(post.published_at).toLocaleDateString('en-US', {
@@ -8,6 +17,9 @@ export default function BlogPostCard({ post, variant = 'default' }) {
               day: 'numeric',
           })
         : null;
+
+    // Use excerpt if available, otherwise generate preview from content
+    const description = post.excerpt || getContentPreview(post.content);
 
     if (variant === 'featured') {
         return (
@@ -51,10 +63,10 @@ export default function BlogPostCard({ post, variant = 'default' }) {
                             {post.title}
                         </Link>
 
-                        {/* Excerpt */}
-                        {post.excerpt && (
+                        {/* Description (excerpt or content preview) */}
+                        {description && (
                             <p className="mt-3 text-sm text-gray-600 line-clamp-3">
-                                {post.excerpt}
+                                {description}
                             </p>
                         )}
 
@@ -168,10 +180,10 @@ export default function BlogPostCard({ post, variant = 'default' }) {
                     {post.title}
                 </Link>
 
-                {/* Excerpt */}
-                {post.excerpt && (
+                {/* Description (excerpt or content preview) */}
+                {description && (
                     <p className="mt-2 text-sm text-gray-600 line-clamp-2">
-                        {post.excerpt}
+                        {description}
                     </p>
                 )}
 
