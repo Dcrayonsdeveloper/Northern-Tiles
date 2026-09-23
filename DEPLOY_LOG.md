@@ -171,3 +171,19 @@ Files changed:
    resources/js/Pages/Storefront/Home.jsx          |  13 ++++++++++---
    2 files changed, 10 insertions(+), 3 deletions(-)
 ```
+
+## 2026-09-23 11:04 UTC — `4f76bf9`
+
+**Add poster image for video loading state in phone mockup**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (4f76bf9)
+- Server: aae2d3e → 4f76bf9
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   resources/js/Pages/Storefront/Home.jsx | 6 +++++-
+   1 file changed, 5 insertions(+), 1 deletion(-)
+```
