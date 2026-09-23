@@ -50,3 +50,19 @@ Files changed:
    .../Storefront/VisualizerController.php            | 59 +++++++++++++++++-----
    1 file changed, 46 insertions(+), 13 deletions(-)
 ```
+
+## 2026-09-23 09:22 UTC — `d67790a`
+
+**Add category tabs to Users admin page: All Users, Admins, Builders/Trade, Regular Users with summary cards**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (d67790a)
+- Server: 072d8b2 → d67790a
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   resources/js/Pages/Admin/Users/Index.jsx | 295 ++++++++++++++++++++++---------
+   1 file changed, 212 insertions(+), 83 deletions(-)
+```
