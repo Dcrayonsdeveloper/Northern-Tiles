@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <clipPath id="floor-mask">
+      <polygon points="100,400 700,400 750,600 50,600"/>
+    </clipPath>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f5f3f0"/>
+  
+  <!-- FLOOR AREA (with perspective) -->
+  <g id="floor-area" data-type="floor">
+    <polygon points="100,400 700,400 750,600 50,600" fill="#e8e4e0" id="floor-placeholder"/>
+  </g>
+  
+  <!-- Left wall -->
+  <polygon points="0,0 100,0 100,400 50,600 0,600" fill="#f0ece6"/>
+  
+  <!-- Right wall -->
+  <polygon points="700,0 800,0 800,600 750,600 700,400" fill="#ebe7e1"/>
+  
+  <!-- Back wall -->
+  <rect x="100" y="0" width="600" height="400" fill="#faf9f7"/>
+  
+  <!-- Decorative wall molding -->
+  <rect x="100" y="390" width="600" height="10" fill="#d4cfc9"/>
+  <rect x="100" y="50" width="600" height="5" fill="#e8e4e0"/>
+  
+  <!-- Main door -->
+  <rect x="300" y="100" width="200" height="290" fill="#5a4a3a" rx="3"/>
+  <rect x="310" y="110" width="80" height="120" fill="#4a3a2a" rx="2"/>
+  <rect x="410" y="110" width="80" height="120" fill="#4a3a2a" rx="2"/>
+  <rect x="310" y="240" width="80" height="140" fill="#4a3a2a" rx="2"/>
+  <rect x="410" y="240" width="80" height="140" fill="#4a3a2a" rx="2"/>
+  <!-- Door handle -->
+  <ellipse cx="475" cy="260" rx="8" ry="10" fill="#c0a080"/>
+  
+  <!-- Sidelights (windows beside door) -->
+  <rect x="240" y="150" width="50" height="200" fill="#a8d4e6" stroke="#5a4a3a" stroke-width="4"/>
+  <rect x="510" y="150" width="50" height="200" fill="#a8d4e6" stroke="#5a4a3a" stroke-width="4"/>
+  
+  <!-- Console table -->
+  <rect x="550" y="280" width="120" height="15" fill="#5a4a3a"/>
+  <rect x="560" y="295" width="10" height="100" fill="#4a3a2a"/>
+  <rect x="650" y="295" width="10" height="100" fill="#4a3a2a"/>
+  
+  <!-- Vase on console -->
+  <path d="M 595 280 Q 590 250, 610 220 Q 630 250, 625 280 Z" fill="#c0a080"/>
+  <ellipse cx="610" cy="215" rx="15" ry="8" fill="#228b22"/>
+  <ellipse cx="605" cy="208" rx="10" ry="6" fill="#2da02d"/>
+  <ellipse cx="618" cy="205" rx="8" ry="5" fill="#32b232"/>
+  
+  <!-- Mirror on left wall -->
+  <ellipse cx="160" cy="200" rx="40" ry="70" fill="#c8dce8" stroke="#c0a080" stroke-width="5"/>
+  
+  <!-- Coat hooks -->
+  <rect x="140" y="300" width="40" height="5" fill="#5a4a3a"/>
+  <circle cx="150" cy="305" r="5" fill="#c0a080"/>
+  <circle cx="170" cy="305" r="5" fill="#c0a080"/>
+  
+  <!-- Umbrella stand -->
+  <rect x="130" y="350" width="30" height="45" fill="#4a3a2a" rx="2"/>
+  <line x1="140" y1="310" x2="140" y2="355" stroke="#333333" stroke-width="4"/>
+  <ellipse cx="140" cy="310" rx="12" ry="3" fill="#2c5282"/>
+  
+  <!-- Ceiling light -->
+  <ellipse cx="400" cy="40" rx="60" ry="20" fill="#f5f0e8" stroke="#d4cfc9" stroke-width="2"/>
+  <rect x="395" y="20" width="10" height="25" fill="#c0a080"/>
+  
+  <!-- Welcome mat area (subtle indicator) -->
+  <rect x="320" y="420" width="160" height="80" fill="#8b7355" opacity="0.3" rx="3"/>
+  
+  <!-- Shadows -->
+  <ellipse cx="400" cy="400" rx="120" ry="8" fill="#000000" opacity="0.1"/>
+  <ellipse cx="610" cy="398" rx="65" ry="5" fill="#000000" opacity="0.08"/>
+</svg>

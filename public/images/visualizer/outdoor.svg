@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <clipPath id="floor-mask">
+      <polygon points="0,300 800,300 800,600 0,600"/>
+    </clipPath>
+    <linearGradient id="sky-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#87CEEB"/>
+      <stop offset="100%" style="stop-color:#e0f0ff"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Sky -->
+  <rect width="800" height="300" fill="url(#sky-gradient)"/>
+  
+  <!-- FLOOR/PATIO AREA -->
+  <g id="floor-area" data-type="floor">
+    <rect x="0" y="300" width="800" height="300" fill="#d4cfc9" id="floor-placeholder"/>
+  </g>
+  
+  <!-- Distant trees/garden -->
+  <ellipse cx="100" cy="290" rx="80" ry="60" fill="#228b22"/>
+  <ellipse cx="200" cy="280" rx="60" ry="50" fill="#2da02d"/>
+  <ellipse cx="700" cy="285" rx="90" ry="55" fill="#228b22"/>
+  <ellipse cx="600" cy="275" rx="50" ry="45" fill="#32b232"/>
+  
+  <!-- Garden hedge -->
+  <rect x="0" y="260" width="300" height="45" fill="#1a6b1a" rx="20"/>
+  <rect x="500" y="260" width="300" height="45" fill="#1a6b1a" rx="20"/>
+  
+  <!-- Back fence -->
+  <rect x="300" y="230" width="200" height="75" fill="#8b7355"/>
+  <line x1="320" y1="230" x2="320" y2="305" stroke="#5a4a3a" stroke-width="3"/>
+  <line x1="360" y1="230" x2="360" y2="305" stroke="#5a4a3a" stroke-width="3"/>
+  <line x1="400" y1="230" x2="400" y2="305" stroke="#5a4a3a" stroke-width="3"/>
+  <line x1="440" y1="230" x2="440" y2="305" stroke="#5a4a3a" stroke-width="3"/>
+  <line x1="480" y1="230" x2="480" y2="305" stroke="#5a4a3a" stroke-width="3"/>
+  
+  <!-- Outdoor dining set -->
+  <!-- Table -->
+  <ellipse cx="300" cy="420" rx="80" ry="40" fill="#5a4a3a"/>
+  <ellipse cx="300" cy="415" rx="75" ry="37" fill="#6b5a4a"/>
+  
+  <!-- Chairs -->
+  <rect x="180" y="400" width="40" height="50" fill="#4a3a2a" rx="3"/>
+  <rect x="185" y="380" width="30" height="25" fill="#5a4a3a" rx="2"/>
+  
+  <rect x="380" y="400" width="40" height="50" fill="#4a3a2a" rx="3"/>
+  <rect x="385" y="380" width="30" height="25" fill="#5a4a3a" rx="2"/>
+  
+  <rect x="275" y="470" width="50" height="40" fill="#4a3a2a" rx="3"/>
+  <rect x="280" y="450" width="40" height="25" fill="#5a4a3a" rx="2"/>
+  
+  <!-- BBQ grill -->
+  <rect x="600" y="340" width="80" height="100" fill="#333333" rx="5"/>
+  <rect x="595" y="330" width="90" height="20" fill="#444444" rx="3"/>
+  <rect x="610" y="350" width="60" height="40" fill="#222222" rx="2"/>
+  <rect x="605" y="440" width="10" height="40" fill="#555555"/>
+  <rect x="665" y="440" width="10" height="40" fill="#555555"/>
+  
+  <!-- Potted plants -->
+  <rect x="50" y="380" width="50" height="50" fill="#8b5a2b" rx="3"/>
+  <ellipse cx="75" cy="375" rx="35" ry="25" fill="#228b22"/>
+  <ellipse cx="65" cy="360" rx="25" ry="20" fill="#2da02d"/>
+  <ellipse cx="85" cy="355" rx="20" ry="18" fill="#32b232"/>
+  
+  <rect x="700" y="400" width="60" height="60" fill="#8b5a2b" rx="3"/>
+  <ellipse cx="730" cy="395" rx="40" ry="30" fill="#228b22"/>
+  <ellipse cx="720" cy="375" rx="30" ry="25" fill="#2da02d"/>
+  <ellipse cx="740" cy="365" rx="25" ry="20" fill="#38c238"/>
+  
+  <!-- Sun -->
+  <circle cx="650" cy="80" r="40" fill="#FFD700" opacity="0.9"/>
+  
+  <!-- Clouds -->
+  <ellipse cx="150" cy="60" rx="50" ry="25" fill="#ffffff" opacity="0.9"/>
+  <ellipse cx="190" cy="55" rx="40" ry="20" fill="#ffffff" opacity="0.9"/>
+  <ellipse cx="120" cy="65" rx="30" ry="18" fill="#ffffff" opacity="0.9"/>
+  
+  <ellipse cx="450" cy="100" rx="60" ry="25" fill="#ffffff" opacity="0.8"/>
+  <ellipse cx="500" cy="95" rx="45" ry="22" fill="#ffffff" opacity="0.8"/>
+  
+  <!-- Shadow under table -->
+  <ellipse cx="300" cy="460" rx="90" ry="20" fill="#000000" opacity="0.1"/>
+</svg>
