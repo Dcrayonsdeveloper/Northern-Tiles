@@ -66,3 +66,20 @@ Files changed:
    resources/js/Pages/Admin/Users/Index.jsx | 295 ++++++++++++++++++++++---------
    1 file changed, 212 insertions(+), 83 deletions(-)
 ```
+
+## 2026-09-23 09:34 UTC — `d23ed28`
+
+**Show content preview on blog listing: add content accessor to Post model, update BlogPostCard to show content when no excerpt**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (d23ed28)
+- Server: d67790a → d23ed28
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Domain/CMS/Models/Post.php               | 39 +++++++++++++++++++++++++++-
+   resources/js/Components/CMS/BlogPostCard.jsx | 24 ++++++++++++-----
+   2 files changed, 56 insertions(+), 7 deletions(-)
+```
