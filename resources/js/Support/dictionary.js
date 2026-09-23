@@ -14,12 +14,29 @@ function replacePlaceholders(value, params) {
 
 /**
  * Hook version - uses Inertia page props for dictionary.
+ * Usage: 
+ *   d('key', 'fallback')           - simple usage with fallback
+ *   d('key', 'fallback', {params}) - with params for placeholders
+ *   d('key', {params})             - with params, no fallback
  */
 export function useD() {
     const { dictionary } = usePage().props;
     const items = dictionary?.items ?? {};
 
-    return (key, params = {}, locale = null, defaultValue = null) => {
+    return (key, fallbackOrParams = null, paramsIfFallback = {}) => {
+        // Handle different call signatures:
+        // d('key', 'fallback') or d('key', 'fallback', {params})
+        // d('key', {params})
+        let defaultValue = null;
+        let params = {};
+        
+        if (typeof fallbackOrParams === 'string') {
+            defaultValue = fallbackOrParams;
+            params = paramsIfFallback;
+        } else if (typeof fallbackOrParams === 'object' && fallbackOrParams !== null) {
+            params = fallbackOrParams;
+        }
+
         const val = items?.[key] ?? defaultValue ?? key;
         return replacePlaceholders(val, params);
     };
