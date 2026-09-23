@@ -83,3 +83,19 @@ Files changed:
    resources/js/Components/CMS/BlogPostCard.jsx | 24 ++++++++++++-----
    2 files changed, 56 insertions(+), 7 deletions(-)
 ```
+
+## 2026-09-23 09:40 UTC — `6ee8b7b`
+
+**Update Featured Collections on homepage: add specific category links for each collection card**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (6ee8b7b)
+- Server: d23ed28 → 6ee8b7b
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   resources/js/Pages/Storefront/Home.jsx | 14 +++++++-------
+   1 file changed, 7 insertions(+), 7 deletions(-)
+```
