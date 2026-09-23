@@ -114,6 +114,22 @@ Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])
     ->middleware('throttle:20,1')
     ->name('checkout.success');
 
+// Stripe payment routes (card payment page after order is placed)
+Route::get('/checkout/payment/{order}', [\App\Http\Controllers\Storefront\PaymentController::class, 'show'])
+    ->middleware('throttle:20,1')
+    ->name('checkout.payment');
+Route::post('/checkout/payment/{order}/intent', [\App\Http\Controllers\Storefront\PaymentController::class, 'intent'])
+    ->middleware('throttle:10,1')
+    ->name('checkout.payment.intent');
+Route::get('/checkout/payment/{order}/confirm', [\App\Http\Controllers\Storefront\PaymentController::class, 'confirm'])
+    ->middleware('throttle:20,1')
+    ->name('checkout.payment.confirm');
+
+// Stripe webhook (no CSRF verification, signed by Stripe)
+Route::post('/webhook/stripe', [\App\Http\Controllers\Storefront\StripeWebhookController::class, 'handle'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
+    ->name('webhook.stripe');
+
 Route::get('/about', [PublicPageController::class, 'show'])
     ->defaults('slug', 'about')
     ->name('pages.about');
