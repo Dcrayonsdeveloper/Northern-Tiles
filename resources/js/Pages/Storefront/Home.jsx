@@ -194,8 +194,8 @@ function TileVisualizer() {
                     </div>
                     <div className="flex justify-center">
                         <div className="relative w-[280px]">
-                            <div className="rounded-[32px] border-[6px] border-[#222] bg-white p-3 shadow-2xl">
-                                <div className="aspect-[9/16] rounded-[24px] overflow-hidden bg-gradient-to-b from-[#f0efed] to-[#e8e6e2] relative">
+                            <div className="rounded-[32px] border-[6px] border-[#222] bg-[#222] shadow-2xl overflow-hidden">
+                                <div className="aspect-[9/16] overflow-hidden">
                                     <video
                                         className="h-full w-full object-cover"
                                         autoPlay
