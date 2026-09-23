@@ -118,3 +118,19 @@ Files changed:
    resources/js/Pages/Admin/Users/Index.jsx      | 31 +++++++++++++--
    4 files changed, 131 insertions(+), 43 deletions(-)
 ```
+
+## 2026-09-23 10:03 UTC — `4c56e8d`
+
+**Fix dictionary helper to properly use fallback text when translation key not found**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (4c56e8d)
+- Server: 2e4f187 → 4c56e8d
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   resources/js/Support/dictionary.js | 19 ++++++++++++++++++-
+   1 file changed, 18 insertions(+), 1 deletion(-)
+```
