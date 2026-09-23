@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import debounce from 'lodash/debounce';
 
 export default function Edit({ room, defaultFloorBounds }) {
-    const [imagePreview, setImagePreview] = useState(room.image_url);
+    const [newImagePreviews, setNewImagePreviews] = useState([]);
     const [productSearch, setProductSearch] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [searching, setSearching] = useState(false);
@@ -13,22 +13,46 @@ export default function Edit({ room, defaultFloorBounds }) {
         _method: 'PUT',
         name: room.name,
         slug: room.slug,
-        image: null,
+        new_images: [],
         floor_bounds: room.floor_bounds || defaultFloorBounds,
         sort_order: room.sort_order || 0,
         is_active: room.is_active,
     });
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setData('image', file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+    // Existing images from the room (primary + additional)
+    const existingImages = room.all_images || [];
+
+    const handleNewImagesChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length > 0) {
+            setData('new_images', [...data.new_images, ...files]);
+            
+            // Generate previews for new images
+            files.forEach((file) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setNewImagePreviews(prev => [...prev, reader.result]);
+                };
+                reader.readAsDataURL(file);
+            });
         }
+    };
+
+    const removeNewImage = (index) => {
+        const newImages = [...data.new_images];
+        newImages.splice(index, 1);
+        setData('new_images', newImages);
+
+        const newPreviews = [...newImagePreviews];
+        newPreviews.splice(index, 1);
+        setNewImagePreviews(newPreviews);
+    };
+
+    const deleteExistingImage = (imageId) => {
+        if (!confirm('Delete this image from the room?')) return;
+        router.post(route('admin.visualizer.delete-image', room.id), { image_id: imageId }, {
+            preserveScroll: true,
+        });
     };
 
     const handleFloorBoundsChange = (key, value) => {
@@ -161,32 +185,99 @@ export default function Edit({ room, defaultFloorBounds }) {
                 </div>
 
                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Room Image</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Room Images</h3>
 
-                    <div className="flex gap-6">
-                        <div className="flex-1">
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                                className="admin-input w-full"
-                            />
-                            {errors.image && <p className="mt-1 text-xs text-red-500">{errors.image}</p>}
-                            <p className="mt-2 text-[11px] text-gray-500">
-                                Leave empty to keep current image.
-                            </p>
-                        </div>
-
-                        {imagePreview && (
-                            <div className="flex-shrink-0">
-                                <img
-                                    src={imagePreview}
-                                    alt="Preview"
-                                    className="h-32 w-48 object-cover rounded-lg border border-gray-200"
-                                />
+                    {/* Existing Images */}
+                    {existingImages.length > 0 && (
+                        <div className="mb-4">
+                            <label className="block text-xs font-medium text-gray-700 mb-2">
+                                Current Images ({existingImages.length})
+                            </label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                {existingImages.map((img, index) => (
+                                    <div key={img.id} className="relative group">
+                                        <img
+                                            src={img.image_url}
+                                            alt={`Room image ${index + 1}`}
+                                            className="h-24 w-full object-cover rounded-lg border border-gray-200"
+                                        />
+                                        {index === 0 && (
+                                            <span className="absolute top-1 left-1 bg-brand text-white text-[10px] px-1.5 py-0.5 rounded">
+                                                Primary
+                                            </span>
+                                        )}
+                                        {existingImages.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => deleteExistingImage(img.id)}
+                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                title="Delete this image"
+                                            >
+                                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
-                        )}
+                            {existingImages.length === 1 && (
+                                <p className="mt-2 text-[11px] text-gray-500">
+                                    At least one image is required. Add more images before deleting.
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Add New Images */}
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-2">
+                            Add More Images
+                        </label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleNewImagesChange}
+                            className="admin-input w-full"
+                        />
+                        {errors.new_images && <p className="mt-1 text-xs text-red-500">{errors.new_images}</p>}
+                        <p className="mt-2 text-[11px] text-gray-500">
+                            Upload additional room images (PNG, JPG, WebP). Max 10MB each.
+                        </p>
                     </div>
+
+                    {/* New Image Previews */}
+                    {newImagePreviews.length > 0 && (
+                        <div className="mt-4">
+                            <label className="block text-xs font-medium text-gray-700 mb-2">
+                                New Images to Add ({newImagePreviews.length})
+                            </label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                {newImagePreviews.map((preview, index) => (
+                                    <div key={index} className="relative group">
+                                        <img
+                                            src={preview}
+                                            alt={`New image ${index + 1}`}
+                                            className="h-24 w-full object-cover rounded-lg border border-green-300 border-dashed"
+                                        />
+                                        <span className="absolute top-1 left-1 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded">
+                                            New
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeNewImage(index)}
+                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

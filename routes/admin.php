@@ -187,6 +187,7 @@ Route::prefix('visualizer')->name('visualizer.')->group(function () {
     Route::put('{visualizer}', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'update'])->name('update');
     Route::delete('{visualizer}', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'destroy'])->name('destroy');
     Route::post('{visualizer}/toggle-status', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'toggleStatus'])->name('toggle-status');
+    Route::post('{visualizer}/delete-image', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'deleteImage'])->name('delete-image');
     Route::get('search-products', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'searchProducts'])->name('search-products');
     Route::post('{visualizer}/add-product', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'addProduct'])->name('add-product');
     Route::post('{visualizer}/remove-product', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'removeProduct'])->name('remove-product');

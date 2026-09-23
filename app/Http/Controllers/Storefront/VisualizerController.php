@@ -14,17 +14,19 @@ class VisualizerController extends Controller
 {
     public function index(Request $request): Response
     {
-        // Fetch active rooms from database
+        // Fetch active rooms from database with their images
         $rooms = VisualizerRoom::query()
             ->active()
             ->ordered()
+            ->with(['images', 'products:id'])
             ->get()
             ->map(fn ($room) => [
                 'id' => $room->slug,
                 'name' => $room->name,
-                'image' => $room->image_url,
+                'image' => $room->image_url, // Primary image for backward compatibility
+                'images' => $room->all_images, // All images including primary
                 'floorBounds' => $room->floor_bounds_array,
-                'featuredProductIds' => $room->products()->pluck('products.id')->toArray(),
+                'featuredProductIds' => $room->products->pluck('id')->toArray(),
             ]);
 
         // If no rooms in database, use fallback
@@ -34,12 +36,20 @@ class VisualizerController extends Controller
                     'id' => 'living-room',
                     'name' => 'Living Room',
                     'image' => '/images/visualizerimg/qq.webp',
+                    'images' => [
+                        [
+                            'id' => 'primary',
+                            'image_url' => '/images/visualizerimg/qq.webp',
+                            'floor_bounds' => ['x' => 0, 'y' => 0, 'width' => 100, 'height' => 100],
+                        ],
+                    ],
                     'floorBounds' => ['x' => 0, 'y' => 0, 'width' => 100, 'height' => 100],
                     'featuredProductIds' => [],
                 ],
             ]);
         }
 
+        // Fetch all products that might be used
         $products = Product::query()
             ->where('is_active', true)
             ->whereNotNull('image_url')
@@ -57,7 +67,7 @@ class VisualizerController extends Controller
             ])
             ->orderByDesc('is_featured')
             ->orderByDesc('id')
-            ->limit(100)
+            ->limit(500)
             ->get();
 
         $categories = Category::query()

@@ -3,27 +3,45 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function Create({ defaultFloorBounds }) {
-    const [imagePreview, setImagePreview] = useState(null);
+    const [imagePreviews, setImagePreviews] = useState([]);
 
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         slug: '',
-        image: null,
+        images: [],
         floor_bounds: defaultFloorBounds,
         sort_order: 0,
         is_active: true,
     });
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setData('image', file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+    const handleImagesChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length > 0) {
+            setData('images', files);
+            
+            // Generate previews for all selected images
+            const previews = [];
+            files.forEach((file) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    previews.push(reader.result);
+                    if (previews.length === files.length) {
+                        setImagePreviews([...previews]);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
         }
+    };
+
+    const removeImage = (index) => {
+        const newImages = [...data.images];
+        newImages.splice(index, 1);
+        setData('images', newImages);
+
+        const newPreviews = [...imagePreviews];
+        newPreviews.splice(index, 1);
+        setImagePreviews(newPreviews);
     };
 
     const handleFloorBoundsChange = (key, value) => {
@@ -114,30 +132,53 @@ export default function Create({ defaultFloorBounds }) {
                 </div>
 
                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4">Room Image <span className="text-red-500">*</span></h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                        Room Images <span className="text-red-500">*</span>
+                        <span className="ml-2 text-xs font-normal text-gray-500">(First image will be primary)</span>
+                    </h3>
 
-                    <div className="flex gap-6">
-                        <div className="flex-1">
+                    <div className="space-y-4">
+                        <div>
                             <input
                                 type="file"
                                 accept="image/*"
-                                onChange={handleImageChange}
+                                multiple
+                                onChange={handleImagesChange}
                                 className="admin-input w-full"
                             />
-                            {errors.image && <p className="mt-1 text-xs text-red-500">{errors.image}</p>}
+                            {errors.images && <p className="mt-1 text-xs text-red-500">{errors.images}</p>}
+                            {errors['images.0'] && <p className="mt-1 text-xs text-red-500">{errors['images.0']}</p>}
                             <p className="mt-2 text-[11px] text-gray-500">
-                                Recommended: High-quality room photo (PNG, JPG, WebP). Max 10MB.
-                                Tiles will be rendered behind this image.
+                                Upload one or more room images (PNG, JPG, WebP). Max 10MB each.
+                                You can select multiple files at once.
                             </p>
                         </div>
 
-                        {imagePreview && (
-                            <div className="flex-shrink-0">
-                                <img
-                                    src={imagePreview}
-                                    alt="Preview"
-                                    className="h-32 w-48 object-cover rounded-lg border border-gray-200"
-                                />
+                        {imagePreviews.length > 0 && (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                {imagePreviews.map((preview, index) => (
+                                    <div key={index} className="relative group">
+                                        <img
+                                            src={preview}
+                                            alt={`Preview ${index + 1}`}
+                                            className="h-24 w-full object-cover rounded-lg border border-gray-200"
+                                        />
+                                        {index === 0 && (
+                                            <span className="absolute top-1 left-1 bg-brand text-white text-[10px] px-1.5 py-0.5 rounded">
+                                                Primary
+                                            </span>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(index)}
+                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>

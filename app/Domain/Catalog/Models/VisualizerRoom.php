@@ -5,6 +5,7 @@ namespace App\Domain\Catalog\Models;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -41,6 +42,12 @@ class VisualizerRoom extends Model
             ->withPivot('sort_order')
             ->withTimestamps()
             ->orderBy('visualizer_room_products.sort_order');
+    }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(VisualizerRoomImage::class)
+            ->orderBy('sort_order');
     }
 
     // Scopes
@@ -83,6 +90,34 @@ class VisualizerRoom extends Model
     public function getProductCount(): int
     {
         return $this->products()->count();
+    }
+
+    /**
+     * Get all images for this room (including the primary image_path if set)
+     */
+    public function getAllImagesAttribute(): array
+    {
+        $images = [];
+
+        // Add primary image if exists
+        if ($this->image_path) {
+            $images[] = [
+                'id' => 'primary',
+                'image_url' => $this->image_url,
+                'floor_bounds' => $this->floor_bounds_array,
+            ];
+        }
+
+        // Add additional images from the images relation
+        foreach ($this->images as $img) {
+            $images[] = [
+                'id' => $img->id,
+                'image_url' => $img->image_url,
+                'floor_bounds' => $img->floor_bounds_array,
+            ];
+        }
+
+        return $images;
     }
 
     public static function getDefaultFloorBounds(): array

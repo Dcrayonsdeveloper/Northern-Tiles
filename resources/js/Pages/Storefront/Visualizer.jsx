@@ -193,11 +193,28 @@ function RoomSceneRenderer({ room, selectedTile, tileScale, groutColor, groutWid
    ═══════════════════════════════════════════════════════════════════════ */
 export default function Visualizer({ rooms, products, categories }) {
     const [selectedRoom, setSelectedRoom] = useState(rooms[0] || null);
+    const [selectedRoomImage, setSelectedRoomImage] = useState(null);
     const [selectedTile, setSelectedTile] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [tileScale, setTileScale] = useState(1);
     const [groutColor, setGroutColor] = useState('#d4d4d4');
     const [groutWidth, setGroutWidth] = useState(2);
+
+    // Initialize selected room image when room changes
+    useEffect(() => {
+        if (selectedRoom?.images?.length > 0) {
+            setSelectedRoomImage(selectedRoom.images[0]);
+        } else {
+            setSelectedRoomImage(null);
+        }
+    }, [selectedRoom]);
+
+    // Build room object for renderer using selected image
+    const currentRoomData = selectedRoomImage ? {
+        ...selectedRoom,
+        image: selectedRoomImage.image_url,
+        floorBounds: selectedRoomImage.floor_bounds || selectedRoom.floorBounds,
+    } : selectedRoom;
 
     // Get products for the selected room only (products assigned to this room)
     const roomProducts = selectedRoom?.featuredProductIds?.length > 0
@@ -274,9 +291,39 @@ export default function Visualizer({ rooms, products, categories }) {
                                 ))}
                             </div>
 
+                            {/* Room Image Selector (when room has multiple images) */}
+                            {selectedRoom?.images?.length > 1 && (
+                                <div className="mb-4">
+                                    <p className="text-xs font-medium text-gray-600 mb-2">Select View:</p>
+                                    <div className="flex gap-2 overflow-x-auto pb-2">
+                                        {selectedRoom.images.map((img, index) => (
+                                            <button
+                                                key={img.id}
+                                                type="button"
+                                                onClick={() => setSelectedRoomImage(img)}
+                                                className={`flex-shrink-0 relative rounded-lg overflow-hidden border-2 transition-all ${
+                                                    selectedRoomImage?.id === img.id
+                                                        ? 'border-brand ring-2 ring-brand ring-offset-1'
+                                                        : 'border-gray-200 hover:border-gray-300'
+                                                }`}
+                                            >
+                                                <img
+                                                    src={img.image_url}
+                                                    alt={`${selectedRoom.name} view ${index + 1}`}
+                                                    className="h-14 w-20 object-cover"
+                                                />
+                                                {selectedRoomImage?.id === img.id && (
+                                                    <div className="absolute inset-0 bg-brand/10" />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Room Scene */}
                             <RoomSceneRenderer
-                                room={selectedRoom}
+                                room={currentRoomData}
                                 selectedTile={selectedTile}
                                 tileScale={tileScale}
                                 groutColor={groutColor}
