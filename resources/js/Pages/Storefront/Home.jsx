@@ -195,15 +195,19 @@ function TileVisualizer() {
                     <div className="flex justify-center">
                         <div className="relative w-[280px]">
                             <div className="rounded-[32px] border-[6px] border-[#222] bg-white p-3 shadow-2xl">
-                                <div className="aspect-[9/16] rounded-[24px] overflow-hidden bg-gradient-to-b from-[#f0efed] to-[#e8e6e2]">
+                                <div className="aspect-[9/16] rounded-[24px] overflow-hidden bg-gradient-to-b from-[#f0efed] to-[#e8e6e2] relative">
                                     <video
                                         className="h-full w-full object-cover"
                                         autoPlay
                                         muted
                                         loop
                                         playsInline
+                                        preload="auto"
+                                        poster="/images/visualizerimg/qq.webp"
                                     >
                                         <source src="/images/visualizerimg/visualizer-demo.mp4" type="video/mp4" />
+                                        {/* Fallback for browsers that don't support video */}
+                                        <img src="/images/visualizerimg/qq.webp" alt="Tile Visualizer" className="h-full w-full object-cover" />
                                     </video>
                                 </div>
                             </div>
