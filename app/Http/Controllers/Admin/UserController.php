@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domain\Auth\Models\Role;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +16,7 @@ class UserController extends Controller
     public function index(): Response
     {
         $users = User::query()
+            ->with('roles:id,name,slug')
             ->orderByDesc('id')
             ->paginate(20)
             ->through(fn (User $user) => [
@@ -25,6 +27,7 @@ class UserController extends Controller
                 'is_admin'          => (bool) $user->is_admin,
                 'is_builder'        => (bool) $user->is_builder,
                 'is_active'         => (bool) $user->is_active,
+                'roles'             => $user->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name, 'slug' => $r->slug]),
                 'created_at'        => $user->created_at,
             ])
             ->withQueryString();
@@ -36,7 +39,11 @@ class UserController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Admin/Users/Create');
+        $roles = Role::orderBy('name')->get(['id', 'name', 'slug', 'description']);
+
+        return Inertia::render('Admin/Users/Create', [
+            'roles' => $roles,
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -45,23 +52,30 @@ class UserController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'is_admin' => ['required', 'boolean'],
+            'role_id'  => ['nullable', 'exists:roles,id'],
         ]);
+
+        // Determine is_admin based on role
+        $isAdmin = false;
+        if (!empty($validated['role_id'])) {
+            $role = Role::find($validated['role_id']);
+            $isAdmin = $role && $role->slug === 'admin';
+        }
 
         $user = User::create([
             'name'      => $validated['name'],
             'email'     => $validated['email'],
-            // The User model casts 'password' as 'hashed', so this is stored
-            // bcrypt-hashed, never in plain text.
             'password'  => $validated['password'],
-            'is_admin'  => (bool) $validated['is_admin'],
+            'is_admin'  => $isAdmin,
             'is_active' => true,
         ]);
 
+        // Assign role if selected
+        if (!empty($validated['role_id'])) {
+            $user->roles()->sync([$validated['role_id']]);
+        }
+
         // email_verified_at is not mass-assignable, so set it explicitly.
-        // Admin routes require a verified email; an admin-created account is
-        // trusted, so mark it verified now instead of emailing a link — without
-        // this a new admin could not actually reach the panel.
         $user->forceFill(['email_verified_at' => now()])->save();
 
         return redirect()
@@ -71,6 +85,9 @@ class UserController extends Controller
 
     public function edit(User $user): Response
     {
+        $user->load('roles:id,name,slug');
+        $roles = Role::orderBy('name')->get(['id', 'name', 'slug', 'description']);
+
         return Inertia::render('Admin/Users/Edit', [
             'user' => [
                 'id'                => $user->id,
@@ -79,7 +96,9 @@ class UserController extends Controller
                 'email_verified_at' => $user->email_verified_at,
                 'is_admin'          => (bool) $user->is_admin,
                 'is_active'         => (bool) $user->is_active,
+                'role_ids'          => $user->roles->pluck('id')->toArray(),
             ],
+            'roles' => $roles,
         ]);
     }
 
@@ -88,14 +107,25 @@ class UserController extends Controller
         $validated = $request->validate([
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'is_admin' => ['required', 'boolean'],
+            'role_ids' => ['nullable', 'array'],
+            'role_ids.*' => ['exists:roles,id'],
         ]);
+
+        // Determine is_admin based on roles
+        $isAdmin = false;
+        if (!empty($validated['role_ids'])) {
+            $adminRole = Role::where('slug', 'admin')->first();
+            $isAdmin = $adminRole && in_array($adminRole->id, $validated['role_ids']);
+        }
 
         $user->update([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
-            'is_admin' => (bool) $validated['is_admin'],
+            'is_admin' => $isAdmin,
         ]);
+
+        // Sync roles
+        $user->roles()->sync($validated['role_ids'] ?? []);
 
         return redirect()
             ->route('admin.users.edit', $user->id)

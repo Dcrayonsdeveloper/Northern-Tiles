@@ -2,13 +2,13 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 import PasswordInput from '@/Components/PasswordInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 
-export default function Create() {
+export default function Create({ roles = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
         password: '',
         password_confirmation: '',
-        is_admin: false,
+        role_id: '', // Empty means regular user (no role)
     });
 
     const submit = (e) => {
@@ -25,7 +25,7 @@ export default function Create() {
                 <div>
                     <h1 className="text-base font-bold tracking-tight text-gray-900">New User</h1>
                     <p className="mt-0.5 text-xs text-gray-500">
-                        Create a staff or customer account. Tick "Admin Access" to let them into this panel.
+                        Create a new account. Select a role to grant specific permissions.
                     </p>
                 </div>
                 <Link href={route('admin.users.index')} className="btn-secondary">
@@ -87,18 +87,24 @@ export default function Create() {
                         />
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <input
-                            id="is_admin"
-                            type="checkbox"
-                            checked={data.is_admin}
-                            onChange={(e) => setData('is_admin', e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
-                        />
-                        <label htmlFor="is_admin" className="text-xs font-medium text-gray-700">
-                            Admin Access
-                        </label>
-                        {errors.is_admin && <p className="text-[12px] text-red-600">{errors.is_admin}</p>}
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700">Role</label>
+                        <select
+                            value={data.role_id}
+                            onChange={(e) => setData('role_id', e.target.value)}
+                            className="mt-1 admin-input"
+                        >
+                            <option value="">Regular User (No admin access)</option>
+                            {roles.map((role) => (
+                                <option key={role.id} value={role.id}>
+                                    {role.name} {role.description && `- ${role.description}`}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.role_id && <p className="mt-1 text-[12px] text-red-600">{errors.role_id}</p>}
+                        <p className="mt-1 text-[11px] text-gray-400">
+                            Administrator role grants full admin panel access. Other roles have specific permissions.
+                        </p>
                     </div>
 
                     <div className="flex items-center gap-3 pt-2">

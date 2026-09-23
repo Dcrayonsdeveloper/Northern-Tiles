@@ -72,7 +72,7 @@ function DeleteModal({ user, show, onClose, onConfirm, deleting }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default function Edit({ user }) {
+export default function Edit({ user, roles = [] }) {
     const { auth } = usePage().props;
     const isSelf = auth?.user?.id === user.id;
 
@@ -80,11 +80,24 @@ export default function Edit({ user }) {
     const [deleting, setDeleting]   = useState(false);
     const [toggling, setToggling]   = useState(false);
 
+    // Get user's current role IDs (controller passes role_ids directly)
+    const userRoleIds = user.role_ids || [];
+
     const { data, setData, put, processing, errors } = useForm({
         name:     user?.name     ?? '',
         email:    user?.email    ?? '',
-        is_admin: Boolean(user?.is_admin ?? false),
+        role_ids: userRoleIds,
     });
+
+    // Handle role checkbox toggle
+    const toggleRole = (roleId) => {
+        const current = data.role_ids || [];
+        if (current.includes(roleId)) {
+            setData('role_ids', current.filter(id => id !== roleId));
+        } else {
+            setData('role_ids', [...current, roleId]);
+        }
+    };
 
     const submit = (e) => {
         e.preventDefault();
@@ -180,19 +193,35 @@ export default function Edit({ user }) {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <input
-                            id="is_admin"
-                            type="checkbox"
-                            checked={data.is_admin}
-                            onChange={(e) => setData('is_admin', e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
-                        />
-                        <label htmlFor="is_admin" className="text-xs font-medium text-gray-700">
-                            Admin Access
+                    {/* Role Selection */}
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-2">
+                            User Roles
                         </label>
-                        {errors.is_admin && (
-                            <p className="text-[12px] text-red-600">{errors.is_admin}</p>
+                        <p className="text-[11px] text-gray-500 mb-3">
+                            Leave all unchecked for a regular user with no special permissions.
+                        </p>
+                        <div className="space-y-2">
+                            {roles.map((role) => (
+                                <div key={role.id} className="flex items-center gap-3">
+                                    <input
+                                        id={`role_${role.id}`}
+                                        type="checkbox"
+                                        checked={data.role_ids.includes(role.id)}
+                                        onChange={() => toggleRole(role.id)}
+                                        className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                                    />
+                                    <label htmlFor={`role_${role.id}`} className="text-xs font-medium text-gray-700">
+                                        {role.name}
+                                    </label>
+                                </div>
+                            ))}
+                            {roles.length === 0 && (
+                                <p className="text-xs text-gray-400 italic">No roles available</p>
+                            )}
+                        </div>
+                        {errors.role_ids && (
+                            <p className="mt-1 text-[12px] text-red-600">{errors.role_ids}</p>
                         )}
                     </div>
 

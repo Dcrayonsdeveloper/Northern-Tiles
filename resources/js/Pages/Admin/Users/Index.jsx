@@ -35,13 +35,27 @@ function UserTable({ users, toggleBuilder, emptyMessage }) {
         );
     }
 
+    // Role badge colors
+    const getRoleBadgeClass = (slug) => {
+        switch (slug) {
+            case 'admin':
+                return 'bg-blue-50 text-blue-700 ring-blue-200';
+            case 'editor':
+                return 'bg-purple-50 text-purple-700 ring-purple-200';
+            case 'seller':
+                return 'bg-green-50 text-green-700 ring-green-200';
+            default:
+                return 'bg-gray-50 text-gray-700 ring-gray-200';
+        }
+    };
+
     return (
         <table className="min-w-full text-left">
             <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                     <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Name</th>
                     <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Email</th>
-                    <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Admin</th>
+                    <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Roles</th>
                     <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Builder</th>
                     <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Status</th>
                     <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Actions</th>
@@ -55,10 +69,19 @@ function UserTable({ users, toggleBuilder, emptyMessage }) {
                         </td>
                         <td className="px-4 py-2 text-xs text-gray-700">{u.email}</td>
                         <td className="px-4 py-2 text-xs">
-                            {u.is_admin ? (
-                                <span className="badge-brand">Yes</span>
+                            {u.roles && u.roles.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                    {u.roles.map((role) => (
+                                        <span
+                                            key={role.id}
+                                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${getRoleBadgeClass(role.slug)}`}
+                                        >
+                                            {role.name}
+                                        </span>
+                                    ))}
+                                </div>
                             ) : (
-                                <span className="badge-muted">No</span>
+                                <span className="badge-muted">User</span>
                             )}
                         </td>
                         <td className="px-4 py-2 text-xs">
