@@ -134,3 +134,23 @@ Files changed:
    resources/js/Support/dictionary.js | 19 ++++++++++++++++++-
    1 file changed, 18 insertions(+), 1 deletion(-)
 ```
+
+## 2026-09-23 10:09 UTC — `8444393`
+
+**Fix cart and checkout to show proper quantity labels - products sold per unit (bags, pieces) now show 'Qty: X' instead of 'X m²'**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (8444393)
+- Server: 4c56e8d → 8444393
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Domain/Cart/Services/CheckoutService.php     |  7 +++-
+   app/Http/Controllers/Api/CartController.php      | 12 +++++-
+   resources/js/Components/Cart/CartLineItem.jsx    | 48 ++++++++++++++++++++----
+   resources/js/Pages/Builder/Checkout/Index.jsx    |  6 ++-
+   resources/js/Pages/Storefront/Checkout/Index.jsx |  6 ++-
+   5 files changed, 67 insertions(+), 12 deletions(-)
+```
