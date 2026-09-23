@@ -556,6 +556,13 @@ export default function DashboardLayout({ title, children }) {
                     active: route().current('admin.collections.*'),
                     icon: <IconTag className="h-5 w-5" />,
                 },
+                {
+                    key: 'visualizer',
+                    label: 'Tile Visualizer',
+                    href: route('admin.visualizer.index'),
+                    active: route().current('admin.visualizer.*'),
+                    icon: <IconLayers className="h-5 w-5" />,
+                },
 
                 // ── Builder Panel ──
                 // The contractor portal is run from this same admin: what it

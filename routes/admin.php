@@ -177,6 +177,21 @@ Route::prefix('collections')->name('collections.')->group(function () {
     Route::get('search-products', [\App\Domain\Catalog\Http\Controllers\Admin\CollectionController::class, 'searchProducts'])->name('search-products');
 });
 
+// Tile Visualizer Room Scenes
+Route::prefix('visualizer')->name('visualizer.')->group(function () {
+    Route::get('/', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'index'])->name('index');
+    Route::get('create', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'create'])->name('create');
+    Route::post('/', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'store'])->name('store');
+    Route::get('{visualizer}/edit', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'edit'])->name('edit');
+    Route::put('{visualizer}', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'update'])->name('update');
+    Route::delete('{visualizer}', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'destroy'])->name('destroy');
+    Route::post('{visualizer}/toggle-status', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'toggleStatus'])->name('toggle-status');
+    Route::get('search-products', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'searchProducts'])->name('search-products');
+    Route::post('{visualizer}/add-product', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'addProduct'])->name('add-product');
+    Route::post('{visualizer}/remove-product', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'removeProduct'])->name('remove-product');
+    Route::post('{visualizer}/reorder-products', [\App\Domain\Catalog\Http\Controllers\Admin\VisualizerController::class, 'reorderProducts'])->name('reorder-products');
+});
+
 // Variant Families (group standalone products as colour / size variants)
 Route::prefix('variant-families')->name('variant-families.')->group(function () {
     Route::get('/', [VariantFamilyController::class, 'index'])->name('index');

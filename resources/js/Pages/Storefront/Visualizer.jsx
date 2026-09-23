@@ -5,25 +5,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import ProductImage from '@/Components/Catalog/ProductImage';
 
 /* ═══════════════════════════════════════════════════════════════════════
-   ROOM SCENES DATA - Using real room images
-   ═══════════════════════════════════════════════════════════════════════ */
-const ROOM_SCENES = [
-    {
-        id: 'living-room',
-        name: 'Living Room',
-        image: '/images/visualizerimg/qq.png',
-        // Floor bounds as percentage of image (x%, y%, width%, height%)
-        floorBounds: { x: 0, y: 58, width: 100, height: 42 },
-    },
-    {
-        id: 'living-room-alt',
-        name: 'Living Room 2',
-        image: '/images/visualizerimg/qq.jpg.jpeg',
-        floorBounds: { x: 0, y: 58, width: 100, height: 42 },
-    },
-];
-
-/* ═══════════════════════════════════════════════════════════════════════
    ICONS
    ═══════════════════════════════════════════════════════════════════════ */
 const SearchIcon = ({ className }) => (
@@ -210,8 +191,8 @@ function RoomSceneRenderer({ room, selectedTile, tileScale, groutColor, groutWid
 /* ═══════════════════════════════════════════════════════════════════════
    MAIN VISUALIZER PAGE
    ═══════════════════════════════════════════════════════════════════════ */
-export default function Visualizer({ products, categories }) {
-    const [selectedRoom, setSelectedRoom] = useState(ROOM_SCENES[0]);
+export default function Visualizer({ rooms, products, categories }) {
+    const [selectedRoom, setSelectedRoom] = useState(rooms[0] || null);
     const [selectedTile, setSelectedTile] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
@@ -269,13 +250,13 @@ export default function Visualizer({ products, categories }) {
                         <div className="flex-1 lg:w-2/3">
                             {/* Room Selector */}
                             <div className="mb-4 flex flex-wrap gap-2">
-                                {ROOM_SCENES.map(room => (
+                                {rooms.map(room => (
                                     <button
                                         key={room.id}
                                         type="button"
                                         onClick={() => setSelectedRoom(room)}
                                         className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                                            selectedRoom.id === room.id
+                                            selectedRoom?.id === room.id
                                                 ? 'bg-brand text-white'
                                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                         }`}
