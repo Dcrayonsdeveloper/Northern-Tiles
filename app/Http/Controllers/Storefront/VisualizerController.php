@@ -19,19 +19,23 @@ class VisualizerController extends Controller
             ->active()
             ->ordered()
             ->with(['images', 'products:id'])
-            ->get()
-            ->map(fn ($room) => [
-                'id' => $room->slug,
-                'name' => $room->name,
-                'image' => $room->image_url, // Primary image for backward compatibility
-                'images' => $room->all_images, // All images including primary
-                'floorBounds' => $room->floor_bounds_array,
-                'featuredProductIds' => $room->products->pluck('id')->toArray(),
-            ]);
+            ->get();
+
+        // Collect all featured product IDs from rooms
+        $featuredProductIds = $rooms->flatMap(fn ($room) => $room->products->pluck('id'))->unique()->values()->toArray();
+
+        $roomsData = $rooms->map(fn ($room) => [
+            'id' => $room->slug,
+            'name' => $room->name,
+            'image' => $room->image_url, // Primary image for backward compatibility
+            'images' => $room->all_images, // All images including primary
+            'floorBounds' => $room->floor_bounds_array,
+            'featuredProductIds' => $room->products->pluck('id')->toArray(),
+        ]);
 
         // If no rooms in database, use fallback
-        if ($rooms->isEmpty()) {
-            $rooms = collect([
+        if ($roomsData->isEmpty()) {
+            $roomsData = collect([
                 [
                     'id' => 'living-room',
                     'name' => 'Living Room',
@@ -49,7 +53,7 @@ class VisualizerController extends Controller
             ]);
         }
 
-        // Fetch all products that might be used
+        // Fetch products - prioritize featured products from rooms, then other products
         $products = Product::query()
             ->where('is_active', true)
             ->whereNotNull('image_url')
@@ -65,10 +69,39 @@ class VisualizerController extends Controller
                 'category_id',
                 'unit_label',
             ])
+            ->orderByRaw('FIELD(id, ' . (count($featuredProductIds) > 0 ? implode(',', $featuredProductIds) : '0') . ') DESC')
             ->orderByDesc('is_featured')
             ->orderByDesc('id')
             ->limit(500)
             ->get();
+
+        // Ensure all featured products are included even if limit was hit
+        if (count($featuredProductIds) > 0) {
+            $loadedIds = $products->pluck('id')->toArray();
+            $missingIds = array_diff($featuredProductIds, $loadedIds);
+            
+            if (count($missingIds) > 0) {
+                $missingProducts = Product::query()
+                    ->whereIn('id', $missingIds)
+                    ->where('is_active', true)
+                    ->whereNotNull('image_url')
+                    ->where('image_url', '!=', '')
+                    ->with(['category:id,name,slug'])
+                    ->select([
+                        'id',
+                        'name',
+                        'slug',
+                        'sku',
+                        'image_url',
+                        'price',
+                        'category_id',
+                        'unit_label',
+                    ])
+                    ->get();
+                
+                $products = $products->concat($missingProducts);
+            }
+        }
 
         $categories = Category::query()
             ->whereNull('parent_id')
@@ -76,7 +109,7 @@ class VisualizerController extends Controller
             ->get(['id', 'name', 'slug']);
 
         return Inertia::render('Storefront/Visualizer', [
-            'rooms' => $rooms,
+            'rooms' => $roomsData,
             'products' => $products,
             'categories' => $categories,
         ]);
