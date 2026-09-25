@@ -2,6 +2,7 @@
 
 namespace App\Domain\Cart\Services;
 
+use App\Domain\Builder\Models\BuilderAccountProduct;
 use App\Domain\Cart\Models\Cart;
 use App\Models\Product;
 use Illuminate\Support\Collection;
@@ -18,7 +19,7 @@ class UpsellService
     public function getRecommendations(Cart $cart): array
     {
         if ($cart->isEmpty()) {
-            return $this->getPopularProducts();
+            return $this->getPopularProducts($cart);
         }
 
         $cacheKey = $this->getCacheKey($cart);
@@ -27,18 +28,21 @@ class UpsellService
             $cartProductIds = $cart->items->pluck('product_id')->toArray();
             $cartCategoryIds = $this->getCartCategoryIds($cart);
 
+            // For trade carts, only recommend products assigned to the builder
+            $allowedProductIds = $this->getAllowedProductIds($cart);
+
             $recommendations = collect();
 
             // 1. Same category products (not in cart)
-            $sameCategoryProducts = $this->getSameCategoryProducts($cartCategoryIds, $cartProductIds);
+            $sameCategoryProducts = $this->getSameCategoryProducts($cartCategoryIds, $cartProductIds, $allowedProductIds);
             $recommendations = $recommendations->merge($sameCategoryProducts);
 
             // 2. Frequently bought together (based on order history)
-            $frequentlyBoughtTogether = $this->getFrequentlyBoughtTogether($cartProductIds);
+            $frequentlyBoughtTogether = $this->getFrequentlyBoughtTogether($cartProductIds, $allowedProductIds);
             $recommendations = $recommendations->merge($frequentlyBoughtTogether);
 
             // 3. Higher margin / on-sale items
-            $onSaleProducts = $this->getOnSaleProducts($cartProductIds);
+            $onSaleProducts = $this->getOnSaleProducts($cartProductIds, $allowedProductIds);
             $recommendations = $recommendations->merge($onSaleProducts);
 
             // Remove duplicates and limit
@@ -49,11 +53,17 @@ class UpsellService
 
             // Fallback: if no recommendations found, get random active products
             if ($recommendations->isEmpty()) {
-                $fallbackIds = Product::query()
+                $query = Product::query()
                     ->where('is_active', true)
                     ->where('status', 'published')
-                    ->whereNotIn('id', $cartProductIds)
-                    ->pluck('id')
+                    ->whereNotIn('id', $cartProductIds);
+
+                // Filter by allowed products for trade carts
+                if ($allowedProductIds !== null) {
+                    $query->whereIn('id', $allowedProductIds);
+                }
+
+                $fallbackIds = $query->pluck('id')
                     ->shuffle()
                     ->take(self::MAX_RECOMMENDATIONS);
                 $recommendations = $fallbackIds->isNotEmpty()
@@ -62,7 +72,7 @@ class UpsellService
             }
 
             return [
-                'items' => $this->formatProducts($recommendations),
+                'items' => $this->formatProducts($recommendations, $cart),
                 'title_key' => 'cart.upsells.title',
                 'type' => 'recommendations',
             ];
@@ -100,19 +110,51 @@ class UpsellService
     }
 
     /**
+     * Get the list of product IDs allowed for this cart.
+     * For trade carts, this is limited to products assigned to the builder.
+     * For retail carts, returns null (no restriction).
+     */
+    protected function getAllowedProductIds(Cart $cart): ?array
+    {
+        // Only apply filtering for trade carts
+        if ($cart->channel !== Cart::CHANNEL_TRADE) {
+            return null;
+        }
+
+        // Get the builder's user_id
+        $userId = $cart->user_id;
+        if (!$userId) {
+            return [];
+        }
+
+        // Get product IDs assigned to this builder
+        return BuilderAccountProduct::query()
+            ->forAccount($userId)
+            ->live()
+            ->pluck('product_id')
+            ->toArray();
+    }
+
+    /**
      * Get products from the same categories as cart items.
      */
-    protected function getSameCategoryProducts(array $categoryIds, array $excludeProductIds): Collection
+    protected function getSameCategoryProducts(array $categoryIds, array $excludeProductIds, ?array $allowedProductIds = null): Collection
     {
         if (empty($categoryIds)) {
             return collect();
         }
 
-        $ids = Product::query()
+        $query = Product::query()
             ->where('is_active', true)
             ->whereIn('category_id', $categoryIds)
-            ->whereNotIn('id', $excludeProductIds)
-            ->pluck('id')
+            ->whereNotIn('id', $excludeProductIds);
+
+        // Filter by allowed products for trade carts
+        if ($allowedProductIds !== null) {
+            $query->whereIn('id', $allowedProductIds);
+        }
+
+        $ids = $query->pluck('id')
             ->shuffle()
             ->take(4);
         return $ids->isNotEmpty()
@@ -123,7 +165,7 @@ class UpsellService
     /**
      * Get frequently bought together products based on order history.
      */
-    protected function getFrequentlyBoughtTogether(array $productIds): Collection
+    protected function getFrequentlyBoughtTogether(array $productIds, ?array $allowedProductIds = null): Collection
     {
         if (empty($productIds)) {
             return collect();
@@ -131,7 +173,7 @@ class UpsellService
 
         // Find products that appear in orders with the cart products
         try {
-            return Product::query()
+            $query = Product::query()
                 ->where('is_active', true)
                 ->whereNotIn('id', $productIds)
                 ->whereHas('orderItems', function ($query) use ($productIds) {
@@ -140,7 +182,14 @@ class UpsellService
                             $itemQuery->whereIn('product_id', $productIds);
                         });
                     });
-                })
+                });
+
+            // Filter by allowed products for trade carts
+            if ($allowedProductIds !== null) {
+                $query->whereIn('id', $allowedProductIds);
+            }
+
+            return $query
                 ->withCount(['orderItems as purchase_count'])
                 ->orderByDesc('purchase_count')
                 ->limit(4)
@@ -153,13 +202,20 @@ class UpsellService
     /**
      * Get on-sale / discounted products.
      */
-    protected function getOnSaleProducts(array $excludeProductIds): Collection
+    protected function getOnSaleProducts(array $excludeProductIds, ?array $allowedProductIds = null): Collection
     {
-        return Product::query()
+        $query = Product::query()
             ->where('is_active', true)
             ->whereNotNull('compare_at_price')
             ->whereColumn('compare_at_price', '>', 'price')
-            ->whereNotIn('id', $excludeProductIds)
+            ->whereNotIn('id', $excludeProductIds);
+
+        // Filter by allowed products for trade carts
+        if ($allowedProductIds !== null) {
+            $query->whereIn('id', $allowedProductIds);
+        }
+
+        return $query
             ->orderByRaw('(compare_at_price - price) / compare_at_price DESC')
             ->limit(4)
             ->get(['id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description']);
@@ -168,13 +224,25 @@ class UpsellService
     /**
      * Get popular products when cart is empty.
      */
-    protected function getPopularProducts(): array
+    protected function getPopularProducts(Cart $cart = null): array
     {
-        $products = Cache::remember('upsells.popular', 300, function () {
-            $ids = Product::query()
+        // For trade carts, filter by allowed products
+        $allowedProductIds = $cart ? $this->getAllowedProductIds($cart) : null;
+        $cacheKey = $allowedProductIds !== null
+            ? 'upsells.popular.trade.' . ($cart->user_id ?? 0)
+            : 'upsells.popular';
+
+        $products = Cache::remember($cacheKey, 300, function () use ($allowedProductIds) {
+            $query = Product::query()
                 ->where('is_active', true)
-                ->where('status', 'published')
-                ->pluck('id')
+                ->where('status', 'published');
+
+            // Filter by allowed products for trade carts
+            if ($allowedProductIds !== null) {
+                $query->whereIn('id', $allowedProductIds);
+            }
+
+            $ids = $query->pluck('id')
                 ->shuffle()
                 ->take(self::MAX_RECOMMENDATIONS);
             return $ids->isNotEmpty()
@@ -183,7 +251,7 @@ class UpsellService
         });
 
         return [
-            'items' => $this->formatProducts($products),
+            'items' => $this->formatProducts($products, $cart),
             'title_key' => 'cart.upsells.popular',
             'type' => 'popular',
         ];
@@ -204,21 +272,46 @@ class UpsellService
 
     /**
      * Format products for frontend.
+     * For trade carts, uses the builder's custom price if available.
      */
-    protected function formatProducts(Collection $products): array
+    protected function formatProducts(Collection $products, ?Cart $cart = null): array
     {
-        return $products->map(function ($product) {
-            $hasDiscount = $product->compare_at_price && $product->compare_at_price > $product->price;
+        // For trade carts, get the builder's custom prices
+        $builderPrices = [];
+        if ($cart && $cart->channel === Cart::CHANNEL_TRADE && $cart->user_id) {
+            $builderPrices = BuilderAccountProduct::query()
+                ->forAccount($cart->user_id)
+                ->live()
+                ->whereIn('product_id', $products->pluck('id'))
+                ->pluck('price', 'product_id')
+                ->toArray();
+        }
+
+        return $products->map(function ($product) use ($builderPrices, $cart) {
+            // Use builder price if available for trade carts
+            $price = $product->price;
+            $compareAtPrice = $product->compare_at_price;
+
+            if ($cart && $cart->channel === Cart::CHANNEL_TRADE && isset($builderPrices[$product->id])) {
+                $customPrice = $builderPrices[$product->id];
+                if ($customPrice !== null) {
+                    // Trade price: custom price is the new price, retail price becomes compare_at
+                    $compareAtPrice = $product->price; // retail price
+                    $price = (float) $customPrice;
+                }
+            }
+
+            $hasDiscount = $compareAtPrice && $compareAtPrice > $price;
             $discountPercent = $hasDiscount
-                ? round(($product->compare_at_price - $product->price) / $product->compare_at_price * 100)
+                ? round(($compareAtPrice - $price) / $compareAtPrice * 100)
                 : 0;
 
             return [
                 'id' => $product->id,
                 'name' => $product->name,
                 'slug' => $product->slug,
-                'price' => $product->price,
-                'compare_at_price' => $product->compare_at_price,
+                'price' => $price,
+                'compare_at_price' => $compareAtPrice,
                 'image_url' => $product->image_url ?? '/images/placeholder-product.svg',
                 'short_description' => $product->short_description,
                 'has_discount' => $hasDiscount,
@@ -233,7 +326,8 @@ class UpsellService
     protected function getCacheKey(Cart $cart): string
     {
         $itemsHash = md5($cart->items->pluck('product_id')->sort()->implode(','));
-        return "upsells.cart.{$cart->id}.{$itemsHash}";
+        $channelPrefix = $cart->channel === Cart::CHANNEL_TRADE ? "trade.{$cart->user_id}." : '';
+        return "upsells.{$channelPrefix}cart.{$cart->id}.{$itemsHash}";
     }
 
     /**
@@ -243,5 +337,10 @@ class UpsellService
     {
         $cacheKey = $this->getCacheKey($cart);
         Cache::forget($cacheKey);
+
+        // Also clear the popular products cache for trade carts
+        if ($cart->channel === Cart::CHANNEL_TRADE && $cart->user_id) {
+            Cache::forget('upsells.popular.trade.' . $cart->user_id);
+        }
     }
 }
