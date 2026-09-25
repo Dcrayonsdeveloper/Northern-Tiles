@@ -289,3 +289,19 @@ Files changed:
    resources/js/Pages/Admin/AbandonedCarts/Index.jsx | 5 -----
    3 files changed, 13 deletions(-)
 ```
+
+## 2026-09-25 08:11 UTC — `075f12f`
+
+**Remove Email Messages section from Abandoned Cart details page**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (075f12f)
+- Server: a644587 → 075f12f
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   resources/js/Pages/Admin/AbandonedCarts/Show.jsx | 70 +-----------------------
+   1 file changed, 1 insertion(+), 69 deletions(-)
+```
