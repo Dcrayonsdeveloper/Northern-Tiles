@@ -2,7 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { useD } from '@/Support/dictionary';
 
-export default function Show({ cart, messages }) {
+export default function Show({ cart }) {
     const d = useD();
 
     const formatCurrency = (amount) => {
@@ -15,18 +15,6 @@ export default function Show({ cart, messages }) {
     const formatDate = (date) => {
         if (!date) return '-';
         return new Date(date).toLocaleString();
-    };
-
-    const getStatusBadgeClass = (status) => {
-        const classes = {
-            pending: 'bg-yellow-100 text-yellow-800',
-            sent: 'bg-blue-100 text-blue-800',
-            clicked: 'bg-green-100 text-green-800',
-            converted: 'bg-purple-100 text-purple-800',
-            cancelled: 'bg-gray-100 text-gray-800',
-            failed: 'bg-red-100 text-red-800',
-        };
-        return classes[status] || 'bg-gray-100 text-gray-800';
     };
 
     return (
@@ -207,62 +195,6 @@ export default function Show({ cart, messages }) {
                 )}
             </div>
 
-            {/* Email Messages */}
-            <div className="mt-6 rounded-lg bg-white p-6 shadow-sm">
-                <h2 className="mb-4 text-lg font-semibold text-gray-900">
-                    {d('admin.abandoned_carts.email_messages', 'Email Messages')}
-                </h2>
-                {messages?.length > 0 ? (
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead>
-                            <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    {d('admin.abandoned_carts.message.flow', 'Flow')}
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    {d('admin.abandoned_carts.message.step', 'Step')}
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    {d('admin.abandoned_carts.message.status', 'Status')}
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    {d('admin.abandoned_carts.message.scheduled', 'Scheduled')}
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    {d('admin.abandoned_carts.message.sent', 'Sent')}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {messages.map((message) => (
-                                <tr key={message.id}>
-                                    <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-900">
-                                        {message.flow?.name || '-'}
-                                    </td>
-                                    <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-500">
-                                        {message.step_number}
-                                    </td>
-                                    <td className="whitespace-nowrap px-4 py-4">
-                                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${getStatusBadgeClass(message.status)}`}>
-                                            {message.status}
-                                        </span>
-                                    </td>
-                                    <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-500">
-                                        {formatDate(message.scheduled_at)}
-                                    </td>
-                                    <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-500">
-                                        {formatDate(message.sent_at)}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <p className="text-sm text-gray-500">
-                        {d('admin.abandoned_carts.no_messages', 'No email messages yet')}
-                    </p>
-                )}
-            </div>
         </DashboardLayout>
     );
 }
