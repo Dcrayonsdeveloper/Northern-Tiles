@@ -10,7 +10,6 @@ const ADMIN_PAGES = [
     { label: 'Collections',         href: '/admin/collections',        section: 'Store',       keywords: ['collection', 'bundle', 'group', 'set'] },
     { label: 'Coupons',             href: '/admin/coupons',            section: 'Marketing',   keywords: ['coupon', 'discount', 'promo', 'code', 'voucher'] },
     { label: 'Abandoned Carts',     href: '/admin/abandoned-carts',    section: 'Marketing',   keywords: ['abandoned', 'cart', 'recovery', 'lost'] },
-    { label: 'Email Templates',     href: '/admin/email-templates',    section: 'Marketing',   keywords: ['email', 'template', 'notification', 'mail'] },
     { label: 'Announcements',       href: '/admin/announcements',      section: 'Marketing',   keywords: ['announcement', 'banner', 'notice', 'alert'] },
     { label: 'Pages',               href: '/admin/pages',              section: 'CMS',         keywords: ['page', 'content', 'cms', 'static'] },
     { label: 'Blog Posts',          href: '/admin/posts',              section: 'CMS',         keywords: ['blog', 'post', 'article', 'news', 'write'] },

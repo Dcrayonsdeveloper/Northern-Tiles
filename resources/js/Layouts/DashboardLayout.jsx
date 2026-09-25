@@ -607,13 +607,6 @@ export default function DashboardLayout({ title, children }) {
                     icon: <IconReceipt className="h-5 w-5" />,
                 },
                 {
-                    key: 'email-templates',
-                    label: 'Email Templates',
-                    href: route('admin.email-templates.index'),
-                    active: route().current('admin.email-templates.*'),
-                    icon: <IconChat className="h-5 w-5" />,
-                },
-                {
                     key: 'announcements',
                     label: 'Announcements',
                     href: route('admin.announcements.index'),
