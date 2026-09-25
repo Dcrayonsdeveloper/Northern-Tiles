@@ -238,3 +238,20 @@ Files changed:
    resources/js/Pages/Storefront/Shop/Show.jsx | 18 ++----------------
    1 file changed, 2 insertions(+), 16 deletions(-)
 ```
+
+## 2026-09-25 06:53 UTC — `6f38749`
+
+**Add rich product detail page to builder panel with separate trade cart**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (6f38749)
+- Server: 778aba3 → 6f38749
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   .../Controllers/Builder/BuilderShopController.php  |   15 +-
+   resources/js/Pages/Builder/Shop/Show.jsx           | 1101 ++++++++++++++------
+   2 files changed, 785 insertions(+), 331 deletions(-)
+```
