@@ -37,6 +37,14 @@ function MenuIcon({ className }) {
     );
 }
 
+function CloseIcon({ className }) {
+    return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    );
+}
+
 function ChevronDown({ className }) {
     return (
         <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -220,6 +228,18 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
 
     useEffect(() => { setCartCount(initialCartCount); }, [initialCartCount]);
 
+    // Close mobile menu on escape key and prevent body scroll when open
+    useEffect(() => {
+        if (!mobileOpen) return;
+        const handleEscape = (e) => { if (e.key === 'Escape') setMobileOpen(false); };
+        document.addEventListener('keydown', handleEscape);
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+            document.body.style.overflow = '';
+        };
+    }, [mobileOpen]);
+
     // Keep the trade badge live between Inertia navigations by listening for
     // the trade-scoped cart event. Mirror the pattern StorefrontHeader uses
     // for retail. Without this the badge was stale after add-to-cart.
@@ -354,70 +374,130 @@ export default function BuilderHeader({ user, cartCount: initialCartCount = 0, c
                 </Container>
 
                 {/* ── Mobile drawer ── */}
-                {mobileOpen && (
-                    <div className="border-t border-gray-100 bg-white lg:hidden">
-                        <Container>
-                            <form onSubmit={submitSearch} className="relative py-3 md:hidden">
+                <div
+                    className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${mobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                >
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/50"
+                        onClick={() => setMobileOpen(false)}
+                    />
+                    {/* Sidebar */}
+                    <div
+                        className={`absolute inset-y-0 left-0 w-72 bg-white shadow-xl overflow-y-auto transition-transform duration-300 ease-out ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4">
+                            <Link href={route('builder.dashboard')} onClick={() => setMobileOpen(false)}>
+                                <ApplicationLogo className="h-8 w-auto" />
+                            </Link>
+                            <button
+                                type="button"
+                                onClick={() => setMobileOpen(false)}
+                                className="rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                                aria-label="Close menu"
+                            >
+                                <CloseIcon className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        {/* Search */}
+                        <div className="border-b border-gray-100 px-4 py-3">
+                            <form onSubmit={submitSearch} className="relative">
                                 <input
                                     type="search"
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
                                     placeholder="Search the trade catalogue…"
-                                    className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-4 pr-10 text-sm text-navy-dark placeholder-gray-400 focus:border-gold focus:ring-2 focus:ring-gold/40"
+                                    className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-4 pr-10 text-sm text-navy-dark placeholder-gray-400 focus:border-gold focus:bg-white focus:ring-2 focus:ring-gold/40"
                                 />
                                 <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" aria-label="Search">
                                     <SearchIcon className="h-4 w-4" />
                                 </button>
                             </form>
-                            <ul className="pb-3">
-                                <li>
-                                    <Link
-                                        href={route('builder.shop.index')}
-                                        onClick={() => setMobileOpen(false)}
-                                        className="block rounded px-2 py-2.5 text-sm font-semibold text-navy-dark hover:bg-gray-50"
-                                    >
-                                        All Products
-                                    </Link>
-                                </li>
-                                {categories.map((cat) => (
-                                    <li key={cat.id}>
-                                        {/* No hover on a phone, so the drawer shows the
-                                            sub-categories outright rather than hiding them
-                                            behind a root that filters to nothing. */}
-                                        {(cat.children ?? []).length > 0 ? (
-                                            <>
-                                                <div className="px-2 pb-1 pt-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                                    {cat.name}
-                                                </div>
-                                                <ul>
-                                                    {cat.children.map((child) => (
-                                                        <li key={child.id}>
-                                                            <Link
-                                                                href={`/builder/shop?category=${child.slug}`}
-                                                                onClick={() => setMobileOpen(false)}
-                                                                className="block rounded px-2 py-2.5 text-sm text-navy/80 hover:bg-gray-50"
-                                                            >
-                                                                {child.name}
-                                                            </Link>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </>
-                                        ) : (
-                                            <Link
-                                                href={`/builder/shop?category=${cat.slug}`}
-                                                onClick={() => setMobileOpen(false)}
-                                                className="block rounded px-2 py-2.5 text-sm text-navy/80 hover:bg-gray-50"
-                                            >
+                        </div>
+
+                        {/* Navigation */}
+                        <nav className="px-4 py-4">
+                            <Link
+                                href={route('builder.shop.index')}
+                                onClick={() => setMobileOpen(false)}
+                                className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-navy-dark hover:bg-gray-50"
+                            >
+                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                                </svg>
+                                All Products
+                            </Link>
+
+                            {categories.map((cat) => (
+                                <div key={cat.id} className="mt-2">
+                                    {(cat.children ?? []).length > 0 ? (
+                                        <>
+                                            <div className="px-3 pb-1 pt-3 text-[11px] font-bold uppercase tracking-wider text-gray-400">
                                                 {cat.name}
-                                            </Link>
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
-                        </Container>
+                                            </div>
+                                            <ul className="space-y-0.5">
+                                                {cat.children.map((child) => (
+                                                    <li key={child.id}>
+                                                        <Link
+                                                            href={`/builder/shop?category=${child.slug}`}
+                                                            onClick={() => setMobileOpen(false)}
+                                                            className="block rounded-lg px-3 py-2.5 text-sm text-navy/80 hover:bg-gray-50 hover:text-navy-dark"
+                                                        >
+                                                            {child.name}
+                                                        </Link>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    ) : (
+                                        <Link
+                                            href={`/builder/shop?category=${cat.slug}`}
+                                            onClick={() => setMobileOpen(false)}
+                                            className="block rounded-lg px-3 py-2.5 text-sm text-navy/80 hover:bg-gray-50 hover:text-navy-dark"
+                                        >
+                                            {cat.name}
+                                        </Link>
+                                    )}
+                                </div>
+                            ))}
+                        </nav>
+
+                        {/* Footer links */}
+                        <div className="mt-auto border-t border-gray-200 px-4 py-4">
+                            <Link
+                                href={route('builder.dashboard')}
+                                onClick={() => setMobileOpen(false)}
+                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-navy/80 hover:bg-gray-50"
+                            >
+                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                                </svg>
+                                Trade Dashboard
+                            </Link>
+                            <Link
+                                href={route('orders.index')}
+                                onClick={() => setMobileOpen(false)}
+                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-navy/80 hover:bg-gray-50"
+                            >
+                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                                </svg>
+                                My Orders
+                            </Link>
+                            <a
+                                href="/"
+                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-navy/80 hover:bg-gray-50"
+                            >
+                                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                </svg>
+                                Main Website
+                            </a>
+                        </div>
                     </div>
-                )}
+                </div>
             </header>
 
             <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} scope="trade" />
