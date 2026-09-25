@@ -193,6 +193,11 @@ class BuilderShopController extends Controller
         abort_unless($visible, 404);
 
         $product->loadMissing(['category:id,name,slug', 'variants', 'options.values', 'media', 'variantFamily']);
+
+        // Drop media rows whose file was never synced to disk, or the gallery
+        // renders a blank thumbnail for each one.
+        $product->setRelation('media', $product->media->filter->fileExists()->values());
+
         $this->decorateWithBuilderPrice($product, $request->user());
 
         $relatedIds = Product::query()
@@ -208,9 +213,13 @@ class BuilderShopController extends Controller
         if ($relatedIds->isNotEmpty()) {
             $relatedProducts = Product::whereIn('id', $relatedIds)
                 ->with(['builderListing', 'category:id,name,slug'])
-                // category_id and sqm_per_box are needed by ProductUnitResolver;
-                // without them every related card falls back to "not per m²".
-                ->get(['id', 'category_id', 'name', 'slug', 'price', 'compare_at_price', 'image_url', 'short_description', 'sqm_per_box'])
+                // category_id, sqm_per_box, specifications, inventory needed for
+                // unit resolver, comparison table and stock display.
+                ->get([
+                    'id', 'category_id', 'name', 'slug', 'price', 'compare_at_price',
+                    'image_url', 'short_description', 'sqm_per_box', 'specifications',
+                    'inventory_quantity', 'inventory_policy',
+                ])
                 ->map(fn (Product $p) => $this->decorateWithBuilderPrice($p, $request->user()))
                 ->shuffle()
                 ->values();
