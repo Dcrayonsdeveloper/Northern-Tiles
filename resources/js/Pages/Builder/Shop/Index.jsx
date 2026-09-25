@@ -2,9 +2,24 @@ import BuilderLayout from '@/Layouts/BuilderLayout';
 import Container from '@/Components/Container';
 import ProductImage from '@/Components/Catalog/ProductImage';
 import { Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 const money = (v) => `$${parseFloat(v || 0).toFixed(2)}`;
+
+// Chevron icon for collapsible panel
+function ChevronIcon({ open, className = '' }) {
+    return (
+        <svg
+            className={`h-5 w-5 transition-transform ${open ? 'rotate-180' : ''} ${className}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+        >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+    );
+}
 
 /**
  * Trade product card. Leads with the builder price and shows the retail price
@@ -97,152 +112,186 @@ function TradeProductCard({ product }) {
 }
 
 export default function BuilderShopIndex({ products, categories, filters, currentCategory, pageTitle }) {
-    const applyFilter = (patch) => {
+    const [filtersOpen, setFiltersOpen] = useState(false);
+    const [q, setQ] = useState(filters?.q ?? '');
+    const [category, setCategory] = useState(filters?.category ?? '');
+
+    const applyFilter = useCallback((patch) => {
         router.get(route('builder.shop.index'), { ...filters, ...patch }, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
         });
-    };
+    }, [filters]);
+
+    const apply = useCallback(() => {
+        applyFilter({ q, category });
+    }, [applyFilter, q, category]);
+
+    const reset = useCallback(() => {
+        setQ('');
+        setCategory('');
+        router.get(route('builder.shop.index'), {}, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    }, []);
+
+    const handleCategoryChange = useCallback((slug) => {
+        setCategory(slug);
+        applyFilter({ q, category: slug });
+    }, [applyFilter, q]);
 
     const items = products?.data ?? [];
 
     return (
         <BuilderLayout categories={categories} title={pageTitle}>
             <Container className="py-8">
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-slate-900">{pageTitle ?? 'Trade Catalogue'}</h1>
-                    <p className="mt-1 text-sm text-gray-600">
-                        {products?.total ?? 0} product{(products?.total ?? 0) === 1 ? '' : 's'} available to your account at trade pricing.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr]">
-                    {/* ── Sidebar ── */}
-                    <aside className="space-y-6">
-                        <div>
-                            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                Categories
-                            </div>
-                            <ul className="space-y-0.5">
-                                <li>
-                                    <button
-                                        type="button"
-                                        onClick={() => applyFilter({ category: '' })}
-                                        className={`block w-full rounded px-2 py-1.5 text-left text-sm transition ${
-                                            !filters?.category ? 'bg-slate-900 font-semibold text-white' : 'text-gray-700 hover:bg-gray-100'
-                                        }`}
-                                    >
-                                        All Products
-                                    </button>
-                                </li>
-                                {(categories ?? []).map((cat) => (
-                                    <li key={cat.id}>
-                                        {/* A root with children is a heading, not a filter. Every
-                                            product hangs off a sub-category, so filtering on the
-                                            root slug matched nothing and the grid came back
-                                            "0 products available to your account". A root with no
-                                            children holds its products directly, so it stays
-                                            clickable. */}
-                                        {(cat.children ?? []).length > 0 ? (
-                                            <div className="px-2 py-1.5 text-sm font-semibold text-gray-800">
-                                                {cat.name}
-                                            </div>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() => applyFilter({ category: cat.slug })}
-                                                className={`block w-full rounded px-2 py-1.5 text-left text-sm transition ${
-                                                    filters?.category === cat.slug
-                                                        ? 'bg-slate-900 font-semibold text-white'
-                                                        : 'text-gray-700 hover:bg-gray-100'
-                                                }`}
-                                            >
-                                                {cat.name}
-                                            </button>
-                                        )}
-                                        {(cat.children ?? []).length > 0 && (
-                                            <ul className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-200 pl-2">
-                                                {cat.children.map((child) => (
-                                                    <li key={child.id}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => applyFilter({ category: child.slug })}
-                                                            className={`block w-full rounded px-2 py-1 text-left text-[13px] transition ${
-                                                                filters?.category === child.slug
-                                                                    ? 'bg-slate-900 font-semibold text-white'
-                                                                    : 'text-gray-600 hover:bg-gray-100 hover:text-slate-900'
-                                                            }`}
-                                                        >
-                                                            {child.name}
-                                                        </button>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </aside>
-
-                    {/* ── Results ── */}
+                <div className="mb-6 flex items-end justify-between">
                     <div>
-                        <div className="mb-4 flex items-center justify-between gap-4">
-                            <div className="text-sm text-gray-600">
-                                Showing {items.length} of {products?.total ?? 0}
-                            </div>
-                            <select
-                                value={filters?.sort ?? ''}
-                                onChange={(e) => applyFilter({ sort: e.target.value })}
-                                className="rounded border-gray-300 text-sm focus:border-slate-900 focus:ring-slate-900"
-                            >
-                                <option value="">Sort: Default</option>
-                                <option value="price_asc">Trade price: low to high</option>
-                                <option value="price_desc">Trade price: high to low</option>
-                                <option value="name_asc">Name: A–Z</option>
-                                <option value="name_desc">Name: Z–A</option>
-                                <option value="newest">Newest first</option>
-                            </select>
-                        </div>
-
-                        {items.length === 0 ? (
-                            <div className="rounded-lg border border-dashed border-gray-300 bg-white py-16 text-center">
-                                <p className="text-sm font-medium text-gray-900">No products match your filters.</p>
-                                <p className="mt-1 text-sm text-gray-500">
-                                    Try clearing the search, or contact us to have more lines added to your trade catalogue.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-                                {items.map((product) => (
-                                    <TradeProductCard key={product.id} product={product} />
-                                ))}
-                            </div>
-                        )}
-
-                        {/* ── Pagination ── */}
-                        {(products?.links ?? []).length > 3 && (
-                            <div className="mt-8 flex flex-wrap justify-center gap-1">
-                                {products.links.map((link, i) => (
-                                    <Link
-                                        key={i}
-                                        href={link.url ?? '#'}
-                                        preserveScroll
-                                        className={`rounded px-3 py-1.5 text-sm transition ${
-                                            link.active
-                                                ? 'bg-slate-900 font-semibold text-white'
-                                                : link.url
-                                                    ? 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                                    : 'cursor-not-allowed border border-gray-200 bg-white text-gray-300'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                ))}
-                            </div>
-                        )}
+                        <h1 className="text-2xl font-bold text-slate-900">{pageTitle ?? 'Trade Catalogue'}</h1>
+                        <p className="mt-1 text-sm text-gray-600">
+                            {products?.total ?? 0} product{(products?.total ?? 0) === 1 ? '' : 's'} available to your account at trade pricing.
+                        </p>
                     </div>
+                    <Link
+                        href={route('builder.cart.index')}
+                        className="rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                        View Cart
+                    </Link>
                 </div>
+
+                {/* Collapsible Filters Panel */}
+                <div className="mb-6 rounded-lg border border-gray-200 bg-white shadow-sm">
+                    <button
+                        type="button"
+                        onClick={() => setFiltersOpen(!filtersOpen)}
+                        className="flex w-full items-center justify-between p-4 text-left"
+                    >
+                        <span className="text-sm font-semibold text-brand">Filters</span>
+                        <ChevronIcon open={filtersOpen} className="text-gray-500" />
+                    </button>
+
+                    {filtersOpen && (
+                        <div className="border-t border-gray-200 p-4">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label className="text-xs font-medium text-gray-600">
+                                        Search
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={q}
+                                        onChange={(e) => setQ(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && apply()}
+                                        placeholder="Product name, category, keyword..."
+                                        className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm placeholder:text-gray-400 focus:border-slate-900 focus:ring-slate-900"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-medium text-gray-600">
+                                        Category
+                                    </label>
+                                    <select
+                                        value={category}
+                                        onChange={(e) => handleCategoryChange(e.target.value)}
+                                        className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-slate-900 focus:ring-slate-900"
+                                    >
+                                        <option value="">All</option>
+                                        {(categories ?? []).map((cat) => (
+                                            <optgroup key={cat.id} label={cat.name}>
+                                                {(cat.children ?? []).length > 0 ? (
+                                                    cat.children.map((child) => (
+                                                        <option key={child.id} value={child.slug}>
+                                                            {child.name}
+                                                        </option>
+                                                    ))
+                                                ) : (
+                                                    <option value={cat.slug}>{cat.name}</option>
+                                                )}
+                                            </optgroup>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={apply}
+                                    className="rounded-md bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                                >
+                                    Apply
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={reset}
+                                    className="rounded-md border border-gray-200 px-3 py-2 text-sm font-semibold text-brand hover:bg-gray-50"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Results header */}
+                <div className="mb-4 flex items-center justify-between gap-4">
+                    <div className="text-sm text-gray-600">
+                        Showing {items.length} of {products?.total ?? 0}
+                    </div>
+                    <select
+                        value={filters?.sort ?? ''}
+                        onChange={(e) => applyFilter({ sort: e.target.value })}
+                        className="rounded border-gray-300 text-sm focus:border-slate-900 focus:ring-slate-900"
+                    >
+                        <option value="">Sort: Default</option>
+                        <option value="price_asc">Trade price: low to high</option>
+                        <option value="price_desc">Trade price: high to low</option>
+                        <option value="name_asc">Name: A–Z</option>
+                        <option value="name_desc">Name: Z–A</option>
+                        <option value="newest">Newest first</option>
+                    </select>
+                </div>
+
+                {/* Products Grid */}
+                {items.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-white py-16 text-center">
+                        <p className="text-sm font-medium text-gray-900">No products match your filters.</p>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Try clearing the search, or contact us to have more lines added to your trade catalogue.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                        {items.map((product) => (
+                            <TradeProductCard key={product.id} product={product} />
+                        ))}
+                    </div>
+                )}
+
+                {/* Pagination */}
+                {(products?.links ?? []).length > 3 && (
+                    <div className="mt-8 flex flex-wrap justify-center gap-1">
+                        {products.links.map((link, i) => (
+                            <Link
+                                key={i}
+                                href={link.url ?? '#'}
+                                preserveScroll
+                                className={`rounded px-3 py-1.5 text-sm transition ${
+                                    link.active
+                                        ? 'bg-slate-900 font-semibold text-white'
+                                        : link.url
+                                            ? 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                            : 'cursor-not-allowed border border-gray-200 bg-white text-gray-300'
+                                }`}
+                                dangerouslySetInnerHTML={{ __html: link.label }}
+                            />
+                        ))}
+                    </div>
+                )}
             </Container>
         </BuilderLayout>
     );
