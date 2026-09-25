@@ -4,7 +4,6 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useRef, useState, useCallback } from 'react';
 import { StarRating } from '@/Components/Catalog/StarRating';
 import ProductImage from '@/Components/Catalog/ProductImage';
-import TrustpilotCarousel from '@/Components/Storefront/TrustpilotCarousel';
 import TrustpilotReviewLink from '@/Components/Storefront/TrustpilotReviewLink';
 
 
@@ -1195,24 +1194,11 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
             {/* Products Related to This Item */}
             <RelatedProducts products={relatedProducts} />
 
-            {/* Trustpilot Reviews */}
+            {/* Trustpilot Review Link */}
             {import.meta.env.VITE_TRUSTPILOT_BUSINESS_UNIT_ID && (
                 <section className="py-10 border-t border-gray-200">
                     <Container>
-                        <div className="mb-6">
-                            <p className="text-[11px] font-semibold uppercase tracking-[3px] text-brand mb-2">Verified Reviews</p>
-                            <h2 className="text-[22px] font-light text-[#222] tracking-[2px] uppercase font-heading">What Our <span className="font-semibold">Customers Say</span></h2>
-                            <div className="mt-3 h-[2px] w-12 bg-brand" />
-                        </div>
-                        <TrustpilotCarousel
-                            businessUnitId={import.meta.env.VITE_TRUSTPILOT_BUSINESS_UNIT_ID}
-                            templateId="53aa8912dec7e10d38f59f36"
-                            height="140px"
-                        />
-
-                        {/* Outside the widget's iframe, so it works whether the
-                            carousel renders reviews or collapses to a logo. */}
-                        <TrustpilotReviewLink className="mt-6" />
+                        <TrustpilotReviewLink />
                     </Container>
                 </section>
             )}
