@@ -255,3 +255,19 @@ Files changed:
    resources/js/Pages/Builder/Shop/Show.jsx           | 1101 ++++++++++++++------
    2 files changed, 785 insertions(+), 331 deletions(-)
 ```
+
+## 2026-09-25 08:00 UTC — `3e118e3`
+
+**Convert builder portal hamburger menu to slide-in sidebar**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (3e118e3)
+- Server: 6f38749 → 3e118e3
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   resources/js/Components/Builder/BuilderHeader.jsx | 184 ++++++++++++++++------
+   1 file changed, 132 insertions(+), 52 deletions(-)
+```
