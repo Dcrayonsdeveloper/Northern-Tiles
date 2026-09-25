@@ -305,3 +305,19 @@ Files changed:
    resources/js/Pages/Admin/AbandonedCarts/Show.jsx | 70 +-----------------------
    1 file changed, 1 insertion(+), 69 deletions(-)
 ```
+
+## 2026-09-25 09:27 UTC — `3cee626`
+
+**Builder Trade Catalogue: Replace sidebar categories with collapsible filters panel**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (3cee626)
+- Server: 075f12f → 3cee626
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   resources/js/Pages/Builder/Shop/Index.jsx | 301 +++++++++++++++++-------------
+   1 file changed, 175 insertions(+), 126 deletions(-)
+```
