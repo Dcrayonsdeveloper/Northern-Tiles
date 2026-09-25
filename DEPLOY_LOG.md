@@ -271,3 +271,21 @@ Files changed:
    resources/js/Components/Builder/BuilderHeader.jsx | 184 ++++++++++++++++------
    1 file changed, 132 insertions(+), 52 deletions(-)
 ```
+
+## 2026-09-25 08:07 UTC — `a644587`
+
+**Remove Email Templates from admin panel navigation**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (a644587)
+- Server: 3e118e3 → a644587
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   resources/js/Components/Admin/GlobalSearch.jsx    | 1 -
+   resources/js/Layouts/DashboardLayout.jsx          | 7 -------
+   resources/js/Pages/Admin/AbandonedCarts/Index.jsx | 5 -----
+   3 files changed, 13 deletions(-)
+```
