@@ -321,3 +321,19 @@ Files changed:
    resources/js/Pages/Builder/Shop/Index.jsx | 301 +++++++++++++++++-------------
    1 file changed, 175 insertions(+), 126 deletions(-)
 ```
+
+## 2026-09-25 09:44 UTC — `e1c74c5`
+
+**Builder cart upsells: Only show products assigned to builder account**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (e1c74c5)
+- Server: 3cee626 → e1c74c5
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Domain/Cart/Services/UpsellService.php | 161 +++++++++++++++++++++++------
+   1 file changed, 130 insertions(+), 31 deletions(-)
+```
