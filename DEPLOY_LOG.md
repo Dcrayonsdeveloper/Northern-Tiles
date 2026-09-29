@@ -374,3 +374,38 @@ Files changed:
    resources/js/Utils/australiaStates.js              |  21 ++++
    7 files changed, 214 insertions(+), 210 deletions(-)
 ```
+
+## 2026-09-29 11:00 UTC — `b1cce2d`
+
+**Checkout: single PayPal online payment, delivery note by the address, state-aware rates
+
+Replaces Cash on Delivery / UPI / Credit-Debit Card with one Pay Online option
+carrying the PayPal wordmark. UPI and COD were never options this business
+offers, and a radio list of one is a question with no answer, so it is stated
+rather than asked. The logo is served from public/images/payment/ rather than
+hotlinked.
+
+Moves the sales-team line out of the Order Summary and under the shipping
+address, where it now also spells out the three rates -- it belongs where the
+customer is choosing where the order goes, not beside the total.
+
+The delivery zone now also reads the state, so picking one moves the price
+before a postcode has been typed. The postcode still decides it whenever there
+is one: a NSW order to Gosford is not metropolitan Sydney, and charging it as
+though it were would lose money on every regional delivery.**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (b1cce2d)
+- Server: 4788a4e → b1cce2d
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Domain/Cart/Services/CheckoutService.php     | 27 +++-----
+   app/Domain/Cart/Services/PricingService.php      | 36 +++++++---
+   public/images/payment/paypal.svg                 | 55 ++++++++++++++++
+   resources/js/Pages/Builder/Checkout/Index.jsx    | 81 ++++++++---------------
+   resources/js/Pages/Storefront/Checkout/Index.jsx | 84 ++++++++----------------
+   5 files changed, 145 insertions(+), 138 deletions(-)
+```
