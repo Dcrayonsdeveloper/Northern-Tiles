@@ -434,3 +434,36 @@ Files changed:
    ship.sh | 4 ++--
    1 file changed, 2 insertions(+), 2 deletions(-)
 ```
+
+## 2026-09-29 11:25 UTC — `42a2eed`
+
+**Checkout: City dropdown that follows the chosen state
+
+Sydney and Melbourne are cities, so they could never appear in a state
+dropdown, which left the rate card naming places the form had no way to
+express. Each state now carries its own city list -- capital first, ending in
+an Other catch-all -- and the city box fills from whichever state is chosen.
+Changing the state clears the city, so a Victorian address cannot keep Sydney
+selected underneath it.
+
+The city also narrows the delivery zone, sitting between the postcode and the
+state: the postcode still decides whenever there is one, because Gosford is New
+South Wales but is not metropolitan Sydney. City is collected and required
+again, but as a list rather than the free-text box that used to produce four
+spellings of the same suburb.**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (42a2eed)
+- Server: 9083d67 → 42a2eed
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Domain/Cart/Services/CheckoutService.php     | 11 +++--
+   app/Domain/Cart/Services/PricingService.php      | 36 +++++++++-----
+   resources/js/Pages/Builder/Checkout/Index.jsx    | 45 ++++++++++++++---
+   resources/js/Pages/Storefront/Checkout/Index.jsx | 45 ++++++++++++++---
+   resources/js/Utils/australiaStates.js            | 62 +++++++++++++++++++-----
+   5 files changed, 160 insertions(+), 39 deletions(-)
+```
