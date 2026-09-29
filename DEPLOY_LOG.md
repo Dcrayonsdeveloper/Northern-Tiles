@@ -467,3 +467,31 @@ Files changed:
    resources/js/Utils/australiaStates.js            | 62 +++++++++++++++++++-----
    5 files changed, 160 insertions(+), 39 deletions(-)
 ```
+
+## 2026-09-29 11:28 UTC — `e0ec89e`
+
+**Checkout: a chosen city settles the delivery zone
+
+Picking Newcastle or Bendigo was being charged metropolitan rates. The city was
+looked up against the metro lists and, finding no match, fell through to the
+state -- where NSW means Sydney and VIC means Melbourne -- so every regional
+city in those two states quoted $10 instead of $20.
+
+Choosing a city is a statement about where the order is going, so it now ends
+the search: matched means that zone, unmatched means Rest of Australia. The
+state is consulted only when no city has been chosen yet, and the postcode
+still overrides both.**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (e0ec89e)
+- Server: 42a2eed → e0ec89e
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Domain/Cart/Services/PricingService.php      | 5 +++++
+   resources/js/Pages/Builder/Checkout/Index.jsx    | 7 +++++--
+   resources/js/Pages/Storefront/Checkout/Index.jsx | 7 +++++--
+   3 files changed, 15 insertions(+), 4 deletions(-)
+```
