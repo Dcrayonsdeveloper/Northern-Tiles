@@ -495,3 +495,33 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Index.jsx | 7 +++++--
    3 files changed, 15 insertions(+), 4 deletions(-)
 ```
+
+## 2026-09-29 12:39 UTC — `81923d2`
+
+**Checkout: the city the customer picked decides the delivery zone
+
+Selecting Geelong with postcode 3074 quoted $10 metropolitan Melbourne. 3074 is
+Thomastown, inside the Melbourne metro range, and the postcode was ranked above
+the city -- so a mistyped or half-remembered postcode silently overrode a city
+the customer had deliberately chosen from a list.
+
+The city is now what counts: it is picked from a fixed list, it says plainly
+where the order is going, and a postcode that disagrees with it is far more
+likely to be a typo than a correction. Postcode and state are still consulted
+when no city has been chosen, which is how API orders and older saved addresses
+keep getting priced. The hint under the total now asks for a city rather than a
+postcode, since that is what confirms the rate.**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (81923d2)
+- Server: e0ec89e → 81923d2
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Domain/Cart/Services/PricingService.php      | 35 ++++++++++++------------
+   resources/js/Pages/Builder/Checkout/Index.jsx    | 21 ++++++--------
+   resources/js/Pages/Storefront/Checkout/Index.jsx | 23 +++++++---------
+   3 files changed, 37 insertions(+), 42 deletions(-)
+```
