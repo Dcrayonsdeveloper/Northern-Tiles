@@ -121,10 +121,10 @@ ok "assets built"
 # ── 7. deploy the whole tree, then record the revision ──────────────────
 say "7/8  Deploy"
 PKG="/tmp/ship-$(date +%s).tgz"
-tar -czf "$PKG" app routes database/migrations resources public/build tools 2>/dev/null
+tar -czf "$PKG" app routes database/migrations resources public/build public/images tools 2>/dev/null
 scp -q -i "$KEY" "$PKG" "${HOST}:/tmp/ship.tgz"
 ssh_ "sudo tar -xzf /tmp/ship.tgz -C ${RELEASE} \
-   && sudo chown -R www-data:www-data ${RELEASE}/app ${RELEASE}/routes ${RELEASE}/database ${RELEASE}/resources ${RELEASE}/public/build ${RELEASE}/tools \
+   && sudo chown -R www-data:www-data ${RELEASE}/app ${RELEASE}/routes ${RELEASE}/database ${RELEASE}/resources ${RELEASE}/public/build ${RELEASE}/public/images ${RELEASE}/tools \
    && php -l ${RELEASE}/routes/web.php > /dev/null"
 ok "files in place ($(du -h "$PKG" | cut -f1))"
 
