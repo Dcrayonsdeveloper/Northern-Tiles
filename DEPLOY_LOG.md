@@ -409,3 +409,28 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Index.jsx | 84 ++++++++----------------
    5 files changed, 145 insertions(+), 138 deletions(-)
 ```
+
+## 2026-09-29 11:02 UTC — `9083d67`
+
+**ship.sh: carry public/images in the deploy package
+
+The PayPal logo was committed, pushed and deployed, and still 404'd on the
+site: the package listed public/build but not public/images, so an image added
+alongside the code that references it never reached the server. Adding it also
+moved 6MB of images that had only ever existed on the local machine.
+
+This is the failure ship.sh exists to prevent -- a deploy that reports success
+while the server holds only part of the change -- so the package now covers the
+directory rather than relying on someone remembering to upload it by hand.**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (9083d67)
+- Server: b1cce2d → 9083d67
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   ship.sh | 4 ++--
+   1 file changed, 2 insertions(+), 2 deletions(-)
+```
