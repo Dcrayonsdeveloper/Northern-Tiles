@@ -337,3 +337,40 @@ Files changed:
    app/Domain/Cart/Services/UpsellService.php | 161 +++++++++++++++++++++++------
    1 file changed, 130 insertions(+), 31 deletions(-)
 ```
+
+## 2026-09-29 10:44 UTC — `4788a4e`
+
+**Checkout: Australian address fields and delivery priced by postcode
+
+Replaces the free-text City and State boxes with a single State/Territory
+dropdown, and states the country instead of asking for it — deliveries are
+Australian only, and the server enforces both rather than trusting the form.
+The suburb is carried by the postcode, so City is no longer collected.
+
+Removes the Standard/Express picker. Delivery is now priced by destination:
+$10 metropolitan Sydney, $10 metropolitan Melbourne, $20 rest of Australia,
+with a note pointing anything unusual at the sales team. The rate card lives in
+PricingService and is passed to the page, so the figure quoted on screen is the
+one the order is charged at. Rates are settings, changeable without a deploy.
+
+The trade checkout extends the retail controller, so it shares this validation
+and these props and gets the same treatment — left alone it would have rejected
+every trade order on the new country rule.**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (4788a4e)
+- Server: e1c74c5 → 4788a4e
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Domain/Cart/Services/CheckoutService.php       |  56 ++++-----
+   app/Domain/Cart/Services/PricingService.php        |  93 +++++++++++---
+   .../Controllers/Storefront/CheckoutController.php  |   3 +-
+   resources/js/Pages/Admin/Orders/Show.jsx           |   4 +-
+   resources/js/Pages/Builder/Checkout/Index.jsx      | 108 +++++-----------
+   resources/js/Pages/Storefront/Checkout/Index.jsx   | 139 ++++++++-------------
+   resources/js/Utils/australiaStates.js              |  21 ++++
+   7 files changed, 214 insertions(+), 210 deletions(-)
+```
