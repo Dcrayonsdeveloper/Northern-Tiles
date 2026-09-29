@@ -60,7 +60,7 @@ function OrderTracking({ order }) {
                     <span className="font-mono font-semibold text-gray-900">{order.order_number}</span>
                     {order.shipping_method ? (
                         <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-medium capitalize text-blue-700">
-                            {order.shipping_method}
+                            {String(order.shipping_method).replace(/-/g, ' ')}
                         </span>
                     ) : null}
                 </div>
@@ -412,7 +412,7 @@ function OrderInfo({ order }) {
                     : 'bg-yellow-50 text-yellow-700 ring-yellow-200',
         },
         { label: 'Payment Method', value: paymentLabel },
-        { label: 'Shipping Method', value: order.shipping_method, capitalize: true },
+        { label: 'Delivery Zone', value: order.shipping_method ? String(order.shipping_method).replace(/-/g, ' ') : null, capitalize: true },
         { label: 'Shipped', value: when(order.shipped_at) },
         { label: 'Delivered', value: when(order.delivered_at) },
         { label: 'Customer', value: order.user ? 'Account' : 'Guest checkout' },

@@ -59,7 +59,7 @@ class CheckoutController extends Controller
         return Inertia::render($this->checkoutInertiaComponent(), [
             'items' => $summary['items'],
             'totals' => $summary['totals'],
-            'shippingMethods' => $summary['shipping_methods'],
+            'shippingZones' => $summary['shipping_zones'],
             'paymentMethods' => $summary['payment_methods'],
             'isGuest' => !$user,
             'user' => $user ? [
@@ -123,7 +123,6 @@ class CheckoutController extends Controller
             'billing_address' => $request->boolean('billing_same_as_shipping', true)
                 ? $validated['shipping_address']
                 : ($validated['billing_address'] ?? $validated['shipping_address']),
-            'shipping_method' => $validated['shipping_method'],
             'payment_method' => $validated['payment_method'],
             'notes' => $validated['notes'] ?? null,
         ];

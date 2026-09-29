@@ -4,6 +4,7 @@ import Container from '@/Components/Container';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { d } from '@/Support/dictionary';
+import { AU_STATES } from '@/Utils/australiaStates';
 
 // Icons
 function CheckIcon({ className }) {
@@ -42,7 +43,7 @@ function CardIcon({ className }) {
 export default function Index({
     items = [],
     totals = {},
-    shippingMethods = [],
+    shippingZones = [],
     appliedCoupon = null,
     paymentMethods = [],
     isGuest = true,
@@ -66,7 +67,7 @@ export default function Index({
             city: '',
             state: '',
             postal_code: '',
-            country: '',
+            country: 'Australia',
             phone: user?.phone || '',
         },
         billing_address: {
@@ -76,10 +77,9 @@ export default function Index({
             city: '',
             state: '',
             postal_code: '',
-            country: '',
+            country: 'Australia',
         },
         billing_same_as_shipping: true,
-        shipping_method: shippingMethods[0]?.id || 'standard',
         payment_method: 'cod',
         notes: '',
         marketing_opt_in: false,
@@ -108,8 +108,22 @@ export default function Index({
         post(route('checkout.store'));
     };
 
-    const selectedShipping = shippingMethods.find(m => m.id === data.shipping_method);
-    const shippingCost = parseFloat(selectedShipping?.price ?? 0);
+    // Delivery is priced by where it is going. The zones come from the server so
+    // the figure shown here is the one the order is actually charged at.
+    const shippingZone = (() => {
+        const digits = String(data.shipping_address.postal_code || '').replace(/\D/g, '');
+        const fallback = shippingZones[shippingZones.length - 1] ?? null;
+        if (!digits) return fallback;
+        const code = parseInt(digits, 10);
+        return shippingZones.find((z) => (z.ranges ?? []).some(([from, to]) => code >= from && code <= to)) ?? fallback;
+    })();
+
+    // Free delivery over the spend threshold, and coupons that include it, are
+    // decided by the cart rather than the address — so whether it is waived can
+    // be read off the totals the server already sent, whatever the postcode.
+    const nonSampleShipping = parseFloat(totals.shipping || 0) - parseFloat(totals.sample_shipping || 0);
+    const shippingWaived = parseFloat(totals.subtotal || 0) > 0 && nonSampleShipping <= 0;
+    const shippingCost = shippingWaived ? 0 : parseFloat(shippingZone?.price ?? 0);
     // Sample shipping is charged on top of the chosen method and was missing
     // here, so a cart with samples showed a total lower than it was billed.
     const sampleShipping = parseFloat(totals.sample_shipping || 0);
@@ -280,30 +294,19 @@ export default function Index({
                                             </div>
                                             <div>
                                                 <label className="text-xs font-medium text-gray-600">
-                                                    {d('checkout.shipping.city', 'City')} *
+                                                    {d('checkout.shipping.state', 'State / Territory')} *
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    value={data.shipping_address.city}
-                                                    onChange={(e) => updateShippingAddress('city', e.target.value)}
-                                                    className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                                                    required
-                                                />
-                                                {errors['shipping_address.city'] && (
-                                                    <p className="mt-1 text-xs text-red-600">{errors['shipping_address.city']}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-medium text-gray-600">
-                                                    {d('checkout.shipping.state', 'State')} *
-                                                </label>
-                                                <input
-                                                    type="text"
+                                                <select
                                                     value={data.shipping_address.state}
                                                     onChange={(e) => updateShippingAddress('state', e.target.value)}
                                                     className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                                     required
-                                                />
+                                                >
+                                                    <option value="">Select a state…</option>
+                                                    {AU_STATES.map((s) => (
+                                                        <option key={s.code} value={s.code}>{s.name}</option>
+                                                    ))}
+                                                </select>
                                                 {errors['shipping_address.state'] && (
                                                     <p className="mt-1 text-xs text-red-600">{errors['shipping_address.state']}</p>
                                                 )}
@@ -314,6 +317,7 @@ export default function Index({
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    inputMode="numeric"
                                                     value={data.shipping_address.postal_code}
                                                     onChange={(e) => updateShippingAddress('postal_code', e.target.value)}
                                                     className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
@@ -323,63 +327,22 @@ export default function Index({
                                                     <p className="mt-1 text-xs text-red-600">{errors['shipping_address.postal_code']}</p>
                                                 )}
                                             </div>
-                                            <div>
+                                            {/* Northern Tile delivers within Australia only, so the country
+                                                is stated rather than asked. The server enforces the same
+                                                thing — a locked input alone would only be a suggestion. */}
+                                            <div className="sm:col-span-2">
                                                 <label className="text-xs font-medium text-gray-600">
-                                                    {d('checkout.shipping.country', 'Country')} *
+                                                    {d('checkout.shipping.country', 'Country')}
                                                 </label>
                                                 <input
                                                     type="text"
                                                     value={data.shipping_address.country}
-                                                    onChange={(e) => updateShippingAddress('country', e.target.value)}
-                                                    className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                                                    required
+                                                    readOnly
+                                                    aria-readonly="true"
+                                                    tabIndex={-1}
+                                                    className="mt-1 w-full cursor-not-allowed rounded-md border-gray-200 bg-gray-50 text-sm text-gray-500 shadow-sm focus:border-gray-200 focus:ring-0"
                                                 />
-                                                {errors['shipping_address.country'] && (
-                                                    <p className="mt-1 text-xs text-red-600">{errors['shipping_address.country']}</p>
-                                                )}
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Shipping Method */}
-                                    <div className="rounded-lg border bg-white p-6 shadow-sm">
-                                        <h2 className="text-lg font-semibold text-gray-900">
-                                            {d('checkout.shipping_method.title', 'Shipping Method')}
-                                        </h2>
-
-                                        <div className="mt-4 space-y-3">
-                                            {shippingMethods.map((method) => (
-                                                <label
-                                                    key={method.id}
-                                                    className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors ${
-                                                        data.shipping_method === method.id
-                                                            ? 'border-gray-900 bg-gray-50'
-                                                            : 'border-gray-200 hover:border-gray-300'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <input
-                                                            type="radio"
-                                                            name="shipping_method"
-                                                            value={method.id}
-                                                            checked={data.shipping_method === method.id}
-                                                            onChange={(e) => setData('shipping_method', e.target.value)}
-                                                            className="text-gray-900 focus:ring-gray-900"
-                                                        />
-                                                        <div>
-                                                            <p className="text-sm font-medium text-gray-900">{method.name}</p>
-                                                            <p className="text-xs text-gray-500">{method.description}</p>
-                                                        </div>
-                                                    </div>
-                                                    <span className="text-sm font-semibold text-gray-900">
-                                                        {method.price === 0 ? (
-                                                            <span className="text-green-600">{d('checkout.free', 'Free')}</span>
-                                                        ) : (
-                                                            `$${method.price}`
-                                                        )}
-                                                    </span>
-                                                </label>
-                                            ))}
                                         </div>
                                     </div>
 
@@ -535,20 +498,22 @@ export default function Index({
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-600">{d('checkout.summary.shipping', 'Shipping')}</span>
                                                 <span className="font-medium text-gray-900">
-                                                    {/* The rate for the method actually selected. This read
-                                                        the server's page-load total instead, so choosing
-                                                        Express moved the Total but left this line on $50. */}
-                                                    {(() => {
-                                                        if (shippingCost > 0) {
-                                                            return `$${shippingCost.toFixed(2)}`;
-                                                        }
-                                                        if (parseFloat(totals.subtotal || 0) > 0) {
-                                                            return <span className="text-green-600">{d('checkout.free', 'Free')}</span>;
-                                                        }
-                                                        return '—';
-                                                    })()}
+                                                    {shippingCost > 0
+                                                        ? `$${shippingCost.toFixed(2)}`
+                                                        : parseFloat(totals.subtotal || 0) > 0
+                                                            ? <span className="text-green-600">{d('checkout.free', 'Free')}</span>
+                                                            : '—'}
                                                 </span>
                                             </div>
+                                            {shippingZone && !shippingWaived && (
+                                                <p className="-mt-1 text-xs text-gray-500">
+                                                    {shippingZone.label}
+                                                    {!String(data.shipping_address.postal_code || '').trim() && ' — enter a postcode to confirm'}
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-gray-500">
+                                                For any other delivery quotes, please contact the sales team.
+                                            </p>
                                             {totals.sample_count > 0 && (
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-600">

@@ -21,13 +21,21 @@ class PricingService
     public const SHIPPING_STANDARD = 'standard';
     public const SHIPPING_EXPRESS = 'express';
 
+    /** Delivery zones. What a customer pays is decided by where it is going. */
+    public const ZONE_SYDNEY_METRO = 'sydney-metro';
+    public const ZONE_MELBOURNE_METRO = 'melbourne-metro';
+    public const ZONE_REST_OF_AUSTRALIA = 'rest-of-australia';
+
     public function computeTotals(Cart $cart, array $shippingData = [], ?string $shippingMethod = null): array
     {
         $subtotal = $this->calculateSubtotal($cart);
         $discount = $this->calculateDiscount($cart, $subtotal);
 
         $sampleShipping = $this->calculateSampleShipping($cart);
-        $nonSampleShipping = $this->nonSampleShippingFor($cart, $shippingMethod ?: self::SHIPPING_STANDARD);
+        // $shippingMethod is ignored: the destination decides the rate now. The
+        // parameter stays so existing callers keep working unchanged.
+        $zone = self::zoneForPostcode($shippingData['postal_code'] ?? null);
+        $nonSampleShipping = $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null);
         $shipping = $sampleShipping + $nonSampleShipping;
 
         $taxableAmount = $subtotal - $discount;
@@ -45,6 +53,8 @@ class PricingService
             'subtotal' => round($subtotal, 2),
             'discount' => round($discount, 2),
             'shipping' => round($shipping, 2),
+            'shipping_zone' => $zone['key'],
+            'shipping_zone_label' => $zone['label'],
             'sample_shipping' => round($sampleShipping, 2),
             'tax' => round($tax, 2),
             'grand_total' => round($grandTotal, 2),
@@ -106,10 +116,71 @@ class PricingService
     }
 
     /**
-     * Calculate non-sample shipping (regular products) using the existing
-     * flat-rate / free-threshold logic, but operating on the non-sample subtotal only.
+     * The delivery rate card.
+     *
+     * One definition, read by the checkout page as well as by the totals below,
+     * so the price quoted on screen and the price charged cannot drift apart.
+     * Prices come from settings, so they can be changed without a deploy; the
+     * postcode ranges are the metropolitan areas the flat rates apply to, and
+     * anything outside them is Rest of Australia.
      */
-    public function nonSampleShippingFor(Cart $cart, string $method = self::SHIPPING_STANDARD): float
+    public static function shippingZones(): array
+    {
+        return [
+            [
+                'key' => self::ZONE_SYDNEY_METRO,
+                'label' => 'Metropolitan Sydney',
+                'price' => (float) Setting::getValue('shipping.rate_sydney_metro', 10),
+                'ranges' => [[1000, 2249], [2555, 2574], [2740, 2786]],
+            ],
+            [
+                'key' => self::ZONE_MELBOURNE_METRO,
+                'label' => 'Metropolitan Melbourne',
+                'price' => (float) Setting::getValue('shipping.rate_melbourne_metro', 10),
+                'ranges' => [[3000, 3207], [8000, 8499]],
+            ],
+            [
+                'key' => self::ZONE_REST_OF_AUSTRALIA,
+                'label' => 'Rest of Australia',
+                'price' => (float) Setting::getValue('shipping.rate_rest_of_australia', 20),
+                'ranges' => [],
+            ],
+        ];
+    }
+
+    /**
+     * Which zone a postcode falls in.
+     *
+     * An unknown or missing postcode falls back to Rest of Australia rather
+     * than to nothing: the cart shows a shipping figure before an address has
+     * been entered, and quoting $0 there would understate the total.
+     */
+    public static function zoneForPostcode(?string $postcode): array
+    {
+        $zones = self::shippingZones();
+        $digits = preg_replace('/\D/', '', (string) $postcode);
+
+        if ($digits !== '') {
+            $code = (int) $digits;
+            foreach ($zones as $zone) {
+                foreach ($zone['ranges'] as [$from, $to]) {
+                    if ($code >= $from && $code <= $to) {
+                        return $zone;
+                    }
+                }
+            }
+        }
+
+        return end($zones);
+    }
+
+    /**
+     * Non-sample shipping, priced by where the order is going.
+     *
+     * Operates on the non-sample subtotal only, so samples keep their own flat
+     * rate rather than being charged twice.
+     */
+    public function nonSampleShippingFor(Cart $cart, ?string $postcode = null): float
     {
         if ($cart->isEmpty()) {
             return 0;
@@ -130,21 +201,15 @@ class PricingService
             }
         }
 
-        // Express is a paid upgrade: it is never covered by the free-shipping
-        // threshold, or picking it above the threshold would cost the customer
-        // nothing and the courier plenty.
-        if ($method === self::SHIPPING_EXPRESS) {
-            return (float) Setting::getValue('shipping.express_rate', 150);
-        }
-
+        // The spend-over threshold still waives delivery; it sits on top of the
+        // rate card rather than replacing it.
         $freeShippingThreshold = (float) Setting::getValue('shipping.free_threshold', 999);
-        $flatRate = (float) Setting::getValue('shipping.flat_rate', 50);
 
         if ($nonSampleSubtotal >= $freeShippingThreshold) {
             return 0;
         }
 
-        return $flatRate;
+        return (float) self::zoneForPostcode($postcode)['price'];
     }
 
     /**
@@ -165,7 +230,7 @@ class PricingService
     protected function calculateShipping(Cart $cart, array $shippingData, ?string $method = null): float
     {
         return $this->calculateSampleShipping($cart)
-            + $this->nonSampleShippingFor($cart, $method ?: self::SHIPPING_STANDARD);
+            + $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null);
     }
 
     /**

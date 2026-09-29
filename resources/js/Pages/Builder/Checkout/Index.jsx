@@ -3,6 +3,7 @@ import Container from '@/Components/Container';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { d } from '@/Support/dictionary';
+import { AU_STATES } from '@/Utils/australiaStates';
 
 /**
  * Trade checkout — mirror of Storefront/Checkout/Index. Only differences vs
@@ -46,7 +47,7 @@ function CardIcon({ className }) {
 export default function Index({
     items = [],
     totals = {},
-    shippingMethods = [],
+    shippingZones = [],
     paymentMethods = [],
     isGuest = true,
     user = null,
@@ -69,7 +70,7 @@ export default function Index({
             city: '',
             state: '',
             postal_code: '',
-            country: '',
+            country: 'Australia',
             phone: user?.phone || '',
         },
         billing_address: {
@@ -79,10 +80,9 @@ export default function Index({
             city: '',
             state: '',
             postal_code: '',
-            country: '',
+            country: 'Australia',
         },
         billing_same_as_shipping: true,
-        shipping_method: shippingMethods[0]?.id || 'standard',
         payment_method: 'cod',
         notes: '',
         marketing_opt_in: false,
@@ -107,8 +107,20 @@ export default function Index({
         post(route('builder.checkout.store'));
     };
 
-    const selectedShipping = shippingMethods.find(m => m.id === data.shipping_method);
-    const shippingCost = selectedShipping?.price || 0;
+    // Delivery is priced by destination, from the same server-side rate card the
+    // retail checkout uses, so a trade order to Parramatta is not quoted one
+    // figure here and charged another.
+    const shippingZone = (() => {
+        const digits = String(data.shipping_address.postal_code || '').replace(/\D/g, '');
+        const fallback = shippingZones[shippingZones.length - 1] ?? null;
+        if (!digits) return fallback;
+        const code = parseInt(digits, 10);
+        return shippingZones.find((z) => (z.ranges ?? []).some(([from, to]) => code >= from && code <= to)) ?? fallback;
+    })();
+
+    const nonSampleShipping = parseFloat(totals.shipping || 0) - parseFloat(totals.sample_shipping || 0);
+    const shippingWaived = parseFloat(totals.subtotal || 0) > 0 && nonSampleShipping <= 0;
+    const shippingCost = shippingWaived ? 0 : parseFloat(shippingZone?.price ?? 0);
     const grandTotal = (totals.subtotal || 0) + shippingCost + (totals.tax || 0) - (totals.discount || 0);
 
     const isEmpty = items.length === 0;
@@ -251,30 +263,19 @@ export default function Index({
                                             </div>
                                             <div>
                                                 <label className="text-xs font-medium text-gray-600">
-                                                    City *
+                                                    State / Territory *
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    value={data.shipping_address.city}
-                                                    onChange={(e) => updateShippingAddress('city', e.target.value)}
-                                                    className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                                                    required
-                                                />
-                                                {errors['shipping_address.city'] && (
-                                                    <p className="mt-1 text-xs text-red-600">{errors['shipping_address.city']}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-medium text-gray-600">
-                                                    State *
-                                                </label>
-                                                <input
-                                                    type="text"
+                                                <select
                                                     value={data.shipping_address.state}
                                                     onChange={(e) => updateShippingAddress('state', e.target.value)}
                                                     className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                                     required
-                                                />
+                                                >
+                                                    <option value="">Select a state…</option>
+                                                    {AU_STATES.map((s) => (
+                                                        <option key={s.code} value={s.code}>{s.name}</option>
+                                                    ))}
+                                                </select>
                                                 {errors['shipping_address.state'] && (
                                                     <p className="mt-1 text-xs text-red-600">{errors['shipping_address.state']}</p>
                                                 )}
@@ -285,6 +286,7 @@ export default function Index({
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    inputMode="numeric"
                                                     value={data.shipping_address.postal_code}
                                                     onChange={(e) => updateShippingAddress('postal_code', e.target.value)}
                                                     className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
@@ -294,63 +296,19 @@ export default function Index({
                                                     <p className="mt-1 text-xs text-red-600">{errors['shipping_address.postal_code']}</p>
                                                 )}
                                             </div>
-                                            <div>
+                                            <div className="sm:col-span-2">
                                                 <label className="text-xs font-medium text-gray-600">
-                                                    Country *
+                                                    Country
                                                 </label>
                                                 <input
                                                     type="text"
                                                     value={data.shipping_address.country}
-                                                    onChange={(e) => updateShippingAddress('country', e.target.value)}
-                                                    className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
-                                                    required
+                                                    readOnly
+                                                    aria-readonly="true"
+                                                    tabIndex={-1}
+                                                    className="mt-1 w-full cursor-not-allowed rounded-md border-gray-200 bg-gray-50 text-sm text-gray-500 shadow-sm focus:border-gray-200 focus:ring-0"
                                                 />
-                                                {errors['shipping_address.country'] && (
-                                                    <p className="mt-1 text-xs text-red-600">{errors['shipping_address.country']}</p>
-                                                )}
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Shipping Method */}
-                                    <div className="rounded-lg border bg-white p-6 shadow-sm">
-                                        <h2 className="text-lg font-semibold text-gray-900">
-                                            Shipping Method
-                                        </h2>
-
-                                        <div className="mt-4 space-y-3">
-                                            {shippingMethods.map((method) => (
-                                                <label
-                                                    key={method.id}
-                                                    className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-colors ${
-                                                        data.shipping_method === method.id
-                                                            ? 'border-gray-900 bg-gray-50'
-                                                            : 'border-gray-200 hover:border-gray-300'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <input
-                                                            type="radio"
-                                                            name="shipping_method"
-                                                            value={method.id}
-                                                            checked={data.shipping_method === method.id}
-                                                            onChange={(e) => setData('shipping_method', e.target.value)}
-                                                            className="text-gray-900 focus:ring-gray-900"
-                                                        />
-                                                        <div>
-                                                            <p className="text-sm font-medium text-gray-900">{method.name}</p>
-                                                            <p className="text-xs text-gray-500">{method.description}</p>
-                                                        </div>
-                                                    </div>
-                                                    <span className="text-sm font-semibold text-gray-900">
-                                                        {method.price === 0 ? (
-                                                            <span className="text-green-600">Free</span>
-                                                        ) : (
-                                                            `$${method.price}`
-                                                        )}
-                                                    </span>
-                                                </label>
-                                            ))}
                                         </div>
                                     </div>
 

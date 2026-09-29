@@ -79,7 +79,11 @@ class CheckoutService
                 'total' => $totals['grand_total'],
                 'shipping_address' => $data['shipping_address'] ?? null,
                 'billing_address' => $data['billing_address'] ?? $data['shipping_address'] ?? null,
-                'shipping_method' => $data['shipping_method'] ?? 'standard',
+                // The zone this order was priced at, so the charge can be explained
+                // later even if the rate card changes.
+                'shipping_method' => \App\Domain\Cart\Services\PricingService::zoneForPostcode(
+                    $data['shipping_address']['postal_code'] ?? null
+                )['key'],
                 'payment_method' => $data['payment_method'] ?? 'cod',
                 'payment_status' => 'pending',
                 'notes' => $data['notes'] ?? null,
@@ -140,6 +144,10 @@ class CheckoutService
      */
     public function validateCheckoutData(array $data, bool $isGuest, string $channel = 'retail'): array
     {
+        // Deliveries are Australian only and the state comes from a fixed list,
+        // so both are enforced here rather than trusted from the form. The city
+        // is no longer collected -- the postcode carries the suburb -- but the key
+        // stays accepted so saved addresses and older clients still validate.
         $rules = [
             'contact.email' => 'required|email|max:255',
             'contact.phone' => 'nullable|string|max:20',
@@ -147,12 +155,14 @@ class CheckoutService
             'shipping_address.name' => 'required|string|max:255',
             'shipping_address.address_line_1' => 'required|string|max:255',
             'shipping_address.address_line_2' => 'nullable|string|max:255',
-            'shipping_address.city' => 'required|string|max:100',
-            'shipping_address.state' => 'required|string|max:100',
+            'shipping_address.city' => 'nullable|string|max:100',
+            'shipping_address.state' => 'required|string|in:ACT,NSW,NT,QLD,SA,TAS,VIC,WA',
             'shipping_address.postal_code' => 'required|string|max:20',
-            'shipping_address.country' => 'required|string|max:100',
+            'shipping_address.country' => 'required|string|in:Australia',
             'shipping_address.phone' => 'nullable|string|max:20',
-            'shipping_method' => 'required|string|in:standard,express',
+            // No longer chosen by the customer -- the delivery postcode decides it.
+            // Left nullable so a stale open tab posting the old field still checks out.
+            'shipping_method' => 'nullable|string|max:50',
             'payment_method' => 'required|string|in:cod,upi,card',
             'billing_same_as_shipping' => 'boolean',
             'notes' => 'nullable|string|max:500',
@@ -164,10 +174,10 @@ class CheckoutService
                 'billing_address.name' => 'required|string|max:255',
                 'billing_address.address_line_1' => 'required|string|max:255',
                 'billing_address.address_line_2' => 'nullable|string|max:255',
-                'billing_address.city' => 'required|string|max:100',
-                'billing_address.state' => 'required|string|max:100',
+                'billing_address.city' => 'nullable|string|max:100',
+                'billing_address.state' => 'required|string|in:ACT,NSW,NT,QLD,SA,TAS,VIC,WA',
                 'billing_address.postal_code' => 'required|string|max:20',
-                'billing_address.country' => 'required|string|max:100',
+                'billing_address.country' => 'required|string|in:Australia',
             ]);
         }
 
@@ -175,28 +185,14 @@ class CheckoutService
     }
 
     /**
-     * Get available shipping methods.
+     * The delivery rate card shown at checkout.
+     *
+     * Comes straight from PricingService so the figure on screen is the same
+     * one the order is charged at.
      */
-    public function getShippingMethods(Cart $cart): array
+    public function getShippingZones(): array
     {
-        $subtotal = $cart->getSubtotal();
-
-        return [
-            [
-                'id' => 'standard',
-                'name' => 'Standard Shipping',
-                'description' => '5-7 business days',
-                'price' => $subtotal >= 999 ? 0 : 50,
-                'estimated_days' => '5-7',
-            ],
-            [
-                'id' => 'express',
-                'name' => 'Express Shipping',
-                'description' => '2-3 business days',
-                'price' => 150,
-                'estimated_days' => '2-3',
-            ],
-        ];
+        return \App\Domain\Cart\Services\PricingService::shippingZones();
     }
 
     /**
@@ -282,13 +278,13 @@ class CheckoutService
         });
 
         $totals = $this->pricingService->computeTotals($cart, $shippingData);
-        $shippingMethods = $this->getShippingMethods($cart);
+        $shippingZones = $this->getShippingZones();
         $paymentMethods = $this->getPaymentMethods();
 
         return [
             'items' => $items,
             'totals' => $totals,
-            'shipping_methods' => $shippingMethods,
+            'shipping_zones' => $shippingZones,
             'payment_methods' => $paymentMethods,
         ];
     }
