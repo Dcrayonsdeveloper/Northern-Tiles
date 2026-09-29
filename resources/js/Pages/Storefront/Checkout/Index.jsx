@@ -24,28 +24,11 @@ function LockIcon({ className }) {
 }
 
 // Payment method icons
-function CashIcon({ className }) {
-    return (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-    );
-}
-
-function CardIcon({ className }) {
-    return (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-        </svg>
-    );
-}
-
 export default function Index({
     items = [],
     totals = {},
     shippingZones = [],
     appliedCoupon = null,
-    paymentMethods = [],
     isGuest = true,
     user = null,
 }) {
@@ -80,7 +63,7 @@ export default function Index({
             country: 'Australia',
         },
         billing_same_as_shipping: true,
-        payment_method: 'cod',
+        payment_method: 'online',
         notes: '',
         marketing_opt_in: false,
     });
@@ -113,9 +96,17 @@ export default function Index({
     const shippingZone = (() => {
         const digits = String(data.shipping_address.postal_code || '').replace(/\D/g, '');
         const fallback = shippingZones[shippingZones.length - 1] ?? null;
-        if (!digits) return fallback;
-        const code = parseInt(digits, 10);
-        return shippingZones.find((z) => (z.ranges ?? []).some(([from, to]) => code >= from && code <= to)) ?? fallback;
+
+        // The postcode decides it whenever there is one -- a NSW order to Gosford
+        // is not metropolitan Sydney. Before one is typed the state gives a
+        // provisional figure so the total is not blank while the form is filled.
+        if (digits) {
+            const code = parseInt(digits, 10);
+            return shippingZones.find((z) => (z.ranges ?? []).some(([from, to]) => code >= from && code <= to)) ?? fallback;
+        }
+
+        const state = String(data.shipping_address.state || '').toUpperCase();
+        return shippingZones.find((z) => (z.states ?? []).includes(state)) ?? fallback;
     })();
 
     // Free delivery over the spend threshold, and coupons that include it, are
@@ -343,6 +334,10 @@ export default function Index({
                                                     className="mt-1 w-full cursor-not-allowed rounded-md border-gray-200 bg-gray-50 text-sm text-gray-500 shadow-sm focus:border-gray-200 focus:ring-0"
                                                 />
                                             </div>
+                                            <p className="sm:col-span-2 text-xs text-gray-500">
+                                                Delivery: {shippingZones.map((z) => `${z.label} $${parseFloat(z.price).toFixed(0)}`).join(', ')}. For any other delivery
+                                                quotes, please contact the sales team.
+                                            </p>
                                         </div>
                                     </div>
 
@@ -352,40 +347,20 @@ export default function Index({
                                             {d('checkout.payment.title', 'Payment Method')}
                                         </h2>
 
-                                        <div className="mt-4 space-y-3">
-                                            {paymentMethods.map((method) => (
-                                                <label
-                                                    key={method.id}
-                                                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors ${
-                                                        data.payment_method === method.id
-                                                            ? 'border-gray-900 bg-gray-50'
-                                                            : 'border-gray-200 hover:border-gray-300'
-                                                    }`}
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="payment_method"
-                                                        value={method.id}
-                                                        checked={data.payment_method === method.id}
-                                                        onChange={(e) => setData('payment_method', e.target.value)}
-                                                        className="text-gray-900 focus:ring-gray-900"
-                                                    />
-                                                    <div className="flex items-center gap-3">
-                                                        {method.id === 'cod' && <CashIcon className="h-6 w-6 text-gray-500" />}
-                                                        {method.id === 'card' && <CardIcon className="h-6 w-6 text-gray-500" />}
-                                                        {method.id === 'upi' && (
-                                                            <span className="text-xs font-bold text-gray-500">UPI</span>
-                                                        )}
-                                                        <div>
-                                                            <p className="text-sm font-medium text-gray-900">{method.name}</p>
-                                                            <p className="text-xs text-gray-500">{method.description}</p>
-                                                        </div>
-                                                    </div>
-                                                </label>
-                                            ))}
+                                        {/* One way to pay, so this states it rather than asking the
+                                            customer to choose from a list of one. */}
+                                        <div className="mt-4 flex items-center gap-4 rounded-lg border border-gray-900 bg-gray-50 p-4">
+                                            <img
+                                                src="/images/payment/paypal.svg"
+                                                alt="PayPal"
+                                                className="h-7 w-auto flex-shrink-0"
+                                            />
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-medium text-gray-900">{d('checkout.payment.online', 'Pay Online')}</p>
+                                                <p className="text-xs text-gray-500">{d('checkout.payment.online_hint', 'Pay securely with PayPal, or by card through PayPal')}</p>
+                                            </div>
                                         </div>
                                     </div>
-
                                     {/* Order Notes */}
                                     <div className="rounded-lg border bg-white p-6 shadow-sm">
                                         <h2 className="text-lg font-semibold text-gray-900">
@@ -511,9 +486,6 @@ export default function Index({
                                                     {!String(data.shipping_address.postal_code || '').trim() && ' — enter a postcode to confirm'}
                                                 </p>
                                             )}
-                                            <p className="text-xs text-gray-500">
-                                                For any other delivery quotes, please contact the sales team.
-                                            </p>
                                             {totals.sample_count > 0 && (
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-600">

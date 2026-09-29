@@ -82,9 +82,10 @@ class CheckoutService
                 // The zone this order was priced at, so the charge can be explained
                 // later even if the rate card changes.
                 'shipping_method' => \App\Domain\Cart\Services\PricingService::zoneForPostcode(
-                    $data['shipping_address']['postal_code'] ?? null
+                    $data['shipping_address']['postal_code'] ?? null,
+                    $data['shipping_address']['state'] ?? null
                 )['key'],
-                'payment_method' => $data['payment_method'] ?? 'cod',
+                'payment_method' => $data['payment_method'] ?? 'online',
                 'payment_status' => 'pending',
                 'notes' => $data['notes'] ?? null,
             ]);
@@ -163,7 +164,7 @@ class CheckoutService
             // No longer chosen by the customer -- the delivery postcode decides it.
             // Left nullable so a stale open tab posting the old field still checks out.
             'shipping_method' => 'nullable|string|max:50',
-            'payment_method' => 'required|string|in:cod,upi,card',
+            'payment_method' => 'required|string|in:online',
             'billing_same_as_shipping' => 'boolean',
             'notes' => 'nullable|string|max:500',
         ];
@@ -202,22 +203,10 @@ class CheckoutService
     {
         return [
             [
-                'id' => 'cod',
-                'name' => 'Cash on Delivery',
-                'description' => 'Pay when you receive your order',
-                'icon' => 'cash',
-            ],
-            [
-                'id' => 'upi',
-                'name' => 'UPI',
-                'description' => 'Pay via UPI apps like GPay, PhonePe',
-                'icon' => 'upi',
-            ],
-            [
-                'id' => 'card',
-                'name' => 'Credit/Debit Card',
-                'description' => 'Pay securely with your card',
-                'icon' => 'card',
+                'id' => 'online',
+                'name' => 'Pay Online',
+                'description' => 'Pay securely with PayPal, or by card through PayPal',
+                'icon' => 'paypal',
             ],
         ];
     }

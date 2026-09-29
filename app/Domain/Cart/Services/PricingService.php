@@ -34,8 +34,8 @@ class PricingService
         $sampleShipping = $this->calculateSampleShipping($cart);
         // $shippingMethod is ignored: the destination decides the rate now. The
         // parameter stays so existing callers keep working unchanged.
-        $zone = self::zoneForPostcode($shippingData['postal_code'] ?? null);
-        $nonSampleShipping = $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null);
+        $zone = self::zoneForPostcode($shippingData['postal_code'] ?? null, $shippingData['state'] ?? null);
+        $nonSampleShipping = $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null, $shippingData['state'] ?? null);
         $shipping = $sampleShipping + $nonSampleShipping;
 
         $taxableAmount = $subtotal - $discount;
@@ -132,30 +132,35 @@ class PricingService
                 'label' => 'Metropolitan Sydney',
                 'price' => (float) Setting::getValue('shipping.rate_sydney_metro', 10),
                 'ranges' => [[1000, 2249], [2555, 2574], [2740, 2786]],
+                'states' => ['NSW'],
             ],
             [
                 'key' => self::ZONE_MELBOURNE_METRO,
                 'label' => 'Metropolitan Melbourne',
                 'price' => (float) Setting::getValue('shipping.rate_melbourne_metro', 10),
                 'ranges' => [[3000, 3207], [8000, 8499]],
+                'states' => ['VIC'],
             ],
             [
                 'key' => self::ZONE_REST_OF_AUSTRALIA,
                 'label' => 'Rest of Australia',
                 'price' => (float) Setting::getValue('shipping.rate_rest_of_australia', 20),
                 'ranges' => [],
+                'states' => [],
             ],
         ];
     }
 
     /**
-     * Which zone a postcode falls in.
+     * Which zone an address falls in.
      *
-     * An unknown or missing postcode falls back to Rest of Australia rather
-     * than to nothing: the cart shows a shipping figure before an address has
-     * been entered, and quoting $0 there would understate the total.
+     * The postcode decides it whenever there is one: a NSW order to Gosford is
+     * not metropolitan Sydney, and charging it as though it were would lose
+     * money on every regional delivery. The state is only consulted before a
+     * postcode has been typed, so the checkout can show a figure while the
+     * customer is still filling the form; the postcode always overrides it.
      */
-    public static function zoneForPostcode(?string $postcode): array
+    public static function zoneForPostcode(?string $postcode, ?string $state = null): array
     {
         $zones = self::shippingZones();
         $digits = preg_replace('/\D/', '', (string) $postcode);
@@ -169,6 +174,17 @@ class PricingService
                     }
                 }
             }
+
+            return end($zones);
+        }
+
+        $state = strtoupper(trim((string) $state));
+        if ($state !== '') {
+            foreach ($zones as $zone) {
+                if (in_array($state, $zone['states'], true)) {
+                    return $zone;
+                }
+            }
         }
 
         return end($zones);
@@ -180,7 +196,7 @@ class PricingService
      * Operates on the non-sample subtotal only, so samples keep their own flat
      * rate rather than being charged twice.
      */
-    public function nonSampleShippingFor(Cart $cart, ?string $postcode = null): float
+    public function nonSampleShippingFor(Cart $cart, ?string $postcode = null, ?string $state = null): float
     {
         if ($cart->isEmpty()) {
             return 0;
@@ -209,7 +225,7 @@ class PricingService
             return 0;
         }
 
-        return (float) self::zoneForPostcode($postcode)['price'];
+        return (float) self::zoneForPostcode($postcode, $state)['price'];
     }
 
     /**
@@ -230,7 +246,7 @@ class PricingService
     protected function calculateShipping(Cart $cart, array $shippingData, ?string $method = null): float
     {
         return $this->calculateSampleShipping($cart)
-            + $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null);
+            + $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null, $shippingData['state'] ?? null);
     }
 
     /**
