@@ -181,6 +181,9 @@ class PricingService
             return end($zones);
         }
 
+        // A chosen city settles it: picking Newcastle says the order is not going
+        // to metropolitan Sydney, so it must not fall through to the state and
+        // pick up the Sydney rate.
         $city = strtolower(trim((string) $city));
         if ($city !== '') {
             foreach ($zones as $zone) {
@@ -190,6 +193,8 @@ class PricingService
                     }
                 }
             }
+
+            return end($zones);
         }
 
         $state = strtoupper(trim((string) $state));

@@ -108,9 +108,12 @@ export default function Index({
             return shippingZones.find((z) => (z.ranges ?? []).some(([from, to]) => code >= from && code <= to)) ?? fallback;
         }
 
+        // A chosen city settles it: picking Newcastle says the order is not going
+        // to metropolitan Sydney, so it must not fall through to the state below.
         const city = String(data.shipping_address.city || '').toLowerCase();
-        const byCity = shippingZones.find((z) => (z.cities ?? []).some((c) => c.toLowerCase() === city));
-        if (byCity) return byCity;
+        if (city) {
+            return shippingZones.find((z) => (z.cities ?? []).some((c) => c.toLowerCase() === city)) ?? fallback;
+        }
 
         const state = String(data.shipping_address.state || '').toUpperCase();
         return shippingZones.find((z) => (z.states ?? []).includes(state)) ?? fallback;
