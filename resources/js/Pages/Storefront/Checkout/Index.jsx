@@ -96,23 +96,20 @@ export default function Index({
     const cityOptions = citiesForState(data.shipping_address.state);
 
     const shippingZone = (() => {
-        const digits = String(data.shipping_address.postal_code || '').replace(/\D/g, '');
         const fallback = shippingZones[shippingZones.length - 1] ?? null;
 
-        // Three signals, most precise first. The postcode decides it whenever
-        // there is one -- a NSW order to Gosford is not metropolitan Sydney.
-        // Failing that the chosen city, then the state, give a figure to show
-        // while the customer is still filling the form.
-        if (digits) {
-            const code = parseInt(digits, 10);
-            return shippingZones.find((z) => (z.ranges ?? []).some(([from, to]) => code >= from && code <= to)) ?? fallback;
-        }
-
-        // A chosen city settles it: picking Newcastle says the order is not going
-        // to metropolitan Sydney, so it must not fall through to the state below.
+        // The city the customer picked decides it. A postcode that disagrees is
+        // more likely a typo than a correction, so it is only consulted before a
+        // city has been chosen.
         const city = String(data.shipping_address.city || '').toLowerCase();
         if (city) {
             return shippingZones.find((z) => (z.cities ?? []).some((c) => c.toLowerCase() === city)) ?? fallback;
+        }
+
+        const digits = String(data.shipping_address.postal_code || '').replace(/\D/g, '');
+        if (digits) {
+            const code = parseInt(digits, 10);
+            return shippingZones.find((z) => (z.ranges ?? []).some(([from, to]) => code >= from && code <= to)) ?? fallback;
         }
 
         const state = String(data.shipping_address.state || '').toUpperCase();
@@ -519,7 +516,7 @@ export default function Index({
                                             {shippingZone && !shippingWaived && (
                                                 <p className="-mt-1 text-xs text-gray-500">
                                                     {shippingZone.label}
-                                                    {!String(data.shipping_address.postal_code || '').trim() && ' — enter a postcode to confirm'}
+                                                    {!String(data.shipping_address.city || '').trim() && ' — select a city to confirm'}
                                                 </p>
                                             )}
                                             {totals.sample_count > 0 && (

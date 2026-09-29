@@ -157,22 +157,25 @@ class PricingService
     /**
      * Which zone an address falls in.
      *
-     * Three signals, most precise first. The postcode decides it whenever there
-     * is one: a NSW order to Gosford is not metropolitan Sydney, and charging it
-     * as though it were would lose money on every regional delivery. Failing
-     * that the chosen city, then the state, give a figure to show while the
-     * customer is still filling the form.
+     * The city the customer picked decides it. It is chosen from a list, so it
+     * says plainly where the order is going, and a postcode that disagrees is
+     * more likely a typo than a correction -- 3074 is a Melbourne suburb, and
+     * letting it override a selected Geelong quoted metropolitan rates for a
+     * regional delivery.
+     *
+     * The postcode and then the state are only consulted when no city has been
+     * chosen, which is how orders arriving from the API and older saved
+     * addresses still get priced.
      */
     public static function zoneForPostcode(?string $postcode, ?string $state = null, ?string $city = null): array
     {
         $zones = self::shippingZones();
-        $digits = preg_replace('/\D/', '', (string) $postcode);
 
-        if ($digits !== '') {
-            $code = (int) $digits;
+        $city = strtolower(trim((string) $city));
+        if ($city !== '') {
             foreach ($zones as $zone) {
-                foreach ($zone['ranges'] as [$from, $to]) {
-                    if ($code >= $from && $code <= $to) {
+                foreach ($zone['cities'] as $known) {
+                    if (strtolower($known) === $city) {
                         return $zone;
                     }
                 }
@@ -181,14 +184,12 @@ class PricingService
             return end($zones);
         }
 
-        // A chosen city settles it: picking Newcastle says the order is not going
-        // to metropolitan Sydney, so it must not fall through to the state and
-        // pick up the Sydney rate.
-        $city = strtolower(trim((string) $city));
-        if ($city !== '') {
+        $digits = preg_replace('/\D/', '', (string) $postcode);
+        if ($digits !== '') {
+            $code = (int) $digits;
             foreach ($zones as $zone) {
-                foreach ($zone['cities'] as $known) {
-                    if (strtolower($known) === $city) {
+                foreach ($zone['ranges'] as [$from, $to]) {
+                    if ($code >= $from && $code <= $to) {
                         return $zone;
                     }
                 }
