@@ -3,7 +3,7 @@ import Container from '@/Components/Container';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { d } from '@/Support/dictionary';
-import { AU_STATES } from '@/Utils/australiaStates';
+import { AU_STATES, citiesForState } from '@/Utils/australiaStates';
 
 /**
  * Trade checkout — mirror of Storefront/Checkout/Index. Only differences vs
@@ -93,17 +93,24 @@ export default function Index({
     // Delivery is priced by destination, from the same server-side rate card the
     // retail checkout uses, so a trade order to Parramatta is not quoted one
     // figure here and charged another.
+    const cityOptions = citiesForState(data.shipping_address.state);
+
     const shippingZone = (() => {
         const digits = String(data.shipping_address.postal_code || '').replace(/\D/g, '');
         const fallback = shippingZones[shippingZones.length - 1] ?? null;
 
-        // The postcode decides it whenever there is one -- a NSW order to Gosford
-        // is not metropolitan Sydney. Before one is typed the state gives a
-        // provisional figure so the total is not blank while the form is filled.
+        // Three signals, most precise first. The postcode decides it whenever
+        // there is one -- a NSW order to Gosford is not metropolitan Sydney.
+        // Failing that the chosen city, then the state, give a figure to show
+        // while the customer is still filling the form.
         if (digits) {
             const code = parseInt(digits, 10);
             return shippingZones.find((z) => (z.ranges ?? []).some(([from, to]) => code >= from && code <= to)) ?? fallback;
         }
+
+        const city = String(data.shipping_address.city || '').toLowerCase();
+        const byCity = shippingZones.find((z) => (z.cities ?? []).some((c) => c.toLowerCase() === city));
+        if (byCity) return byCity;
 
         const state = String(data.shipping_address.state || '').toUpperCase();
         return shippingZones.find((z) => (z.states ?? []).includes(state)) ?? fallback;
@@ -258,7 +265,11 @@ export default function Index({
                                                 </label>
                                                 <select
                                                     value={data.shipping_address.state}
-                                                    onChange={(e) => updateShippingAddress('state', e.target.value)}
+                                                    onChange={(e) => setData('shipping_address', {
+                                                        ...data.shipping_address,
+                                                        state: e.target.value,
+                                                        city: '',
+                                                    })}
                                                     className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
                                                     required
                                                 >
@@ -269,6 +280,28 @@ export default function Index({
                                                 </select>
                                                 {errors['shipping_address.state'] && (
                                                     <p className="mt-1 text-xs text-red-600">{errors['shipping_address.state']}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-medium text-gray-600">
+                                                    City *
+                                                </label>
+                                                <select
+                                                    value={data.shipping_address.city}
+                                                    onChange={(e) => updateShippingAddress('city', e.target.value)}
+                                                    disabled={cityOptions.length === 0}
+                                                    className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400"
+                                                    required
+                                                >
+                                                    <option value="">
+                                                        {cityOptions.length === 0 ? 'Choose a state first' : 'Select a city…'}
+                                                    </option>
+                                                    {cityOptions.map((c) => (
+                                                        <option key={c} value={c}>{c}</option>
+                                                    ))}
+                                                </select>
+                                                {errors['shipping_address.city'] && (
+                                                    <p className="mt-1 text-xs text-red-600">{errors['shipping_address.city']}</p>
                                                 )}
                                             </div>
                                             <div>
@@ -287,7 +320,7 @@ export default function Index({
                                                     <p className="mt-1 text-xs text-red-600">{errors['shipping_address.postal_code']}</p>
                                                 )}
                                             </div>
-                                            <div className="sm:col-span-2">
+                                            <div>
                                                 <label className="text-xs font-medium text-gray-600">
                                                     Country
                                                 </label>

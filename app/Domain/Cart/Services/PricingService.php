@@ -34,8 +34,8 @@ class PricingService
         $sampleShipping = $this->calculateSampleShipping($cart);
         // $shippingMethod is ignored: the destination decides the rate now. The
         // parameter stays so existing callers keep working unchanged.
-        $zone = self::zoneForPostcode($shippingData['postal_code'] ?? null, $shippingData['state'] ?? null);
-        $nonSampleShipping = $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null, $shippingData['state'] ?? null);
+        $zone = self::zoneForPostcode($shippingData['postal_code'] ?? null, $shippingData['state'] ?? null, $shippingData['city'] ?? null);
+        $nonSampleShipping = $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null, $shippingData['state'] ?? null, $shippingData['city'] ?? null);
         $shipping = $sampleShipping + $nonSampleShipping;
 
         $taxableAmount = $subtotal - $discount;
@@ -133,6 +133,7 @@ class PricingService
                 'price' => (float) Setting::getValue('shipping.rate_sydney_metro', 10),
                 'ranges' => [[1000, 2249], [2555, 2574], [2740, 2786]],
                 'states' => ['NSW'],
+                'cities' => ['Sydney'],
             ],
             [
                 'key' => self::ZONE_MELBOURNE_METRO,
@@ -140,6 +141,7 @@ class PricingService
                 'price' => (float) Setting::getValue('shipping.rate_melbourne_metro', 10),
                 'ranges' => [[3000, 3207], [8000, 8499]],
                 'states' => ['VIC'],
+                'cities' => ['Melbourne'],
             ],
             [
                 'key' => self::ZONE_REST_OF_AUSTRALIA,
@@ -147,6 +149,7 @@ class PricingService
                 'price' => (float) Setting::getValue('shipping.rate_rest_of_australia', 20),
                 'ranges' => [],
                 'states' => [],
+                'cities' => [],
             ],
         ];
     }
@@ -154,13 +157,13 @@ class PricingService
     /**
      * Which zone an address falls in.
      *
-     * The postcode decides it whenever there is one: a NSW order to Gosford is
-     * not metropolitan Sydney, and charging it as though it were would lose
-     * money on every regional delivery. The state is only consulted before a
-     * postcode has been typed, so the checkout can show a figure while the
-     * customer is still filling the form; the postcode always overrides it.
+     * Three signals, most precise first. The postcode decides it whenever there
+     * is one: a NSW order to Gosford is not metropolitan Sydney, and charging it
+     * as though it were would lose money on every regional delivery. Failing
+     * that the chosen city, then the state, give a figure to show while the
+     * customer is still filling the form.
      */
-    public static function zoneForPostcode(?string $postcode, ?string $state = null): array
+    public static function zoneForPostcode(?string $postcode, ?string $state = null, ?string $city = null): array
     {
         $zones = self::shippingZones();
         $digits = preg_replace('/\D/', '', (string) $postcode);
@@ -176,6 +179,17 @@ class PricingService
             }
 
             return end($zones);
+        }
+
+        $city = strtolower(trim((string) $city));
+        if ($city !== '') {
+            foreach ($zones as $zone) {
+                foreach ($zone['cities'] as $known) {
+                    if (strtolower($known) === $city) {
+                        return $zone;
+                    }
+                }
+            }
         }
 
         $state = strtoupper(trim((string) $state));
@@ -196,7 +210,7 @@ class PricingService
      * Operates on the non-sample subtotal only, so samples keep their own flat
      * rate rather than being charged twice.
      */
-    public function nonSampleShippingFor(Cart $cart, ?string $postcode = null, ?string $state = null): float
+    public function nonSampleShippingFor(Cart $cart, ?string $postcode = null, ?string $state = null, ?string $city = null): float
     {
         if ($cart->isEmpty()) {
             return 0;
@@ -225,7 +239,7 @@ class PricingService
             return 0;
         }
 
-        return (float) self::zoneForPostcode($postcode, $state)['price'];
+        return (float) self::zoneForPostcode($postcode, $state, $city)['price'];
     }
 
     /**
@@ -246,7 +260,7 @@ class PricingService
     protected function calculateShipping(Cart $cart, array $shippingData, ?string $method = null): float
     {
         return $this->calculateSampleShipping($cart)
-            + $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null, $shippingData['state'] ?? null);
+            + $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null, $shippingData['state'] ?? null, $shippingData['city'] ?? null);
     }
 
     /**

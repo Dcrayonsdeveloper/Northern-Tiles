@@ -83,7 +83,8 @@ class CheckoutService
                 // later even if the rate card changes.
                 'shipping_method' => \App\Domain\Cart\Services\PricingService::zoneForPostcode(
                     $data['shipping_address']['postal_code'] ?? null,
-                    $data['shipping_address']['state'] ?? null
+                    $data['shipping_address']['state'] ?? null,
+                    $data['shipping_address']['city'] ?? null
                 )['key'],
                 'payment_method' => $data['payment_method'] ?? 'online',
                 'payment_status' => 'pending',
@@ -147,8 +148,8 @@ class CheckoutService
     {
         // Deliveries are Australian only and the state comes from a fixed list,
         // so both are enforced here rather than trusted from the form. The city
-        // is no longer collected -- the postcode carries the suburb -- but the key
-        // stays accepted so saved addresses and older clients still validate.
+        // The city is chosen from a list per state, so it cannot come back as
+        // four spellings of the same place the way a free-text box allowed.
         $rules = [
             'contact.email' => 'required|email|max:255',
             'contact.phone' => 'nullable|string|max:20',
@@ -156,7 +157,7 @@ class CheckoutService
             'shipping_address.name' => 'required|string|max:255',
             'shipping_address.address_line_1' => 'required|string|max:255',
             'shipping_address.address_line_2' => 'nullable|string|max:255',
-            'shipping_address.city' => 'nullable|string|max:100',
+            'shipping_address.city' => 'required|string|max:100',
             'shipping_address.state' => 'required|string|in:ACT,NSW,NT,QLD,SA,TAS,VIC,WA',
             'shipping_address.postal_code' => 'required|string|max:20',
             'shipping_address.country' => 'required|string|in:Australia',
@@ -175,7 +176,7 @@ class CheckoutService
                 'billing_address.name' => 'required|string|max:255',
                 'billing_address.address_line_1' => 'required|string|max:255',
                 'billing_address.address_line_2' => 'nullable|string|max:255',
-                'billing_address.city' => 'nullable|string|max:100',
+                'billing_address.city' => 'required|string|max:100',
                 'billing_address.state' => 'required|string|in:ACT,NSW,NT,QLD,SA,TAS,VIC,WA',
                 'billing_address.postal_code' => 'required|string|max:20',
                 'billing_address.country' => 'required|string|in:Australia',
