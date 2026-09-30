@@ -473,31 +473,45 @@ class Product extends Model
     }
 
     /**
-     * The image to show for this product in a list.
+     * The product's image.
      *
-     * Prefers what was uploaded to the product over the image_url column. A
-     * product photographed through the media uploader has nothing in that
-     * column, which is why newly added products showed a placeholder in the
-     * admin list while imported ones did not.
+     * Imported products carry a URL in this column. Products photographed
+     * through the admin uploader do not: their files live in product_media and
+     * the column stays empty, which left every new product showing a
+     * placeholder in search, the shop grid, the cart and the home page while
+     * the picture sat on disk the whole time.
      *
-     * Reads the already-loaded relation instead of querying, so a page of
-     * twenty rows stays one query rather than forty, and skips media whose
-     * file is gone so a dead row shows the placeholder rather than a broken
-     * image.
+     * So an empty column falls back to the uploaded image. Only products
+     * missing a column value pay for the lookup, and an already-loaded media
+     * relation is used in preference to querying. Media whose file is gone is
+     * skipped, so a dead row shows the placeholder rather than a broken image.
      */
-    public function getThumbnailUrlAttribute(): ?string
+    public function getImageUrlAttribute(?string $value): ?string
     {
-        if ($this->relationLoaded('media')) {
-            $image = $this->media
-                ->sortByDesc('is_primary')
-                ->first(fn ($m) => $m->type === 'image' && $m->fileExists());
-
-            if ($image) {
-                return $image->url;
-            }
+        if ($value) {
+            return $value;
         }
 
-        return $this->image_url ?: null;
+        if ($this->relationLoaded('media')) {
+            return $this->media
+                ->sortByDesc('is_primary')
+                ->first(fn ($m) => $m->type === 'image' && $m->fileExists())
+                ?->url;
+        }
+
+        $image = $this->media()
+            ->where('type', 'image')
+            ->orderByDesc('is_primary')
+            ->orderBy('sort')
+            ->first();
+
+        return $image?->fileExists() ? $image->url : null;
+    }
+
+    /** Kept for the admin list, which asks for this by name. */
+    public function getThumbnailUrlAttribute(): ?string
+    {
+        return $this->image_url;
     }
 
     public function getPrimaryImageUrl(): ?string

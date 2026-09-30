@@ -35,7 +35,8 @@ class CatalogService
 
     public function getProducts(array $filters = [], ?int $sellerId = null, int $perPage = 15): LengthAwarePaginator
     {
-        $query = Product::with(['category', 'variants'])
+        $query = Product::with(['category', 'variants',
+            'media' => fn ($q) => $q->where('type', 'image')->orderByDesc('is_primary')->orderBy('sort')])
             ->active();
 
         if ($sellerId) {

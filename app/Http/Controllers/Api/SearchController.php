@@ -104,7 +104,7 @@ class SearchController extends Controller
                         $sub->orWhereHas('tags', fn ($tq) => $tq->where('name', 'like', $like));
                     }
                 })
-                ->with(['category:id,name,slug'])
+                ->with(['category:id,name,slug', 'media' => fn ($q) => $q->where('type', 'image')->orderByDesc('is_primary')->orderBy('sort')])
                 // Order: FULLTEXT relevance first, then exact-phrase-in-name, then alpha.
                 ->orderByRaw(
                     'MATCH(name, sku, brand, short_description) AGAINST(? IN BOOLEAN MODE) DESC',
@@ -190,7 +190,7 @@ class SearchController extends Controller
             ->where(function ($query) use ($applyTokens) {
                 $applyTokens($query);
             })
-            ->with(['category:id,name,slug'])
+            ->with(['category:id,name,slug', 'media' => fn ($q) => $q->where('type', 'image')->orderByDesc('is_primary')->orderBy('sort')])
             ->orderByRaw('CASE WHEN name LIKE ? THEN 0 ELSE 1 END', [$phraseLike])
             ->orderBy('name')
             ->limit(6)
