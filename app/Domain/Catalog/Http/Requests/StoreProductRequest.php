@@ -117,6 +117,14 @@ class StoreProductRequest extends FormRequest
             'variants.*.height_mm' => ['nullable', 'integer', 'min:0'],
             'variants.*.option_value_ids' => ['nullable', 'array'],
             'variants.*.is_active' => ['nullable', 'boolean'],
+
+            // Images chosen on the create form, uploaded once the product exists.
+            // Videos are left to the edit page, which can set the media type per
+            // file; everything here is stored as an image.
+            'media' => ['nullable', 'array', 'max:20'],
+            // 32MB is the per-file ceiling in 99-ntiled.ini; a larger rule here
+            // would only let PHP drop the file before validation ever saw it.
+            'media.*' => ['file', 'max:32768', 'mimes:jpeg,jpg,png,gif,webp'],
         ];
     }
 

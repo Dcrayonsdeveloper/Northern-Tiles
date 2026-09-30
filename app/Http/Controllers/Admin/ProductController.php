@@ -125,10 +125,20 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request): RedirectResponse
     {
-        $product = $this->productService->createProduct(
-            $request->validated(),
-            $request->user()
-        );
+        // The uploaded files are not product columns, so they are kept out of
+        // the attributes the product is created from.
+        $attributes = $request->validated();
+        unset($attributes['media']);
+
+        $product = $this->productService->createProduct($attributes, $request->user());
+
+        // Media used to need a saved product before it could be attached, which
+        // meant creating the product, waiting for the redirect, then uploading.
+        // The files ride along with the form now and are stored here, once there
+        // is something to attach them to.
+        if ($request->hasFile('media')) {
+            $this->mediaService->storeMedia($product, $request->file('media'), 'image');
+        }
 
         $this->syncCollections($product, $request->input('collection_ids'));
 

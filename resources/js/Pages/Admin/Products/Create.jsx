@@ -1,7 +1,7 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { groupCollections } from '@/Utils/collectionGroups';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import RichTextEditor from '@/Components/Admin/RichTextEditor';
 import SpecListInput from '@/Components/Admin/SpecListInput';
 import { COLOUR_NAMES, SPEC_LIST_FORMATS } from '@/Support/colours';
@@ -97,8 +97,111 @@ function TagInput({ tags = [], onChange, popularTags = [] }) {
     );
 }
 
+
+/**
+ * Picks images while the product is still being written.
+ *
+ * They cannot be uploaded yet -- there is no product to attach them to -- so
+ * they ride along with the form and are stored server-side the moment the
+ * product is created. Previews are object URLs, revoked when the selection
+ * changes so a long editing session does not hold every file it ever showed.
+ */
+// The server accepts a 40MB request and 20 files (99-ntiled.ini, nginx). Holding
+// the selection just under that turns "too big" into a sentence the person can
+// act on, instead of the bare 413 nginx would return.
+const MAX_FILES = 20;
+const MAX_TOTAL_BYTES = 36 * 1024 * 1024;
+const mb = (bytes) => (bytes / 1024 / 1024).toFixed(1);
+
+function MediaPicker({ files, onChange, error }) {
+    const [notice, setNotice] = useState('');
+    const previews = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files]);
+    const total = files.reduce((sum, file) => sum + file.size, 0);
+
+    useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
+
+    const add = (picked) => {
+        const next = [...files];
+        let running = total;
+        let skipped = 0;
+
+        for (const file of Array.from(picked ?? [])) {
+            if (next.length >= MAX_FILES || running + file.size > MAX_TOTAL_BYTES) {
+                skipped += 1;
+                continue;
+            }
+            next.push(file);
+            running += file.size;
+        }
+
+        setNotice(skipped
+            ? `${skipped} file${skipped === 1 ? '' : 's'} not added — one save takes up to ${MAX_FILES} images and ${mb(MAX_TOTAL_BYTES)} MB. Add the rest from the edit page after saving.`
+            : '');
+        onChange(next);
+    };
+
+    return (
+        <div className="admin-card">
+            <h3 className="text-xs font-semibold text-gray-900 mb-3">Media</h3>
+
+            <label className="block cursor-pointer rounded-lg border-2 border-dashed border-gray-200 p-6 text-center transition hover:border-gray-300 hover:bg-gray-50">
+                <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="mt-2 text-xs text-gray-600">Click to choose images</p>
+                <p className="mt-0.5 text-[10px] text-gray-400">
+                    JPG, PNG, GIF or WebP · they upload when you save the product
+                </p>
+                <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                        add(e.target.files);
+                        // lets the same file be re-picked after being removed
+                        e.target.value = '';
+                    }}
+                />
+            </label>
+
+            {files.length > 0 && (
+                <>
+                    <div className="mt-3 grid grid-cols-4 gap-2">
+                        {files.map((file, i) => (
+                            <div key={`${file.name}-${file.size}-${i}`} className="group relative aspect-square overflow-hidden rounded border border-gray-200 bg-gray-50">
+                                <img src={previews[i]} alt={file.name} className="h-full w-full object-cover" />
+                                {i === 0 && (
+                                    <span className="absolute left-1 top-1 rounded bg-gray-900/75 px-1.5 py-0.5 text-[9px] font-medium text-white">
+                                        Main
+                                    </span>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => onChange(files.filter((_, j) => j !== i))}
+                                    className="absolute right-1 top-1 rounded bg-gray-900/75 px-1.5 py-0.5 text-[11px] leading-none text-white opacity-0 transition group-hover:opacity-100"
+                                    aria-label={`Remove ${file.name}`}
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    <p className="mt-2 text-[10px] text-gray-400">
+                        {files.length} image{files.length === 1 ? '' : 's'} · {mb(total)} of {mb(MAX_TOTAL_BYTES)} MB · the first is the main image
+                    </p>
+                </>
+            )}
+
+            {notice && <div className="mt-2 text-[11px] text-amber-700">{notice}</div>}
+            {error && <div className="mt-2 text-[11px] text-red-600">{error}</div>}
+        </div>
+    );
+}
+
 export default function Create({ categories, vendors, popularTags, statuses, collections = [] }) {
     const { data, setData, post, processing, errors } = useForm({
+        media: [],
         name: '',
         slug: '',
         sku: '',
@@ -211,16 +314,11 @@ export default function Create({ categories, vendors, popularTags, statuses, col
                             </div>
                         </div>
 
-                        {/* Media placeholder */}
-                        <div className="admin-card">
-                            <h3 className="text-xs font-semibold text-gray-900 mb-3">Media</h3>
-                            <div className="border-2 border-dashed rounded-lg p-6 text-center border-gray-200">
-                                <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                </svg>
-                                <p className="mt-2 text-xs text-gray-500">Save the product first to upload media</p>
-                            </div>
-                        </div>
+                        <MediaPicker
+                            files={data.media}
+                            onChange={(files) => setData('media', files)}
+                            error={errors.media || errors['media.0']}
+                        />
 
                         {/* Lifestyle Image */}
                         <div className="admin-card">
