@@ -560,3 +560,35 @@ Files changed:
    resources/js/Pages/Admin/Products/Create.jsx       | 120 +++++++++++++++++++--
    3 files changed, 131 insertions(+), 15 deletions(-)
 ```
+
+## 2026-09-30 06:19 UTC — `22ab961`
+
+**Admin: product uploads use the live session token, not the page-load one
+
+Uploading an image failed with 419. The csrf-token meta tag is written into the
+HTML once, when the page renders, so an admin tab left open past the two-hour
+session lifetime carries a token the server has already retired -- the page
+still looks signed in, and every upload is rejected.
+
+The XSRF-TOKEN cookie is refreshed on every response, so requests now carry
+that. Laravel reads X-CSRF-TOKEN first and only falls back to X-XSRF-TOKEN when
+it is absent, so exactly one header is sent, cookie preferred; sending both
+would let the stale tag beat the fresh cookie. All six fetch calls on the
+product editor move across, autosave and variant updates included -- those were
+failing the same way, silently.
+
+A 419 now says the session expired and to refresh, rather than printing the
+number. The uploader also advertised 100MB when the server accepts 32MB.**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (22ab961)
+- Server: 3aa8675 → 22ab961
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   resources/js/Pages/Admin/Products/Edit.jsx | 41 +++++++++++++++---------------
+   resources/js/Utils/csrf.js                 | 37 +++++++++++++++++++++++++++
+   2 files changed, 57 insertions(+), 21 deletions(-)
+```
