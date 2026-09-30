@@ -1,6 +1,7 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { groupCollections } from '@/Utils/collectionGroups';
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { csrfHeaders, SESSION_EXPIRED, SESSION_EXPIRED_MESSAGE } from '@/Utils/csrf';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import debounce from 'lodash/debounce';
 import RichTextEditor from '@/Components/Admin/RichTextEditor';
@@ -29,7 +30,7 @@ function LifestyleImageUploader({ product, value, onChange }) {
             const res = await fetch(route('admin.products.lifestyle.upload', product.id), {
                 method: 'POST',
                 body,
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content },
+                headers: csrfHeaders(),
             });
 
             const result = await res.json().catch(() => ({}));
@@ -37,7 +38,9 @@ function LifestyleImageUploader({ product, value, onChange }) {
             // The old uploader assumed success and showed nothing when the
             // request failed. Surface the reason instead.
             if (!res.ok || !result.success) {
-                setError(result.message || `Upload failed (${res.status})`);
+                setError(res.status === SESSION_EXPIRED
+                    ? SESSION_EXPIRED_MESSAGE
+                    : (result.message || `Upload failed (${res.status})`));
                 return;
             }
 
@@ -129,9 +132,7 @@ function MediaUploader({ product, media = [], onUpdate }) {
             const response = await fetch(route('admin.products.media.upload', product.id), {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
-                },
+                headers: csrfHeaders(),
             });
             const result = await response.json().catch(() => ({}));
 
@@ -140,9 +141,11 @@ function MediaUploader({ product, media = [], onUpdate }) {
             // so a 500 or a validation error showed nothing at all.
             if (!response.ok || !result.success) {
                 setError(
-                    result.message
-                    || (result.errors ? Object.values(result.errors).flat().join(' ') : null)
-                    || `Upload failed (${response.status})`
+                    response.status === SESSION_EXPIRED
+                        ? SESSION_EXPIRED_MESSAGE
+                        : result.message
+                        || (result.errors ? Object.values(result.errors).flat().join(' ') : null)
+                        || `Upload failed (${response.status})`
                 );
                 return;
             }
@@ -163,10 +166,9 @@ function MediaUploader({ product, media = [], onUpdate }) {
         try {
             await fetch(route('admin.products.media.delete', [product.id, mediaId]), {
                 method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                headers: csrfHeaders({
                     'Content-Type': 'application/json',
-                },
+                }),
             });
             router.reload({ only: ['product'] });
         } catch (error) {
@@ -178,10 +180,9 @@ function MediaUploader({ product, media = [], onUpdate }) {
         try {
             await fetch(route('admin.products.media.primary', [product.id, mediaId]), {
                 method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                headers: csrfHeaders({
                     'Content-Type': 'application/json',
-                },
+                }),
             });
             router.reload({ only: ['product'] });
         } catch (error) {
@@ -267,7 +268,7 @@ function MediaUploader({ product, media = [], onUpdate }) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
                         <p className="mt-2 text-xs text-gray-500">Drop files or click to upload</p>
-                        <p className="text-[10px] text-gray-400">Images & videos up to 100MB</p>
+                        <p className="text-[10px] text-gray-400">Images & videos up to 32MB each</p>
                     </>
                 )}
             </div>
@@ -686,10 +687,9 @@ export default function Edit({ product, categories, vendors, popularTags, status
                 const response = await fetch(route('admin.products.autosave', productId), {
                     method: 'POST',
                     body: JSON.stringify(saveData),
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                    headers: csrfHeaders({
                         'Content-Type': 'application/json',
-                    },
+                    }),
                 });
                 const result = await response.json();
                 if (result.success) {
@@ -733,10 +733,9 @@ export default function Edit({ product, categories, vendors, popularTags, status
             await fetch(route('admin.products.variants.update', [product.id, variantId]), {
                 method: 'PUT',
                 body: JSON.stringify({ [field]: value }),
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                headers: csrfHeaders({
                     'Content-Type': 'application/json',
-                },
+                }),
             });
         } catch (error) {
             console.error('Variant update failed:', error);
