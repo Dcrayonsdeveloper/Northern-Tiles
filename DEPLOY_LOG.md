@@ -525,3 +525,38 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Index.jsx | 23 +++++++---------
    3 files changed, 37 insertions(+), 42 deletions(-)
 ```
+
+## 2026-09-30 06:14 UTC — `3aa8675`
+
+**Admin: choose product images while creating the product
+
+The create page said 'Save the product first to upload media', so adding a
+product meant filling the form, saving, waiting for the redirect, then going
+back for the images. Media needed a product row to attach to, and on the create
+page there was not one yet.
+
+The files now ride along with the form and are stored server-side the moment the
+product exists, which is the first point at which they can be. Previews are
+object URLs revoked when the selection changes, so a long editing session does
+not hold every file it ever displayed, and the first image is marked as the main
+one.
+
+The selection is held to 20 files and 36MB because that is what the server
+accepts (32MB per file and a 40MB request in 99-ntiled.ini, nginx at 40MB), and
+says so in a sentence rather than letting nginx answer with a bare 413. The
+validation rule was written at 100MB per file, which PHP would have dropped
+before validation ever saw it.**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (3aa8675)
+- Server: 81923d2 → 3aa8675
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   .../Catalog/Http/Requests/StoreProductRequest.php  |   8 ++
+   app/Http/Controllers/Admin/ProductController.php   |  18 +++-
+   resources/js/Pages/Admin/Products/Create.jsx       | 120 +++++++++++++++++++--
+   3 files changed, 131 insertions(+), 15 deletions(-)
+```
