@@ -626,3 +626,38 @@ Files changed:
    resources/js/Pages/Admin/Products/Index.jsx      |  4 ++--
    4 files changed, 40 insertions(+), 3 deletions(-)
 ```
+
+## 2026-09-30 11:33 UTC — `eff8b54`
+
+**Storefront: products show their uploaded image everywhere, not just where a column was imported
+
+Search, the shop grid, product cards, the cart and the home page all read the
+image_url column. Imported products have a URL there; products photographed
+through the admin uploader do not -- their files live in product_media and the
+column stays empty -- so every newly added product showed a placeholder across
+the whole site while the picture sat on disk.
+
+An empty column now falls back to the uploaded image, which fixes every one of
+those surfaces at once rather than a dozen call sites one at a time. Only
+products missing a column value pay for the lookup, and a loaded media relation
+is used in preference to querying; search and the catalogue listing now load
+media alongside their results so the fallback costs no extra queries. Media
+whose file is missing is skipped, so a dead row shows the placeholder instead of
+a broken image.
+
+Safe to resolve at the model: image_url is import data, not an admin field --
+nothing in the product editor reads or writes it.**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (eff8b54)
+- Server: 24361d4 → eff8b54
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Domain/Catalog/Services/CatalogService.php |  3 +-
+   app/Http/Controllers/Api/SearchController.php  |  4 +--
+   app/Models/Product.php                         | 48 +++++++++++++++++---------
+   3 files changed, 35 insertions(+), 20 deletions(-)
+```
