@@ -472,6 +472,34 @@ class Product extends Model
         return (int) round((($this->compare_at_price - $this->price) / $this->compare_at_price) * 100);
     }
 
+    /**
+     * The image to show for this product in a list.
+     *
+     * Prefers what was uploaded to the product over the image_url column. A
+     * product photographed through the media uploader has nothing in that
+     * column, which is why newly added products showed a placeholder in the
+     * admin list while imported ones did not.
+     *
+     * Reads the already-loaded relation instead of querying, so a page of
+     * twenty rows stays one query rather than forty, and skips media whose
+     * file is gone so a dead row shows the placeholder rather than a broken
+     * image.
+     */
+    public function getThumbnailUrlAttribute(): ?string
+    {
+        if ($this->relationLoaded('media')) {
+            $image = $this->media
+                ->sortByDesc('is_primary')
+                ->first(fn ($m) => $m->type === 'image' && $m->fileExists());
+
+            if ($image) {
+                return $image->url;
+            }
+        }
+
+        return $this->image_url ?: null;
+    }
+
     public function getPrimaryImageUrl(): ?string
     {
         $primary = $this->media()->where('is_primary', true)->where('type', 'image')->first();

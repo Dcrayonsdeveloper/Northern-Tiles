@@ -291,9 +291,9 @@ export default function Index({ products, filters, categories, vendors, statuses
                                         </td>
                                         <td className="px-4 py-2">
                                             <div className="flex items-center gap-3">
-                                                {p.image_url ? (
+                                                {(p.thumbnail_url || p.image_url) ? (
                                                     <img
-                                                        src={p.image_url}
+                                                        src={p.thumbnail_url || p.image_url}
                                                         alt={p.name}
                                                         className="h-10 w-10 flex-shrink-0 rounded-md object-cover"
                                                     />

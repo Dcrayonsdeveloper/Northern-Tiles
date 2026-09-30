@@ -47,6 +47,10 @@ class ProductController extends Controller
         $filters = $request->only(['search', 'status', 'category_id', 'vendor_id', 'sort', 'dir']);
         $products = $this->productService->getProducts($filters, null, 20);
 
+        // Appended here rather than on the model, so only the screen that needs
+        // a thumbnail pays for resolving one.
+        $products->getCollection()->transform(fn ($product) => $product->append('thumbnail_url'));
+
         $categories = Category::query()->active()->orderBy('name')->get(['id', 'name', 'slug']);
         $vendors = User::query()->where('is_seller', true)->orderBy('name')->get(['id', 'name']);
 

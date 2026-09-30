@@ -20,7 +20,12 @@ class ProductService
     public function getProducts(array $filters = [], ?int $sellerId = null, int $perPage = 20)
     {
         $query = Product::query()
-            ->with(['category', 'categories', 'seller', 'media' => fn ($q) => $q->where('is_primary', true)])
+            // Primary first, but not primary only: a product whose images were
+            // uploaded without one being flagged still has a thumbnail to show.
+            ->with(['category', 'categories', 'seller', 'media' => fn ($q) => $q
+                ->where('type', 'image')
+                ->orderByDesc('is_primary')
+                ->orderBy('sort')])
             ->when($sellerId, fn ($q) => $q->forSeller($sellerId));
 
         // Status filter
