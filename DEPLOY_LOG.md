@@ -592,3 +592,37 @@ Files changed:
    resources/js/Utils/csrf.js                 | 37 +++++++++++++++++++++++++++
    2 files changed, 57 insertions(+), 21 deletions(-)
 ```
+
+## 2026-09-30 09:48 UTC — `24361d4`
+
+**Admin: product list falls back to uploaded media for its thumbnail
+
+The list read the image_url column alone, so the nine products whose photos were
+uploaded through the media uploader -- which writes rows to product_media and
+leaves that column empty -- showed a placeholder while the 1,167 imported ones
+showed a picture. The files were on disk and flagged primary the whole time.
+
+A thumbnail_url accessor now prefers the uploaded image and falls back to the
+column. It reads the relation the list already eager-loads rather than querying,
+so twenty rows stay one query instead of forty, and it skips media whose file is
+missing so a dead row shows the placeholder rather than a broken image.
+
+The eager load no longer filters to is_primary only: a product whose images were
+uploaded without one being flagged has a thumbnail to show as well. The accessor
+is appended in the controller rather than on the model, so only the screen that
+needs it pays for resolving one.**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (24361d4)
+- Server: 22ab961 → 24361d4
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+   app/Domain/Catalog/Services/ProductService.php   |  7 +++++-
+   app/Http/Controllers/Admin/ProductController.php |  4 ++++
+   app/Models/Product.php                           | 28 ++++++++++++++++++++++++
+   resources/js/Pages/Admin/Products/Index.jsx      |  4 ++--
+   4 files changed, 40 insertions(+), 3 deletions(-)
+```
