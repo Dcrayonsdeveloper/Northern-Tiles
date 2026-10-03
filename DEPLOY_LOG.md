@@ -713,3 +713,26 @@ Files changed:
    resources/js/Pages/Admin/Products/Index.jsx | 12 ++++++++++--
    1 file changed, 10 insertions(+), 2 deletions(-)
 ```
+
+## 2026-10-03 10:10 UTC — `20043a2`
+
+**Products admin: catalogue CSV export, select-all across pages, bulk is_active fix**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (20043a2)
+- Server: cc68554 → 20043a2
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   .../Catalog/Services/ProductExportService.php      | 196 +++++++++++++++++++++
+   app/Domain/Catalog/Services/ProductService.php     |  43 ++++-
+   app/Http/Controllers/Admin/ProductController.php   |  54 +++++-
+   resources/js/Pages/Admin/Products/Index.jsx        | 188 +++++++++++++++-----
+   routes/admin.php                                   |   4 +
+   tests/Feature/Admin/ProductBulkActionsTest.php     |  98 +++++++++++
+   tests/Feature/Admin/ProductExportTest.php          | 166 +++++++++++++++++
+   7 files changed, 690 insertions(+), 59 deletions(-)
+```
