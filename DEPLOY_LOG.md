@@ -736,3 +736,24 @@ Files changed:
    tests/Feature/Admin/ProductExportTest.php          | 166 +++++++++++++++++
    7 files changed, 690 insertions(+), 59 deletions(-)
 ```
+
+## 2026-10-03 10:42 UTC — `2fd8a6b`
+
+**Products admin: one Download button wired to the selection**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (2fd8a6b)
+- Server: 20043a2 → 2fd8a6b
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   .../Catalog/Services/ProductExportService.php      |  27 +++--
+   app/Http/Controllers/Admin/ProductController.php   |  25 +++--
+   resources/js/Pages/Admin/Products/Index.jsx        | 115 +++++++++++++--------
+   routes/admin.php                                   |   5 +-
+   tests/Feature/Admin/ProductExportTest.php          |  53 ++++++++++
+   5 files changed, 165 insertions(+), 60 deletions(-)
+```
