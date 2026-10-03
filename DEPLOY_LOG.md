@@ -757,3 +757,28 @@ Files changed:
    tests/Feature/Admin/ProductExportTest.php          |  53 ++++++++++
    5 files changed, 165 insertions(+), 60 deletions(-)
 ```
+
+## 2026-10-03 10:57 UTC — `4100fa4`
+
+**Admin dashboard rebuild: revenue fix, charts, sidebar alert dots**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (4100fa4)
+- Server: 2fd8a6b → 4100fa4
+- Migrations: 2026_10_03_000001_add_admin_dashboard_widgets ................. 13.99ms DONE
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   .../Dashboard/Services/AdminAlertService.php       |  44 +++
+   app/Domain/Dashboard/Services/DashboardService.php | 311 ++++++++++++++++++++-
+   app/Http/Middleware/HandleInertiaRequests.php      |   5 +
+   ...26_10_03_000001_add_admin_dashboard_widgets.php | 121 ++++++++
+   resources/js/Components/Dashboard/Charts.jsx       | 303 ++++++++++++++++++++
+   .../js/Components/Dashboard/WidgetRenderer.jsx     | 179 +++++++++++-
+   resources/js/Layouts/DashboardLayout.jsx           |  29 +-
+   resources/js/Pages/Admin/Dashboard.jsx             |  28 +-
+   tests/Feature/Admin/DashboardTest.php              | 181 ++++++++++++
+   9 files changed, 1168 insertions(+), 33 deletions(-)
+```
