@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductService
@@ -171,9 +172,13 @@ class ProductService
     public function duplicateProduct(Product $product, User $user): Product
     {
         return DB::transaction(function () use ($product, $user) {
-            $newProduct = $product->replicate(['slug', 'created_at', 'updated_at']);
+            $newProduct = $product->replicate(['slug', 'sku', 'created_at', 'updated_at']);
             $newProduct->name = $product->name . ' (Copy)';
             $newProduct->slug = $this->generateUniqueSlug($newProduct->name);
+            // products.sku is UNIQUE. Replicating it verbatim meant the insert
+            // broke the constraint for any product that has one — which is the
+            // whole catalogue — so Duplicate 500'd instead of copying anything.
+            $newProduct->sku = $this->generateUniqueSku($product->sku, Product::class);
             $newProduct->status = Product::STATUS_DRAFT;
             $newProduct->published_at = null;
             $newProduct->created_by = $user->id;
@@ -208,17 +213,92 @@ class ProductService
                 }
             }
 
-            // Copy variants
+            // Copy variants. product_variants.sku is UNIQUE too, with the same
+            // consequence as above for any product that reached this far.
             foreach ($product->variants as $variant) {
-                $newVariant = $newProduct->variants()->create(
+                $newProduct->variants()->create(
                     collect($variant->toArray())
                         ->except(['id', 'product_id', 'created_at', 'updated_at'])
+                        ->put('sku', $this->generateUniqueSku($variant->sku, ProductVariant::class))
                         ->toArray()
                 );
             }
 
-            return $newProduct->fresh(['categories', 'variants', 'options.values']);
+            // Copy media. The new rows must not point at the original's files:
+            // MediaService::deleteMedia() removes the file from disk, so a
+            // shared path would mean deleting the copy's image also blanked the
+            // product it was copied from. Each local file is duplicated into the
+            // new product's own directory; remote urls are referenced as-is.
+            foreach ($product->media as $media) {
+                $newProduct->media()->create(
+                    collect($media->toArray())
+                        ->except(['id', 'product_id', 'created_at', 'updated_at', 'url', 'poster_url'])
+                        ->put('path', $this->copyMediaFile($media->path, $newProduct->id, $media->type))
+                        ->put('poster_path', $this->copyMediaFile($media->poster_path, $newProduct->id, $media->type))
+                        ->toArray()
+                );
+            }
+
+            return $newProduct->fresh(['categories', 'variants', 'options.values', 'media']);
         });
+    }
+
+    /**
+     * A SKU that is free to use, derived from the one being copied.
+     *
+     * Both products.sku and product_variants.sku are UNIQUE and nullable.
+     * Null stays null — a blank SKU is a legitimate state and NULLs do not
+     * collide — anything else gains a -COPY suffix, numbered if that is taken.
+     *
+     * Any -COPY suffix already on the source is stripped before numbering, so
+     * duplicating a duplicate gives NTD2004-COPY-2 rather than a SKU that
+     * grows -COPY-COPY-COPY the further it gets from the original.
+     *
+     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $model
+     */
+    protected function generateUniqueSku(?string $sku, string $model): ?string
+    {
+        if (! $sku) {
+            return null;
+        }
+
+        $base = preg_replace('/-COPY(-\d+)?$/i', '', $sku) . '-COPY';
+        $candidate = $base;
+        $counter = 1;
+
+        while ($model::where('sku', $candidate)->exists()) {
+            $counter++;
+            $candidate = $base . '-' . $counter;
+        }
+
+        return $candidate;
+    }
+
+    /**
+     * Duplicate one stored media file for a copied product.
+     *
+     * Remote urls (imported from Shopify and S3) have no local file to copy,
+     * and a row whose file is already missing — older imports left plenty —
+     * is carried over unchanged rather than silently dropped.
+     */
+    protected function copyMediaFile(?string $path, int $productId, string $type): ?string
+    {
+        if (! $path || Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
+        }
+
+        $disk = Storage::disk('public');
+
+        if (! $disk->exists($path)) {
+            return $path;
+        }
+
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $copy = "products/{$productId}/{$type}s/" . Str::uuid() . ($extension ? '.' . $extension : '');
+
+        $disk->copy($path, $copy);
+
+        return $copy;
     }
 
     /**
