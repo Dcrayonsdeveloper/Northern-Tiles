@@ -14,10 +14,27 @@ const widthClass = {
 // ── Range labels ──────────────────────────────────────────────────────────────
 
 const RANGES = [
-    { value: 'today', label: 'Today'    },
-    { value: '7d',    label: '7 days'   },
-    { value: '30d',   label: '30 days'  },
+    { value: 'today',      label: 'Today'      },
+    { value: '7d',         label: '7 days'     },
+    { value: '30d',        label: '30 days'    },
+    { value: 'this_month', label: 'This month' },
+    { value: 'this_year',  label: 'This year'  },
 ];
+
+// The widget registry stores a dictionary key for each title. Keys added after
+// the dictionary was last seeded resolve to nothing, so each component names
+// itself here — a widget with no title is worse than one named in English.
+const FALLBACK_TITLES = {
+    RevenueOverview: 'Overview',
+    RevenueTrend:    'Revenue & orders',
+    OrdersByStatus:  'Orders by status',
+    Performance:     'Performance',
+    RecentOrders:    'Recent orders',
+    TopProducts:     'Top products',
+    TopSellers:      'Top sellers',
+    SystemHealth:    'System health',
+    Announcements:   'Announcements',
+};
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -110,7 +127,10 @@ export default function Dashboard({ widgets = [], range = '30d' }) {
                 <div className="grid grid-cols-12 gap-5">
                     {widgets.map((w) => (
                         <div key={w.widget_key} className={widthClass[w.width] ?? widthClass.full}>
-                            <WidgetRenderer widget={w} title={d(w.title_key)} />
+                            <WidgetRenderer
+                                widget={w}
+                                title={d(w.title_key, FALLBACK_TITLES[w.component] ?? w.widget_key)}
+                            />
                         </div>
                     ))}
                 </div>

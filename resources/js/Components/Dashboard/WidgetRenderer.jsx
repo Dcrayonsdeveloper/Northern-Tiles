@@ -1,4 +1,25 @@
 import WidgetCard from '@/Components/Dashboard/WidgetCard';
+import { Link } from '@inertiajs/react';
+import {
+    LineChart, Meter, StatTile, StatusBars, formatMoney, formatNumber,
+} from '@/Components/Dashboard/Charts';
+
+const ORDER_STATUS_STYLES = {
+    pending: 'bg-yellow-50 text-yellow-700 ring-yellow-200',
+    processing: 'bg-blue-50 text-blue-700 ring-blue-200',
+    shipped: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
+    delivered: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+    cancelled: 'bg-red-50 text-red-700 ring-red-200',
+    refunded: 'bg-orange-50 text-orange-700 ring-orange-200',
+};
+
+function OrderStatusPill({ status }) {
+    return (
+        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ring-1 ring-inset ${ORDER_STATUS_STYLES[status] ?? 'bg-gray-50 text-gray-600 ring-gray-200'}`}>
+            {status}
+        </span>
+    );
+}
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -96,7 +117,34 @@ export default function WidgetRenderer({ widget, title }) {
 
     switch (widget.component) {
 
-        case 'RevenueOverview':
+        // The admin KPI row renders bare: six tiles are already cards, and
+        // wrapping them in another card gives the page a box inside a box.
+        case 'RevenueOverview': {
+            // A cached payload from before the rebuild still has the old shape.
+            // Rendering it the old way beats rendering nothing for the few
+            // minutes until the cache turns over.
+            if (data.kind !== 'stat_tiles') {
+                return (
+                    <WidgetCard title={cardTitle}>
+                        <StatGrid
+                            items={[
+                                { label: 'Orders',  value: data.orders_count  ?? 0 },
+                                { label: 'Revenue', value: data.revenue_total ?? 0 },
+                            ]}
+                        />
+                    </WidgetCard>
+                );
+            }
+
+            return (
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+                    {(data.tiles ?? []).map((t) => (
+                        <StatTile key={t.label} {...t} currency={data.currency} />
+                    ))}
+                </div>
+            );
+        }
+
         case 'SalesKpi': {
             return (
                 <WidgetCard title={cardTitle}>
@@ -110,7 +158,106 @@ export default function WidgetRenderer({ widget, title }) {
             );
         }
 
-        case 'OrdersByStatus':
+        case 'RevenueTrend': {
+            const points = data.points ?? [];
+            const hasAny = points.some(p => p.revenue > 0 || p.orders > 0);
+
+            return (
+                <WidgetCard title={cardTitle}>
+                    {hasAny ? (
+                        // Small multiples, not a dual axis. Each frame owns its
+                        // scale, so neither line's shape is an artefact of the
+                        // other's units.
+                        <div className="grid gap-5 lg:grid-cols-2">
+                            <div>
+                                <div className="mb-1 text-[11px] font-medium uppercase tracking-widest text-gray-400">
+                                    Revenue
+                                </div>
+                                <LineChart
+                                    points={points} valueKey="revenue"
+                                    format="currency" currency={data.currency}
+                                />
+                            </div>
+                            <div>
+                                <div className="mb-1 text-[11px] font-medium uppercase tracking-widest text-gray-400">
+                                    Orders
+                                </div>
+                                <LineChart points={points} valueKey="orders" format="number" />
+                            </div>
+                        </div>
+                    ) : (
+                        <EmptyState>No orders in this period.</EmptyState>
+                    )}
+                </WidgetCard>
+            );
+        }
+
+        case 'Performance': {
+            const meters = data.meters ?? [];
+            return (
+                <WidgetCard title={cardTitle}>
+                    <div className="space-y-4">
+                        {meters.map((m) => <Meter key={m.label} {...m} />)}
+                    </div>
+                </WidgetCard>
+            );
+        }
+
+        case 'RecentOrders': {
+            const rows = data.rows ?? [];
+            return (
+                <WidgetCard
+                    title={cardTitle}
+                    actions={
+                        <Link href={route('admin.orders.index')} className="text-[11px] font-medium text-brand hover:underline">
+                            View all
+                        </Link>
+                    }
+                >
+                    {rows.length ? (
+                        <div className="divide-y divide-gray-50">
+                            {rows.map((r) => (
+                                <div key={r.id} className="flex items-center justify-between gap-3 py-2.5">
+                                    <div className="min-w-0">
+                                        <Link
+                                            href={route('admin.orders.show', r.id)}
+                                            className="block truncate text-xs font-medium text-gray-900 hover:text-brand"
+                                        >
+                                            {r.order_number}
+                                        </Link>
+                                        <div className="truncate text-[11px] text-gray-400">
+                                            {r.customer} · {r.placed_at}
+                                        </div>
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-3">
+                                        <OrderStatusPill status={r.status} />
+                                        <span className="w-20 text-right text-xs font-semibold tabular-nums text-gray-900">
+                                            {formatMoney(r.total, data.currency)}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <EmptyState>No orders yet.</EmptyState>
+                    )}
+                </WidgetCard>
+            );
+        }
+
+        case 'OrdersByStatus': {
+            const rows = data.rows ?? [];
+            return (
+                <WidgetCard title={cardTitle}>
+                    {rows.length ? (
+                        <StatusBars rows={rows} total={data.total ?? 0} />
+                    ) : (
+                        <EmptyState>No orders in this period.</EmptyState>
+                    )}
+                </WidgetCard>
+            );
+        }
+
         case 'OrdersSummary': {
             const rows = data.rows ?? [];
             return (
@@ -155,16 +302,26 @@ export default function WidgetRenderer({ widget, title }) {
             return (
                 <WidgetCard title={cardTitle}>
                     {rows.length ? (
-                        <SimpleTable
-                            columns={[
-                                { key: 'name',    label: 'Product' },
-                                { key: 'revenue', label: 'Revenue' },
-                                { key: 'qty',     label: 'Qty'     },
-                            ]}
-                            rows={rows}
-                        />
+                        <ol className="divide-y divide-gray-50">
+                            {rows.map((r, i) => (
+                                <li key={`${r.sku}-${i}`} className="flex items-center gap-3 py-2.5">
+                                    <span className="w-4 shrink-0 text-[11px] font-semibold tabular-nums text-gray-300">
+                                        {i + 1}
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="truncate text-xs font-medium text-gray-900">{r.name}</div>
+                                        <div className="text-[11px] text-gray-400">
+                                            {r.sku || '—'} · {formatNumber(r.qty)} sold
+                                        </div>
+                                    </div>
+                                    <span className="shrink-0 text-xs font-semibold tabular-nums text-gray-900">
+                                        {formatMoney(r.revenue, data.currency)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
                     ) : (
-                        <EmptyState>No sales yet.</EmptyState>
+                        <EmptyState>No sales in this period.</EmptyState>
                     )}
                 </WidgetCard>
             );
