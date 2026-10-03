@@ -30,7 +30,7 @@ class DashboardTest extends TestCase
 
     private function order(string $status, float $total, ?\DateTimeInterface $at = null): Order
     {
-        return Order::create([
+        $order = Order::create([
             'order_number' => 'ORD-' . str()->random(8),
             'status' => $status,
             'customer_name' => 'Pat Morrow',
@@ -38,8 +38,16 @@ class DashboardTest extends TestCase
             'currency' => 'AUD',
             'subtotal' => $total,
             'total' => $total,
-            'created_at' => $at ?? now(),
         ]);
+
+        // created_at is not fillable, so it has to be forced after the insert —
+        // passing it to create() silently leaves every order stamped now, which
+        // makes a range test pass for the wrong reason.
+        if ($at) {
+            $order->forceFill(['created_at' => $at])->save();
+        }
+
+        return $order->refresh();
     }
 
     private function widget(string $key, string $range = 'today'): array
@@ -126,6 +134,42 @@ class DashboardTest extends TestCase
         $this->assertSame(25.0, $meters['Completion rate']['percent']);
         $this->assertSame(25.0, $meters['Cancellation rate']['percent']);
         $this->assertSame('critical', $meters['Cancellation rate']['tone']);
+    }
+
+    public function test_the_range_tabs_change_the_data(): void
+    {
+        $this->order('delivered', 100.00, now());
+        $this->order('delivered', 900.00, now()->subDays(20));
+
+        $today = collect($this->widget('admin.revenue_overview', 'today')['tiles'])->keyBy('label');
+        $month = collect($this->widget('admin.revenue_overview', '30d')['tiles'])->keyBy('label');
+
+        $this->assertSame(100.0, $today['Revenue']['value']);
+        $this->assertSame(1000.0, $month['Revenue']['value']);
+    }
+
+    public function test_a_saved_layout_cannot_override_the_selected_range(): void
+    {
+        $admin = $this->admin();
+        $this->order('delivered', 100.00, now());
+        $this->order('delivered', 900.00, now()->subDays(20));
+
+        // A layout saved against the old page pinned a range per widget, and
+        // that pin used to beat the tabs — so the KPI row answered for the
+        // pinned period whichever tab was selected, and clicking Today or
+        // This year changed nothing above the fold.
+        app(DashboardService::class)->saveUserLayout($admin, [
+            ['widget_key' => 'admin.revenue_overview', 'enabled' => true, 'sort' => 10, 'range' => 'today'],
+        ]);
+
+        $widgets = app(DashboardService::class)->widgetsForUser($admin, '30d');
+        $overview = collect($widgets)->firstWhere('widget_key', 'admin.revenue_overview');
+
+        $this->assertSame('30d', $overview['range']);
+        $this->assertSame(
+            1000.0,
+            collect($overview['data']['tiles'])->firstWhere('label', 'Revenue')['value'],
+        );
     }
 
     public function test_the_dashboard_renders_for_an_admin(): void

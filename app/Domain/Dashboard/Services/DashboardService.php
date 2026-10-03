@@ -31,6 +31,8 @@ class DashboardService
         'admin.performance' => 'third',
         'admin.top_products' => 'third',
         'admin.recent_orders' => 'full',
+        'admin.system_health' => 'half',
+        'admin.announcements' => 'half',
     ];
 
     public function widgetsForUser(User $user, string $rangeKey = '30d'): array
@@ -54,9 +56,15 @@ class DashboardService
             $width = (string) Arr::get($override, 'width', self::DEFAULT_WIDTHS[$w->widget_key] ?? 'full');
             $ttlSeconds = (int) Arr::get($override, 'cache_ttl_seconds', $w->cache_ttl_seconds);
 
-            $effectiveRangeKey = $w->supports_date_range
-                ? (string) Arr::get($override, 'range', $rangeKey)
-                : null;
+            // The range tabs on the page win, full stop.
+            //
+            // This used to read a per-widget `range` out of the saved layout
+            // and prefer it, so a layout that pinned one silently defeated the
+            // tabs: the KPI row and the status chart answered for whatever was
+            // pinned while the trend answered for the tab, and the page showed
+            // two different periods at once with no sign which was which.
+            // Clicking Today or This year changed nothing above the fold.
+            $effectiveRangeKey = $w->supports_date_range ? $rangeKey : null;
 
             $data = $enabled
                 ? $this->widgetData($user, $roleKey, $w->widget_key, $effectiveRangeKey, $ttlSeconds)

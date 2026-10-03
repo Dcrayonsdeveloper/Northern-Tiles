@@ -1,7 +1,7 @@
 import WidgetCard from '@/Components/Dashboard/WidgetCard';
 import { Link } from '@inertiajs/react';
 import {
-    LineChart, Meter, StatTile, StatusBars, formatMoney, formatNumber,
+    DualLineChart, Meter, StatTile, StatusDonut, formatMoney, formatNumber,
 } from '@/Components/Dashboard/Charts';
 
 const ORDER_STATUS_STYLES = {
@@ -165,26 +165,7 @@ export default function WidgetRenderer({ widget, title }) {
             return (
                 <WidgetCard title={cardTitle}>
                     {hasAny ? (
-                        // Small multiples, not a dual axis. Each frame owns its
-                        // scale, so neither line's shape is an artefact of the
-                        // other's units.
-                        <div className="grid gap-5 lg:grid-cols-2">
-                            <div>
-                                <div className="mb-1 text-[11px] font-medium uppercase tracking-widest text-gray-400">
-                                    Revenue
-                                </div>
-                                <LineChart
-                                    points={points} valueKey="revenue"
-                                    format="currency" currency={data.currency}
-                                />
-                            </div>
-                            <div>
-                                <div className="mb-1 text-[11px] font-medium uppercase tracking-widest text-gray-400">
-                                    Orders
-                                </div>
-                                <LineChart points={points} valueKey="orders" format="number" />
-                            </div>
-                        </div>
+                        <DualLineChart points={points} currency={data.currency} />
                     ) : (
                         <EmptyState>No orders in this period.</EmptyState>
                     )}
@@ -250,7 +231,7 @@ export default function WidgetRenderer({ widget, title }) {
             return (
                 <WidgetCard title={cardTitle}>
                     {rows.length ? (
-                        <StatusBars rows={rows} total={data.total ?? 0} />
+                        <StatusDonut rows={rows} total={data.total ?? 0} />
                     ) : (
                         <EmptyState>No orders in this period.</EmptyState>
                     )}
