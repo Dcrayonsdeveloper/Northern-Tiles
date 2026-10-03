@@ -97,11 +97,11 @@ class ProductExportService
      *
      * @return array<int, string>
      */
-    public function specKeys(): array
+    public function specKeys(?array $ids = null): array
     {
         $keys = [];
 
-        Product::query()
+        $this->baseQuery($ids)
             ->whereNotNull('specifications')
             ->select('id', 'specifications')
             ->chunk(self::CHUNK, function ($chunk) use (&$keys) {
@@ -121,14 +121,27 @@ class ProductExportService
     }
 
     /**
-     * Stream the whole catalogue as a CSV download.
+     * The products being exported: a selection if one was made, else all.
+     *
+     * An empty array is not the same as null here. Null means "nothing was
+     * selected, so export everything"; an empty selection cannot reach this
+     * point, because the button exports all when nothing is ticked.
      */
-    public function download(string $filename = 'products.csv'): StreamedResponse
+    private function baseQuery(?array $ids = null)
+    {
+        return Product::query()
+            ->when($ids !== null, fn ($q) => $q->whereIn('id', $ids));
+    }
+
+    /**
+     * Stream products as a CSV download — the given ids, or all of them.
+     */
+    public function download(string $filename = 'products.csv', ?array $ids = null): StreamedResponse
     {
         $columns = $this->columns();
-        $specKeys = $this->specKeys();
+        $specKeys = $this->specKeys($ids);
 
-        return response()->streamDownload(function () use ($columns, $specKeys) {
+        return response()->streamDownload(function () use ($columns, $specKeys, $ids) {
             $out = fopen('php://output', 'w');
 
             // Excel reads a CSV as the system codepage unless the file opens
@@ -141,7 +154,7 @@ class ProductExportService
                 array_map(fn ($key) => 'spec_' . $key, $specKeys)
             ));
 
-            Product::query()
+            $this->baseQuery($ids)
                 ->with(['category', 'categories', 'collections', 'productTags', 'seller', 'variantFamily', 'media'])
                 ->orderBy('id')
                 ->chunk(self::CHUNK, function ($products) use ($out, $columns, $specKeys) {

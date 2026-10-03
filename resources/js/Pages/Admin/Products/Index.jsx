@@ -2,6 +2,7 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, useCallback, useMemo } from 'react';
 import debounce from 'lodash/debounce';
+import { csrfHeaders, SESSION_EXPIRED, SESSION_EXPIRED_MESSAGE } from '@/Utils/csrf';
 
 function Pagination({ links }) {
     if (!links?.length) return null;
@@ -27,28 +28,13 @@ function Pagination({ links }) {
     );
 }
 
-/**
- * Excel-green spreadsheet glyph for the two CSV downloads.
- *
- * They sit side by side, so the sheet alone would not tell them apart: "all"
- * carries a download arrow, "template" an empty grid. Each button pairs this
- * with a title and aria-label, which is what actually names the action for a
- * tooltip and for a screen reader.
- */
-function SpreadsheetIcon({ variant }) {
+/** Excel-green spreadsheet glyph with a download arrow. */
+function SpreadsheetIcon() {
     return (
         <svg className="h-4 w-4 text-[#1D6F42]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.8} />
-            {variant === 'template' ? (
-                <>
-                    <path strokeWidth={1.5} d="M3 9h18M3 15h18M9 3v18M15 3v18" />
-                </>
-            ) : (
-                <>
-                    <path strokeWidth={1.5} d="M3 9h18" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11.5v6m0 0l-2.5-2.5M12 17.5l2.5-2.5" />
-                </>
-            )}
+            <path strokeWidth={1.5} d="M3 9h18" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11.5v6m0 0l-2.5-2.5M12 17.5l2.5-2.5" />
         </svg>
     );
 }
@@ -178,6 +164,7 @@ export default function Index({ products, filters, categories, vendors, statuses
     const [search, setSearch] = useState(filters?.search || '');
     const [selectedIds, setSelectedIds] = useState([]);
     const [selectingAll, setSelectingAll] = useState(false);
+    const [downloading, setDownloading] = useState(false);
 
     const productIds = useMemo(() => products?.data?.map(p => p.id) || [], [products?.data]);
     const totalMatching = products?.total ?? productIds.length;
@@ -206,6 +193,57 @@ export default function Index({ products, filters, categories, vendors, statuses
             { ...filters, [key]: value || undefined },
             { preserveState: true, replace: true }
         );
+    };
+
+    /**
+     * Download the ticked products, or all of them when nothing is ticked.
+     *
+     * Posted and fetched rather than linked. The ids have to go in a body:
+     * "select all" ticks the whole filtered catalogue and a thousand of them
+     * is past what a url can carry. That rules out a plain <a download>, so
+     * the response is read as a blob and handed to a synthetic link — which
+     * also means a 419 can be reported properly instead of navigating the
+     * admin to an error page.
+     */
+    const downloadCsv = async () => {
+        setDownloading(true);
+
+        try {
+            const response = await fetch(route('admin.products.export'), {
+                method: 'POST',
+                headers: csrfHeaders({
+                    'Content-Type': 'application/json',
+                    Accept: 'text/csv',
+                }),
+                credentials: 'same-origin',
+                body: JSON.stringify({ ids: selectedIds }),
+            });
+
+            if (response.status === SESSION_EXPIRED) {
+                alert(SESSION_EXPIRED_MESSAGE);
+                return;
+            }
+
+            if (!response.ok) throw new Error(response.statusText);
+
+            // The filename the server chose, so a selection and a full export
+            // do not land in Downloads under the same name.
+            const disposition = response.headers.get('Content-Disposition') ?? '';
+            const filename = disposition.match(/filename="?([^";]+)"?/)?.[1] ?? 'products.csv';
+
+            const url = URL.createObjectURL(await response.blob());
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch {
+            alert('Could not download the products. Please try again.');
+        } finally {
+            setDownloading(false);
+        }
     };
 
     // Adds or removes this page's ids rather than replacing the selection, so
@@ -283,31 +321,22 @@ export default function Index({ products, filters, categories, vendors, statuses
             <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-gray-900">Products</div>
                 <div className="flex items-center gap-2">
-                    {/* Plain anchors, not Inertia <Link>s. These routes return a
-                        CSV with Content-Disposition: attachment, and Inertia
-                        visits are XHR — it cannot save a file from one, so on
-                        receiving a response without the X-Inertia header it
-                        dumped the raw CSV into its error overlay instead of
-                        downloading anything. A real navigation lets the browser
-                        honour the header. */}
-                    <a
-                        href={route('admin.products.export')}
-                        className="btn-secondary px-2.5"
-                        title="Download all products — every field, as a spreadsheet"
-                        aria-label="Download all products"
-                        download
+                    <button
+                        type="button"
+                        onClick={downloadCsv}
+                        disabled={downloading}
+                        className="btn-secondary inline-flex items-center gap-1.5 disabled:opacity-50"
+                        title={selectedIds.length > 0
+                            ? `Download the ${selectedIds.length} selected products as a spreadsheet`
+                            : 'Download every product as a spreadsheet'}
                     >
-                        <SpreadsheetIcon variant="all" />
-                    </a>
-                    <a
-                        href={route('admin.products.import-template')}
-                        className="btn-secondary px-2.5"
-                        title="Download the blank import template"
-                        aria-label="Download import template"
-                        download
-                    >
-                        <SpreadsheetIcon variant="template" />
-                    </a>
+                        <SpreadsheetIcon />
+                        {downloading
+                            ? 'Downloading…'
+                            : selectedIds.length > 0
+                                ? `Download (${selectedIds.length})`
+                                : 'Download'}
+                    </button>
                     <Link
                         href={route('admin.products.create')}
                         className="btn-primary"
