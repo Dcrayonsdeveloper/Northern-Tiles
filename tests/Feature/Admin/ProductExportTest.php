@@ -125,6 +125,59 @@ class ProductExportTest extends TestCase
         $this->assertStringContainsString('FALSE', $stops);
     }
 
+    public function test_posting_ids_exports_only_those_products(): void
+    {
+        $wanted = $this->product('NTD1');
+        $this->product('NTD2');
+        $this->product('NTD3');
+
+        $response = $this->actingAs($this->admin())
+            ->post(route('admin.products.export'), ['ids' => [$wanted->id]]);
+
+        $response->assertOk();
+        $csv = $response->streamedContent();
+
+        $this->assertStringContainsString('NTD1', $csv);
+        $this->assertStringNotContainsString('NTD2', $csv);
+        $this->assertStringNotContainsString('NTD3', $csv);
+        // Named apart so a selection and a full export do not collide in the
+        // browser's Downloads folder.
+        $this->assertStringContainsString('selection', $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_posting_no_ids_exports_everything(): void
+    {
+        $this->product('NTD1');
+        $this->product('NTD2');
+
+        $response = $this->actingAs($this->admin())
+            ->post(route('admin.products.export'), ['ids' => []]);
+
+        $response->assertOk();
+        $csv = $response->streamedContent();
+
+        // An empty selection is the button's "nothing ticked" state, which
+        // means the whole catalogue — not an empty file.
+        $this->assertStringContainsString('NTD1', $csv);
+        $this->assertStringContainsString('NTD2', $csv);
+        $this->assertStringNotContainsString('selection', $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_a_selection_export_only_carries_its_own_spec_columns(): void
+    {
+        $wanted = $this->product('NTD1', ['specifications' => ['finish' => 'Polished']]);
+        $this->product('NTD2', ['specifications' => ['grip_rating' => 'P4']]);
+
+        $csv = $this->actingAs($this->admin())
+            ->post(route('admin.products.export'), ['ids' => [$wanted->id]])
+            ->streamedContent();
+
+        $header = explode("\n", $csv)[0];
+
+        $this->assertStringContainsString('spec_finish', $header);
+        $this->assertStringNotContainsString('spec_grip_rating', $header);
+    }
+
     public function test_the_export_is_admin_only(): void
     {
         $this->product('NTD1');

@@ -454,17 +454,26 @@ class ProductController extends Controller
     }
 
     /**
-     * Download the whole catalogue as a CSV.
+     * Download products as a CSV — the ticked ones, or the whole catalogue.
      *
-     * Deliberately ignores the screen's filters: this is "download everything",
-     * and a sheet that silently held only the category you happened to be
-     * looking at would be worse than useless as a backup or a working copy.
+     * Takes ids by POST rather than in the query string: "select all" ticks
+     * the entire filtered catalogue, and a thousand ids is past what a URL can
+     * carry. Nothing ticked means everything, which is also what the screen's
+     * button offers when the selection is empty.
      */
-    public function export(): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
     {
-        return $this->exportService->download(
-            'products-' . now()->format('Y-m-d') . '.csv'
-        );
+        $request->validate([
+            'ids' => ['sometimes', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $ids = $request->input('ids');
+        $ids = empty($ids) ? null : array_map('intval', $ids);
+
+        $filename = 'products-' . ($ids ? 'selection-' : '') . now()->format('Y-m-d') . '.csv';
+
+        return $this->exportService->download($filename, $ids);
     }
 
     /**
