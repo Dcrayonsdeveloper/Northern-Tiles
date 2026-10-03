@@ -696,3 +696,20 @@ Files changed:
    tests/Feature/Admin/ProductDuplicateTest.php   | 133 +++++++++++++++++++++++++
    2 files changed, 217 insertions(+), 4 deletions(-)
 ```
+
+## 2026-10-03 05:48 UTC — `cc68554`
+
+**Download Template: let the browser save the file**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (cc68554)
+- Server: 05bfd50 → cc68554
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   resources/js/Pages/Admin/Products/Index.jsx | 12 ++++++++++--
+   1 file changed, 10 insertions(+), 2 deletions(-)
+```
