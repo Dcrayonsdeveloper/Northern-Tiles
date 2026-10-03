@@ -157,7 +157,11 @@ Route::prefix('products')->name('products.')->group(function () {
     Route::get('bulk-import/{job}/status', [ProductController::class, 'bulkImportStatus'])->name('bulk-import.status');
     Route::get('import-template', [ProductController::class, 'downloadTemplate'])->name('import-template');
 
+    // Export
+    Route::get('export', [ProductController::class, 'export'])->name('export');
+
     // Bulk actions
+    Route::get('matching-ids', [ProductController::class, 'matchingIds'])->name('matching-ids');
     Route::post('bulk-delete', [ProductController::class, 'bulkDelete'])->name('bulk-delete');
     Route::post('bulk-status', [ProductController::class, 'bulkStatus'])->name('bulk-status');
 });

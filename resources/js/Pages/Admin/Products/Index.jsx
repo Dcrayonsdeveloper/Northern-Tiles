@@ -27,6 +27,32 @@ function Pagination({ links }) {
     );
 }
 
+/**
+ * Excel-green spreadsheet glyph for the two CSV downloads.
+ *
+ * They sit side by side, so the sheet alone would not tell them apart: "all"
+ * carries a download arrow, "template" an empty grid. Each button pairs this
+ * with a title and aria-label, which is what actually names the action for a
+ * tooltip and for a screen reader.
+ */
+function SpreadsheetIcon({ variant }) {
+    return (
+        <svg className="h-4 w-4 text-[#1D6F42]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={1.8} />
+            {variant === 'template' ? (
+                <>
+                    <path strokeWidth={1.5} d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+                </>
+            ) : (
+                <>
+                    <path strokeWidth={1.5} d="M3 9h18" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11.5v6m0 0l-2.5-2.5M12 17.5l2.5-2.5" />
+                </>
+            )}
+        </svg>
+    );
+}
+
 function StatusBadge({ status }) {
     const styles = {
         draft: 'bg-gray-100 text-gray-700',
@@ -80,44 +106,69 @@ function InventoryCell({ product: p }) {
     );
 }
 
-function BulkActionsBar({ selectedCount, onDelete, onStatusChange, onClear }) {
+function BulkActionsBar({ selectedCount, total, onDelete, onStatusChange, onClear, onSelectAllMatching, selectingAll }) {
+    // The checkboxes can only tick the page they can see — 20 of 600-odd. A
+    // change meant for the whole catalogue should not mean paging through 30
+    // screens ticking each one, so once there is more to take, offer the rest.
+    const moreToSelect = total > selectedCount;
+
     return (
-        <div className="flex items-center justify-between rounded-lg bg-brand/5 border border-brand/20 px-4 py-2">
-            <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-brand">
-                    {selectedCount} selected
-                </span>
-                <button
-                    type="button"
-                    onClick={onClear}
-                    className="text-xs text-gray-500 hover:text-gray-700"
-                >
-                    Clear selection
-                </button>
+        <div className="rounded-lg bg-brand/5 border border-brand/20 px-4 py-2">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-brand">
+                        {selectedCount} selected
+                    </span>
+                    <button
+                        type="button"
+                        onClick={onClear}
+                        className="text-xs text-gray-500 hover:text-gray-700"
+                    >
+                        Clear selection
+                    </button>
+                </div>
+                <div className="flex items-center gap-2">
+                    <select
+                        onChange={(e) => {
+                            if (e.target.value) {
+                                onStatusChange(e.target.value);
+                                e.target.value = '';
+                            }
+                        }}
+                        className="admin-select text-xs py-1"
+                        defaultValue=""
+                    >
+                        <option value="">Change Status</option>
+                        <option value="published">Publish</option>
+                        <option value="draft">Set as Draft</option>
+                        <option value="archived">Archive</option>
+                    </select>
+                    <button
+                        type="button"
+                        onClick={onDelete}
+                        className="btn-secondary text-red-600 hover:bg-red-50 text-xs px-3 py-1"
+                    >
+                        Delete Selected
+                    </button>
+                </div>
             </div>
-            <div className="flex items-center gap-2">
-                <select
-                    onChange={(e) => {
-                        if (e.target.value) {
-                            onStatusChange(e.target.value);
-                            e.target.value = '';
-                        }
-                    }}
-                    className="admin-select text-xs py-1"
-                    defaultValue=""
-                >
-                    <option value="">Change Status</option>
-                    <option value="published">Publish</option>
-                    <option value="draft">Set as Draft</option>
-                    <option value="archived">Archive</option>
-                </select>
-                <button
-                    type="button"
-                    onClick={onDelete}
-                    className="btn-secondary text-red-600 hover:bg-red-50 text-xs px-3 py-1"
-                >
-                    Delete Selected
-                </button>
+
+            <div className="mt-1.5 border-t border-brand/10 pt-1.5 text-[11px] text-gray-600">
+                {moreToSelect ? (
+                    <button
+                        type="button"
+                        onClick={onSelectAllMatching}
+                        disabled={selectingAll}
+                        className="font-medium text-brand hover:underline disabled:opacity-50"
+                    >
+                        {selectingAll ? 'Selecting…' : `Select all ${total} products matching this filter`}
+                    </button>
+                ) : (
+                    <span>
+                        All {total} products matching this filter are selected.
+                        <strong className="ml-1 text-gray-700">Bulk actions now apply to every one of them.</strong>
+                    </span>
+                )}
             </div>
         </div>
     );
@@ -126,10 +177,15 @@ function BulkActionsBar({ selectedCount, onDelete, onStatusChange, onClear }) {
 export default function Index({ products, filters, categories, vendors, statuses }) {
     const [search, setSearch] = useState(filters?.search || '');
     const [selectedIds, setSelectedIds] = useState([]);
+    const [selectingAll, setSelectingAll] = useState(false);
 
     const productIds = useMemo(() => products?.data?.map(p => p.id) || [], [products?.data]);
-    const allSelected = productIds.length > 0 && selectedIds.length === productIds.length;
-    const someSelected = selectedIds.length > 0 && selectedIds.length < productIds.length;
+    const totalMatching = products?.total ?? productIds.length;
+    // Compared by membership, not by count: once "select all matching" has run,
+    // the selection is larger than the page and a count test would read as
+    // nothing selected, unticking the header box over a fully ticked page.
+    const allSelected = productIds.length > 0 && productIds.every(id => selectedIds.includes(id));
+    const someSelected = selectedIds.length > 0 && !allSelected;
 
     const debouncedSearch = useCallback(
         debounce((value) => {
@@ -152,11 +208,39 @@ export default function Index({ products, filters, categories, vendors, statuses
         );
     };
 
+    // Adds or removes this page's ids rather than replacing the selection, so
+    // ticking page 1, paging to page 2 and ticking that keeps both.
     const toggleSelectAll = () => {
-        if (allSelected) {
-            setSelectedIds([]);
-        } else {
-            setSelectedIds(productIds);
+        setSelectedIds(prev => allSelected
+            ? prev.filter(id => !productIds.includes(id))
+            : [...new Set([...prev, ...productIds])]);
+    };
+
+    // Asks the server which products the current filter matches. The ids are
+    // not shipped with the page: they are only wanted on the rare click, and
+    // sending 600 of them on every page load to support it would be waste.
+    const selectAllMatching = async () => {
+        setSelectingAll(true);
+
+        try {
+            const params = new URLSearchParams();
+            Object.entries(filters ?? {}).forEach(([key, value]) => {
+                if (value) params.append(key, value);
+            });
+
+            const response = await fetch(`${route('admin.products.matching-ids')}?${params}`, {
+                headers: { Accept: 'application/json' },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) throw new Error(response.statusText);
+
+            const { ids } = await response.json();
+            setSelectedIds(ids ?? []);
+        } catch {
+            alert('Could not select every matching product. Please try again.');
+        } finally {
+            setSelectingAll(false);
         }
     };
 
@@ -199,7 +283,7 @@ export default function Index({ products, filters, categories, vendors, statuses
             <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-gray-900">Products</div>
                 <div className="flex items-center gap-2">
-                    {/* A plain anchor, not an Inertia <Link>. The route returns a
+                    {/* Plain anchors, not Inertia <Link>s. These routes return a
                         CSV with Content-Disposition: attachment, and Inertia
                         visits are XHR — it cannot save a file from one, so on
                         receiving a response without the X-Inertia header it
@@ -207,11 +291,22 @@ export default function Index({ products, filters, categories, vendors, statuses
                         downloading anything. A real navigation lets the browser
                         honour the header. */}
                     <a
-                        href={route('admin.products.import-template')}
-                        className="btn-secondary"
+                        href={route('admin.products.export')}
+                        className="btn-secondary px-2.5"
+                        title="Download all products — every field, as a spreadsheet"
+                        aria-label="Download all products"
                         download
                     >
-                        Download Template
+                        <SpreadsheetIcon variant="all" />
+                    </a>
+                    <a
+                        href={route('admin.products.import-template')}
+                        className="btn-secondary px-2.5"
+                        title="Download the blank import template"
+                        aria-label="Download import template"
+                        download
+                    >
+                        <SpreadsheetIcon variant="template" />
                     </a>
                     <Link
                         href={route('admin.products.create')}
@@ -282,9 +377,12 @@ export default function Index({ products, filters, categories, vendors, statuses
                 <div className="mt-4">
                     <BulkActionsBar
                         selectedCount={selectedIds.length}
+                        total={totalMatching}
                         onDelete={bulkDelete}
                         onStatusChange={bulkStatusChange}
                         onClear={() => setSelectedIds([])}
+                        onSelectAllMatching={selectAllMatching}
+                        selectingAll={selectingAll}
                     />
                 </div>
             )}
