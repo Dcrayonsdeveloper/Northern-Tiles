@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Domain\Cart\Services\CartService;
+use App\Domain\Dashboard\Services\AdminAlertService;
 use App\Domain\Dictionary\Services\DictionaryService;
 use App\Domain\Menu\Services\MenuService;
 use App\Domain\Settings\Models\Setting;
@@ -56,6 +57,10 @@ class HandleInertiaRequests extends Middleware
                 'topBar' => Setting::getValue('ui.topBar', config('ui.topBar')),
             ],
             'site' => fn () => app(SiteConfigService::class)->getSiteData(),
+            // Counts behind the sidebar dots. A closure, so a storefront
+            // response never pays for it, and the service itself returns an
+            // empty array for anyone who is not an admin.
+            'adminAlerts' => fn () => app(AdminAlertService::class)->forUser($request->user()),
             // menus stays lazy on purpose. Inertia::lazy() props are sent ONLY
             // when a partial reload asks for them by name, so this is always
             // absent and the header falls back to DEFAULT_NAV in

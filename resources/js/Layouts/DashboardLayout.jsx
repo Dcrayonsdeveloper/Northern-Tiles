@@ -400,10 +400,17 @@ function DashboardUserButton({ user }) {
     );
 }
 
-function SidebarLink({ href, active, icon, collapsed, label, children }) {
+function SidebarLink({ href, active, icon, collapsed, label, badge, children }) {
+    // Collapsed, the label is gone and the number with it, so the count shrinks
+    // to a dot on the icon — still "something is waiting here", just without
+    // room to say how much. The title carries the full wording either way, so
+    // the signal is never colour alone.
+    const badgeTitle = badge ? `${label} — ${badge} awaiting action` : label;
+
     return (
         <Link
             href={href}
+            title={badgeTitle}
             className={
                 (active
                     ? 'bg-brand text-white'
@@ -415,19 +422,34 @@ function SidebarLink({ href, active, icon, collapsed, label, children }) {
                 <span
                     className={
                         (active ? 'text-white' : 'text-slate-500 group-hover:text-white') +
-                        ' shrink-0'
+                        ' relative shrink-0'
                     }
                 >
                     {icon}
+                    {badge && collapsed ? (
+                        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+                    ) : null}
                 </span>
             ) : null}
             {collapsed ? null : <span className="truncate">{children}</span>}
+            {badge && !collapsed ? (
+                <span
+                    className={
+                        (active
+                            ? 'bg-white/20 text-white'
+                            : 'bg-red-500 text-white group-hover:bg-white/20') +
+                        ' ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums leading-none'
+                    }
+                >
+                    {badge > 99 ? '99+' : badge}
+                </span>
+            ) : null}
         </Link>
     );
 }
 
 export default function DashboardLayout({ title, children }) {
-    const { auth } = usePage().props;
+    const { auth, adminAlerts } = usePage().props;
     // Admin guard takes priority on admin pages; falls back to web for user pages.
     const user = auth?.user;
     const [isExpanded, setIsExpanded] = useState(() => {
@@ -802,6 +824,7 @@ export default function DashboardLayout({ title, children }) {
                                                     icon={item.icon}
                                                     collapsed={sidebarCollapsed}
                                                     label={item.label}
+                                                    badge={adminAlerts?.[item.key]}
                                                 >
                                                     {item.label}
                                                 </SidebarLink>
