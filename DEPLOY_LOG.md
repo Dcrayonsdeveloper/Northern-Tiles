@@ -782,3 +782,24 @@ Files changed:
    tests/Feature/Admin/DashboardTest.php              | 181 ++++++++++++
    9 files changed, 1168 insertions(+), 33 deletions(-)
 ```
+
+## 2026-10-03 11:16 UTC — `c0d3b98`
+
+**Dashboard: range tabs fixed, combined line chart and status donut**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (c0d3b98)
+- Server: 4100fa4 → c0d3b98
+- Migrations: 2026_10_03_000002_reset_admin_dashboard_layouts ............... 15.34ms DONE
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   app/Domain/Dashboard/Services/DashboardService.php |  14 +-
+   ..._10_03_000002_reset_admin_dashboard_layouts.php |  60 +++++
+   resources/js/Components/Dashboard/Charts.jsx       | 295 +++++++++++++--------
+   .../js/Components/Dashboard/WidgetRenderer.jsx     |  25 +-
+   tests/Feature/Admin/DashboardTest.php              |  48 +++-
+   5 files changed, 309 insertions(+), 133 deletions(-)
+```
