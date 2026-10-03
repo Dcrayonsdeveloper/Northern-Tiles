@@ -678,3 +678,21 @@ Files changed:
    resources/js/Pages/Admin/Products/Index.jsx | 30 ++++++++++++++++++++++++++++-
    1 file changed, 29 insertions(+), 1 deletion(-)
 ```
+
+## 2026-10-03 05:37 UTC — `05bfd50`
+
+**Fix Duplicate button: unique SKU on the copy, and copy its images**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (05bfd50)
+- Server: 3e3443c → 05bfd50
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   app/Domain/Catalog/Services/ProductService.php |  88 +++++++++++++++-
+   tests/Feature/Admin/ProductDuplicateTest.php   | 133 +++++++++++++++++++++++++
+   2 files changed, 217 insertions(+), 4 deletions(-)
+```
