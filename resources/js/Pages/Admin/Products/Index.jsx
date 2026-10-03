@@ -199,12 +199,20 @@ export default function Index({ products, filters, categories, vendors, statuses
             <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-gray-900">Products</div>
                 <div className="flex items-center gap-2">
-                    <Link
+                    {/* A plain anchor, not an Inertia <Link>. The route returns a
+                        CSV with Content-Disposition: attachment, and Inertia
+                        visits are XHR — it cannot save a file from one, so on
+                        receiving a response without the X-Inertia header it
+                        dumped the raw CSV into its error overlay instead of
+                        downloading anything. A real navigation lets the browser
+                        honour the header. */}
+                    <a
                         href={route('admin.products.import-template')}
                         className="btn-secondary"
+                        download
                     >
                         Download Template
-                    </Link>
+                    </a>
                     <Link
                         href={route('admin.products.create')}
                         className="btn-primary"
