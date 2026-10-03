@@ -14,6 +14,7 @@ use App\Domain\Catalog\Models\Tag;
 use App\Console\Commands\StripSpecsFromDescriptionsCommand;
 use App\Domain\Catalog\Services\BulkImportService;
 use App\Domain\Catalog\Services\MediaService;
+use App\Domain\Catalog\Services\ProductExportService;
 use App\Domain\Catalog\Services\ProductService;
 use App\Domain\Catalog\Services\TagService;
 use App\Domain\Catalog\Services\VariantService;
@@ -37,6 +38,7 @@ class ProductController extends Controller
         protected VariantService $variantService,
         protected TagService $tagService,
         protected BulkImportService $bulkImportService,
+        protected ProductExportService $exportService,
     ) {}
 
     /**
@@ -452,6 +454,36 @@ class ProductController extends Controller
     }
 
     /**
+     * Download the whole catalogue as a CSV.
+     *
+     * Deliberately ignores the screen's filters: this is "download everything",
+     * and a sheet that silently held only the category you happened to be
+     * looking at would be worse than useless as a backup or a working copy.
+     */
+    public function export(): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        return $this->exportService->download(
+            'products-' . now()->format('Y-m-d') . '.csv'
+        );
+    }
+
+    /**
+     * Every product id matching the current filters.
+     *
+     * Backs "select all N" in the list: the checkboxes can only tick the page
+     * they can see, and a bulk action meant for the whole catalogue should not
+     * have to be repeated 32 times.
+     */
+    public function matchingIds(Request $request): JsonResponse
+    {
+        $filters = $request->only(['search', 'status', 'category_id', 'vendor_id']);
+
+        return response()->json([
+            'ids' => $this->productService->matchingIds($filters),
+        ]);
+    }
+
+    /**
      * Autosave product draft.
      */
     public function autosave(Request $request, Product $product): JsonResponse
@@ -481,16 +513,20 @@ class ProductController extends Controller
      */
     public function bulkDelete(Request $request): RedirectResponse
     {
+        // Integers, not exists:products,id. That rule runs one SELECT per id,
+        // and with "select all" sending the whole filtered catalogue that is
+        // hundreds of queries to establish what the whereIn below settles in
+        // one — an id that matches nothing simply deletes nothing.
         $request->validate([
             'ids' => ['required', 'array'],
-            'ids.*' => ['exists:products,id'],
+            'ids.*' => ['integer'],
         ]);
 
-        Product::whereIn('id', $request->ids)->delete();
+        $deleted = Product::whereIn('id', $request->ids)->delete();
 
         return redirect()
             ->route('admin.products.index')
-            ->with('success', count($request->ids) . ' products deleted successfully.');
+            ->with('success', $deleted . ' products deleted successfully.');
     }
 
     /**
@@ -498,20 +534,26 @@ class ProductController extends Controller
      */
     public function bulkStatus(Request $request): RedirectResponse
     {
+        // Integers rather than exists:products,id — see bulkDelete().
         $request->validate([
             'ids' => ['required', 'array'],
-            'ids.*' => ['exists:products,id'],
+            'ids.*' => ['integer'],
             'status' => ['required', 'in:draft,published,archived'],
         ]);
 
-        Product::whereIn('id', $request->ids)->update([
+        $updated = Product::whereIn('id', $request->ids)->update([
             'status' => $request->status,
             'published_at' => $request->status === 'published' ? now() : null,
+            // status and is_active are kept in lockstep by Product::booted(),
+            // but a mass update fires no model events, so a bulk change would
+            // otherwise leave drafts still is_active — still listed and still
+            // sellable on the storefront.
+            'is_active' => $request->status === 'published',
         ]);
 
         return redirect()
             ->route('admin.products.index')
-            ->with('success', count($request->ids) . ' products updated successfully.');
+            ->with('success', $updated . ' products updated successfully.');
     }
 
     /**

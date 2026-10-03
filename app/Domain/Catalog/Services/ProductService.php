@@ -20,13 +20,45 @@ class ProductService
      */
     public function getProducts(array $filters = [], ?int $sellerId = null, int $perPage = 20)
     {
-        $query = Product::query()
+        $query = $this->filteredQuery($filters, $sellerId)
             // Primary first, but not primary only: a product whose images were
             // uploaded without one being flagged still has a thumbnail to show.
             ->with(['category', 'categories', 'seller', 'media' => fn ($q) => $q
                 ->where('type', 'image')
                 ->orderByDesc('is_primary')
-                ->orderBy('sort')])
+                ->orderBy('sort')]);
+
+        // Sorting
+        $sortField = $filters['sort'] ?? 'created_at';
+        $sortDir = $filters['dir'] ?? 'desc';
+        $query->orderBy($sortField, $sortDir);
+
+        return $query->paginate($perPage)->withQueryString();
+    }
+
+    /**
+     * Ids of every product the given filters match, ignoring pagination.
+     *
+     * Backs "select all N" in the admin list. It shares filteredQuery() with
+     * getProducts() on purpose: a select-all that matched a different set from
+     * the one on screen would quietly apply bulk actions to the wrong products.
+     *
+     * @return array<int, int>
+     */
+    public function matchingIds(array $filters = [], ?int $sellerId = null): array
+    {
+        return $this->filteredQuery($filters, $sellerId)
+            ->orderBy('id')
+            ->pluck('id')
+            ->all();
+    }
+
+    /**
+     * The admin list's filters as a query, with no eager loading or ordering.
+     */
+    protected function filteredQuery(array $filters = [], ?int $sellerId = null)
+    {
+        $query = Product::query()
             ->when($sellerId, fn ($q) => $q->forSeller($sellerId));
 
         // Status filter
@@ -55,12 +87,7 @@ class ProductService
             $query->where('seller_id', $filters['vendor_id']);
         }
 
-        // Sorting
-        $sortField = $filters['sort'] ?? 'created_at';
-        $sortDir = $filters['dir'] ?? 'desc';
-        $query->orderBy($sortField, $sortDir);
-
-        return $query->paginate($perPage)->withQueryString();
+        return $query;
     }
 
     /**
