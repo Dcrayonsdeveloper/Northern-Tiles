@@ -661,3 +661,20 @@ Files changed:
    app/Models/Product.php                         | 48 +++++++++++++++++---------
    3 files changed, 35 insertions(+), 20 deletions(-)
 ```
+
+## 2026-10-03 05:11 UTC — `3e3443c`
+
+**Admin product list: report availability, not raw quantity**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (3e3443c)
+- Server: eff8b54 → 3e3443c
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   resources/js/Pages/Admin/Products/Index.jsx | 30 ++++++++++++++++++++++++++++-
+   1 file changed, 29 insertions(+), 1 deletion(-)
+```
