@@ -52,6 +52,34 @@ function StatusBadge({ status }) {
     );
 }
 
+// This column used to print the raw quantity followed by the words "in stock",
+// which read as "0 in stock" for the whole catalogue — products the storefront
+// was selling perfectly well. Quantity is not availability here: stock is held
+// at 0 and sold to order, with "When sold out → Continue selling" carrying the
+// product. Availability is the storefront's rule (Storefront/Shop/Show.jsx,
+// mirroring Product::isInStock() plus the price check that gates Add to Cart),
+// so the two screens now answer the same question the same way. Quantity stays
+// visible underneath as the detail it actually is.
+function InventoryCell({ product: p }) {
+    const qty = p.inventory_quantity ?? 0;
+    const continueSelling = p.inventory_policy === 'continue';
+    const priced = (parseFloat(p.price) || 0) > 0;
+    const sellable = priced && (qty > 0 || continueSelling);
+
+    return (
+        <>
+            <div className={`text-xs font-medium ${sellable ? 'text-green-700' : 'text-red-600'}`}>
+                {sellable ? 'In stock' : 'Out of stock'}
+            </div>
+            <div className="text-[11px] text-gray-500">
+                {priced
+                    ? `${qty} on hand · ${continueSelling ? 'continue selling' : 'stop selling'}`
+                    : 'No price set'}
+            </div>
+        </>
+    );
+}
+
 function BulkActionsBar({ selectedCount, onDelete, onStatusChange, onClear }) {
     return (
         <div className="flex items-center justify-between rounded-lg bg-brand/5 border border-brand/20 px-4 py-2">
@@ -321,7 +349,7 @@ export default function Index({ products, filters, categories, vendors, statuses
                                             <StatusBadge status={p.status} />
                                         </td>
                                         <td className="px-4 py-2 text-xs text-gray-600">
-                                            {p.inventory_quantity ?? 0} in stock
+                                            <InventoryCell product={p} />
                                         </td>
                                         <td className="px-4 py-2">
                                             <div className="text-xs font-medium text-gray-900">
