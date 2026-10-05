@@ -803,3 +803,29 @@ Files changed:
    tests/Feature/Admin/DashboardTest.php              |  48 +++-
    5 files changed, 309 insertions(+), 133 deletions(-)
 ```
+
+## 2026-10-05 05:55 UTC — `9d40bb2`
+
+**Stripe config block restored, webhook CSRF fix, Full-Sized Sample wording**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (9d40bb2)
+- Server: c0d3b98 → 9d40bb2
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   .env.production.example                            |  15 +++
+   STRIPE_SETUP.md                                    |  13 ++-
+   .../Storefront/StripeWebhookController.php         |   5 +-
+   config/services.php                                |  26 +++++
+   resources/js/Pages/Admin/Products/Create.jsx       |   2 +-
+   resources/js/Pages/Admin/Products/Edit.jsx         |   2 +-
+   resources/js/Pages/Storefront/Shop/Show.jsx        |   2 +-
+   routes/web.php                                     |  25 ++++-
+   ship.sh                                            |  11 +-
+   tests/Feature/Payment/StripeConfigTest.php         | 123 +++++++++++++++++++++
+   10 files changed, 214 insertions(+), 10 deletions(-)
+```
