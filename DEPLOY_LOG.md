@@ -1126,3 +1126,24 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Payment.jsx | 50 ++++++++++++++++++++++
    1 file changed, 50 insertions(+)
 ```
+
+## 2026-10-05 12:13 UTC — `e448360`
+
+**Keep the cart until payment succeeds**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (e448360)
+- Server: 19705b2 → e448360
+- Migrations: 2026_10_05_000001_add_cart_id_to_orders ....................... 74.26ms DONE
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   app/Domain/Cart/Services/CheckoutService.php       | 17 +++-
+   .../Payment/Services/StripePaymentService.php      | 34 ++++++++
+   app/Models/Order.php                               |  7 ++
+   .../2026_10_05_000001_add_cart_id_to_orders.php    | 46 ++++++++++
+   .../Checkout/CartSurvivesUnpaidCheckoutTest.php    | 98 ++++++++++++++++++++++
+   5 files changed, 200 insertions(+), 2 deletions(-)
+```
