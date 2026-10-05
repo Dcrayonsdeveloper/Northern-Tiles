@@ -38,13 +38,36 @@ function Pagination({ links }) {
     );
 }
 
-export default function Index({ orders }) {
+export default function Index({ orders, showingAbandoned = false, abandonedCount = 0 }) {
     return (
         <DashboardLayout title="Orders">
             <Head title="Orders" />
 
-            <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-gray-900">Orders</div>
+            <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-semibold text-gray-900">
+                    Orders
+                    {showingAbandoned && (
+                        <span className="ml-2 text-[11px] font-normal text-gray-500">
+                            including abandoned checkouts
+                        </span>
+                    )}
+                </div>
+
+                {/* A card order exists before the customer pays, so an
+                    abandoned attempt leaves a row. They are hidden, not
+                    deleted — stating the count keeps that honest, and the link
+                    reaches a payment that landed late. */}
+                {abandonedCount > 0 && (
+                    <Link
+                        href={route('admin.orders.index', showingAbandoned ? {} : { abandoned: 1 })}
+                        className="text-[11px] font-medium text-brand hover:underline"
+                        preserveScroll
+                    >
+                        {showingAbandoned
+                            ? 'Hide abandoned checkouts'
+                            : `${abandonedCount} abandoned checkout${abandonedCount === 1 ? '' : 's'} hidden — show`}
+                    </Link>
+                )}
             </div>
 
             <div className="mt-4 rounded-xl border border-gray-200 bg-white shadow-sm">
