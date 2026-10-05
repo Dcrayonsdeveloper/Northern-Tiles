@@ -397,6 +397,26 @@ export default function Index({
                                                 <p className="text-sm font-medium text-gray-900">{paymentMethods[0]?.name ?? 'Credit / Debit Card'}</p>
                                                 <p className="text-xs text-gray-500">{paymentMethods[0]?.description ?? 'Pay securely by card on the next step.'}</p>
                                             </div>
+
+                                            {/* The brands Stripe will actually take. The old PayPal
+                                                mark promised a gateway this site has never had; these
+                                                are the card networks the Payment Element accepts, so
+                                                the logos and the checkout agree. */}
+                                            <div className="ml-auto flex flex-shrink-0 items-center gap-1.5" aria-hidden="true">
+                                                <svg className="h-5 w-auto" viewBox="0 0 32 20" role="img">
+                                                    <rect width="32" height="20" rx="3" fill="#1434CB" />
+                                                    <text x="16" y="14" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" fontFamily="system-ui, sans-serif">VISA</text>
+                                                </svg>
+                                                <svg className="h-5 w-auto" viewBox="0 0 32 20" role="img">
+                                                    <rect width="32" height="20" rx="3" fill="#F4F4F4" />
+                                                    <circle cx="13" cy="10" r="6" fill="#EB001B" />
+                                                    <circle cx="19" cy="10" r="6" fill="#F79E1B" fillOpacity="0.85" />
+                                                </svg>
+                                                <svg className="h-5 w-auto" viewBox="0 0 32 20" role="img">
+                                                    <rect width="32" height="20" rx="3" fill="#006FCF" />
+                                                    <text x="16" y="13.5" textAnchor="middle" fontSize="7" fontWeight="700" fill="#fff" fontFamily="system-ui, sans-serif">AMEX</text>
+                                                </svg>
+                                            </div>
                                         </div>
                                     </div>
                                     {/* Order Notes */}
