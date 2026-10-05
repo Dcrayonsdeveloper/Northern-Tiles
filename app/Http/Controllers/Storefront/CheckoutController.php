@@ -6,6 +6,7 @@ use App\Domain\Cart\Services\CartService;
 use App\Domain\Cart\Services\CheckoutService;
 use App\Domain\Cart\Services\PricingService;
 use App\Domain\Marketing\Services\CouponService;
+use App\Domain\Payment\Services\StripePaymentService;
 use App\Http\Controllers\Concerns\HasCartChannel;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,8 @@ class CheckoutController extends Controller
         protected CartService $cartService,
         protected CheckoutService $checkoutService,
         protected PricingService $pricingService,
-        protected CouponService $couponService
+        protected CouponService $couponService,
+        protected StripePaymentService $stripe
     ) {}
 
     /**
@@ -135,6 +137,21 @@ class CheckoutController extends Controller
             // — a single shared key would let the second write clobber the
             // first and lock the earlier one out.
             $request->session()->put($this->orderSuccessTokenKey(), $order->order_number);
+
+            // A card order is not finished here — it is created `pending` and
+            // the customer still has to pay. Checkout used to redirect
+            // straight to the success page in every case, so the Stripe
+            // screen, the whole PaymentController flow and the webhook were
+            // built but unreachable: every order landed on "Order placed
+            // successfully" having taken no money at all.
+            //
+            // This sits in the retail controller on purpose. BuilderCheckout-
+            // Controller extends it, so trade checkout gets the card step from
+            // the same change, and PaymentController::show() already sends
+            // builder orders back to the trade success page afterwards.
+            if ($order->payment_method === CheckoutService::PAYMENT_CARD && $this->stripe->isEnabled()) {
+                return Redirect::route('checkout.payment', ['order' => $order->order_number]);
+            }
 
             return Redirect::route($this->successRouteName(), ['order' => $order->order_number])
                 ->with('success', 'Order placed successfully!');
