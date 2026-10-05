@@ -462,7 +462,7 @@ function UserProfileButton({ user }) {
                     {/* Subtle pointer triangle */}
                     <div className="absolute -top-1.5 right-4 h-3 w-3 rotate-45 rounded-sm border-l border-t border-gray-200 bg-white" aria-hidden="true" />
 
-                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl shadow-gray-200/60">
+                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg">
                         {/* Profile header */}
                         <div className="flex items-center gap-3 border-b border-gray-100 bg-gray-50/60 px-4 py-3.5">
                             <div className={`
