@@ -38,14 +38,45 @@ function Pagination({ links }) {
     );
 }
 
-export default function Index({ orders, showingAbandoned = false, abandonedCount = 0 }) {
+export default function Index({ orders, showingAbandoned = false, abandonedCount = 0, source = 'website', sourceCounts = {} }) {
     return (
         <DashboardLayout title="Orders">
             <Head title="Orders" />
 
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-4">
+                    {/* Trade is a separate book with its own pricing, so this
+                        switches the list over rather than filtering within it.
+                        Website is the default because it is the busier one. */}
+                    <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5">
+                        {[
+                            { key: 'website', label: 'Website' },
+                            { key: 'builder', label: 'Builders' },
+                        ].map((tab) => (
+                            <Link
+                                key={tab.key}
+                                href={route('admin.orders.index', tab.key === 'website' ? {} : { source: tab.key })}
+                                preserveScroll
+                                className={
+                                    (source === tab.key
+                                        ? 'bg-brand text-white'
+                                        : 'text-gray-600 hover:bg-gray-50') +
+                                    ' rounded-md px-3 py-1 text-xs font-medium transition'
+                                }
+                            >
+                                {tab.label}
+                                {sourceCounts[tab.key] != null && (
+                                    <span className={(source === tab.key ? 'text-white/70' : 'text-gray-400') + ' ml-1.5 tabular-nums'}>
+                                        {sourceCounts[tab.key]}
+                                    </span>
+                                )}
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
                 <div className="text-sm font-semibold text-gray-900">
-                    Orders
                     {showingAbandoned && (
                         <span className="ml-2 text-[11px] font-normal text-gray-500">
                             including abandoned checkouts
@@ -59,7 +90,7 @@ export default function Index({ orders, showingAbandoned = false, abandonedCount
                     reaches a payment that landed late. */}
                 {abandonedCount > 0 && (
                     <Link
-                        href={route('admin.orders.index', showingAbandoned ? {} : { abandoned: 1 })}
+                        href={route('admin.orders.index', showingAbandoned ? { source } : { source, abandoned: 1 })}
                         className="text-[11px] font-medium text-brand hover:underline"
                         preserveScroll
                     >
@@ -68,6 +99,7 @@ export default function Index({ orders, showingAbandoned = false, abandonedCount
                             : `${abandonedCount} abandoned checkout${abandonedCount === 1 ? '' : 's'} hidden — show`}
                     </Link>
                 )}
+                </div>
             </div>
 
             <div className="mt-4 rounded-xl border border-gray-200 bg-white shadow-sm">
