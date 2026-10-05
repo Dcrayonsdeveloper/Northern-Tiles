@@ -886,3 +886,20 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Index.jsx | 14 +++++++-------
    2 files changed, 14 insertions(+), 14 deletions(-)
 ```
+
+## 2026-10-05 07:47 UTC — `52669d3`
+
+**Default card country to Australia**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (52669d3)
+- Server: e03d7e5 → 52669d3
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   resources/js/Pages/Storefront/Checkout/Payment.jsx | 16 +++++++++++++++-
+   1 file changed, 15 insertions(+), 1 deletion(-)
+```
