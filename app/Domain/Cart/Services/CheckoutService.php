@@ -229,7 +229,11 @@ class CheckoutService
             return [
                 [
                     'id' => self::PAYMENT_CARD,
-                    'name' => 'Credit / Debit Card',
+                    'name' => 'Pay Online',
+                    // Still says card, because that is what the Stripe page
+                    // leads with -- but the heading no longer promises only
+                    // cards, so Link and the wallets that appear there are not
+                    // a surprise.
                     'description' => 'Pay securely by card on the next step.',
                     'icon' => 'card',
                 ],

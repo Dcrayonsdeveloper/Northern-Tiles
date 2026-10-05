@@ -5,6 +5,7 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { d } from '@/Support/dictionary';
 import { AU_STATES, citiesForState } from '@/Utils/australiaStates';
+import { csrfHeaders, SESSION_EXPIRED, SESSION_EXPIRED_MESSAGE } from '@/Utils/csrf';
 
 // Icons
 function CheckIcon({ className }) {
@@ -37,6 +38,44 @@ export default function Index({
     const isInactive = !!auth?.user && auth.user.is_active === false;
 
     const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
+
+    // Remove a line without leaving checkout. A reload rather than local state:
+    // shipping, the free-delivery threshold and any coupon are all computed on
+    // the server from the whole basket, so dropping the row client-side would
+    // leave the totals beside it wrong until the next full visit.
+    const [removingId, setRemovingId] = useState(null);
+
+    const removeItem = async (itemId) => {
+        setRemovingId(itemId);
+
+        try {
+            const response = await fetch(`/api/cart/${itemId}`, {
+                method: 'DELETE',
+                headers: csrfHeaders({
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                }),
+                credentials: 'same-origin',
+            });
+
+            if (response.status === SESSION_EXPIRED) {
+                alert(SESSION_EXPIRED_MESSAGE);
+                return;
+            }
+
+            if (!response.ok) throw new Error(response.statusText);
+
+            window.dispatchEvent(new CustomEvent('cart-updated'));
+            // Emptying the last line leaves nothing to check out, and the
+            // controller bounces an empty cart back to the cart page itself.
+            router.reload({ preserveScroll: true });
+        } catch {
+            alert('Could not remove that item. Please try again.');
+        } finally {
+            setRemovingId(null);
+        }
+    };
+
 
     const { data, setData, post, processing, errors } = useForm({
         contact: {
@@ -500,13 +539,27 @@ export default function Index({
                                                                 </p>
                                                             )}
                                                         </div>
-                                                        <p className="text-sm font-semibold text-gray-900">
-                                                            {item.is_sample ? (
-                                                                <span className="text-green-600">FREE</span>
-                                                            ) : (
-                                                                <>${parseFloat(item.line_total || 0).toFixed(2)}</>
-                                                            )}
-                                                        </p>
+                                                        <div className="flex flex-col items-end gap-1">
+                                                            <p className="text-sm font-semibold text-gray-900">
+                                                                {item.is_sample ? (
+                                                                    <span className="text-green-600">FREE</span>
+                                                                ) : (
+                                                                    <>${parseFloat(item.line_total || 0).toFixed(2)}</>
+                                                                )}
+                                                            </p>
+                                                            {/* Previously the summary was read-only, so changing your mind
+                                                                here meant going back to the cart and returning through the
+                                                                whole form again. */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeItem(item.id)}
+                                                                disabled={removingId === item.id}
+                                                                className="text-[11px] text-gray-400 underline-offset-2 transition hover:text-red-600 hover:underline disabled:opacity-40"
+                                                                aria-label={`Remove ${item.name}`}
+                                                            >
+                                                                {removingId === item.id ? 'Removing…' : 'Remove'}
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
