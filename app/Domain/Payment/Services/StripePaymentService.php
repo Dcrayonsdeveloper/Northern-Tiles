@@ -220,6 +220,110 @@ class StripePaymentService
         }
     }
 
+
+    /**
+     * A Stripe-hosted Checkout page for this order, returning its url.
+     *
+     * Replaces the embedded Payment Element. Stripe builds and maintains that
+     * page, so Apple Pay, Google Pay, Link and anything enabled later appear
+     * without this application rendering them -- the embedded form only ever
+     * showed what it was explicitly told to, which is why wallets were absent
+     * for so long.
+     *
+     * The order goes over as ONE line for its stored total, not as itemised
+     * lines. Re-deriving a basket here risks a rounding difference between
+     * what Stripe charges and what the order says is owed, and confirmPayment()
+     * refuses to mark an order paid when those disagree -- a mismatch would
+     * take the money and leave the order pending.
+     */
+    public function createCheckoutSession(Order $order): string
+    {
+        $metadata = [
+            'order_id' => (string) $order->id,
+            'order_number' => (string) $order->order_number,
+            // Distinguishes this site's payments from Shopify's inside a
+            // shared Stripe account -- essential when reconciling in Xero.
+            'source' => 'ntiled-web',
+        ];
+
+        $session = $this->client()->checkout->sessions->create([
+            'mode' => 'payment',
+            'line_items' => [[
+                'quantity' => 1,
+                'price_data' => [
+                    'currency' => $this->currency($order),
+                    'unit_amount' => $this->minorUnits($order->total),
+                    'product_data' => [
+                        'name' => 'Northern TILE Distributors',
+                        'description' => "Order {$order->order_number}",
+                    ],
+                ],
+            ]],
+            'customer_email' => $order->customer_email,
+            // The session id comes back so confirm() can resolve the payment
+            // intent behind it and run the same verification as before.
+            'success_url' => route('checkout.payment.confirm', ['order' => $order->order_number])
+                . '?session_id={CHECKOUT_SESSION_ID}',
+            // NOT the payment route: that creates a session and redirects, so
+            // cancelling would bounce the customer straight back to Stripe in
+            // a loop. The cart still holds their items until payment succeeds.
+            'cancel_url' => route('cart.index'),
+            'metadata' => $metadata,
+            'payment_intent_data' => [
+                'statement_descriptor_suffix' => 'NTILED',
+                'description' => "Order {$order->order_number}",
+                'receipt_email' => $order->customer_email,
+                'metadata' => $metadata,
+            ],
+        ]);
+
+        return $session->url;
+    }
+
+    /**
+     * Attach the payment intent a Checkout Session created to its order.
+     *
+     * Both routes back from Stripe need this -- the browser redirect carries
+     * the session id, the webhook carries the session object -- and neither
+     * can verify anything until the order knows which intent to check.
+     */
+    public function attachIntentFromSession(Order $order, string $sessionId): bool
+    {
+        if (filled($order->stripe_payment_intent_id)) {
+            return true;
+        }
+
+        try {
+            $session = $this->client()->checkout->sessions->retrieve($sessionId);
+        } catch (ApiErrorException $e) {
+            Log::error('Stripe: could not retrieve checkout session', [
+                'order_id' => $order->id,
+                'session_id' => $sessionId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+
+        // Guard against a session being replayed against someone else's order.
+        if ((string) ($session->metadata['order_id'] ?? '') !== (string) $order->id) {
+            Log::critical('Stripe: checkout session does not belong to this order', [
+                'order_id' => $order->id,
+                'session_order_id' => $session->metadata['order_id'] ?? null,
+            ]);
+
+            return false;
+        }
+
+        if (blank($session->payment_intent)) {
+            return false;
+        }
+
+        $order->forceFill(['stripe_payment_intent_id' => (string) $session->payment_intent])->save();
+
+        return true;
+    }
+
     /* ---------------------------------------------------------------------
      | Webhooks
      * ------------------------------------------------------------------ */

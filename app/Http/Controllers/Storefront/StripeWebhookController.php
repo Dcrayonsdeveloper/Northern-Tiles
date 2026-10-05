@@ -86,6 +86,28 @@ class StripeWebhookController extends Controller
     protected function dispatch(\Stripe\Event $event): void
     {
         switch ($event->type) {
+            case 'checkout.session.completed':
+                $session = $event->data->object;
+                $orderId = $session->metadata->order_id ?? null;
+
+                if (! $orderId || ! ($order = \App\Models\Order::find($orderId))) {
+                    // The shared Stripe account also serves Shopify, so a
+                    // session with no local order is expected, not a fault.
+                    Log::info('Stripe webhook: no local order for checkout session', [
+                        'session' => $session->id,
+                        'source' => $session->metadata->source ?? 'unknown',
+                    ]);
+                    break;
+                }
+
+                // The session created the intent, so the order does not yet
+                // know which one to verify. This is the path that matters
+                // when the customer pays and closes the tab without ever
+                // returning to the success url.
+                $this->stripe->attachIntentFromSession($order, $session->id);
+                $this->stripe->confirmPayment($order);
+                break;
+
             case 'payment_intent.succeeded':
                 $intent = $event->data->object;
                 $order = $this->stripe->orderForIntent($intent->id);
