@@ -1058,3 +1058,21 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Index.jsx | 10 +++++++---
    1 file changed, 7 insertions(+), 3 deletions(-)
 ```
+
+## 2026-10-05 11:49 UTC — `fd17992`
+
+**Fix payment CSRF mismatch, remove shipping zone line**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (fd17992)
+- Server: 0b64169 → fd17992
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   resources/js/Pages/Storefront/Checkout/Index.jsx   | 15 +++++----------
+   resources/js/Pages/Storefront/Checkout/Payment.jsx | 21 +++++++++++++++++----
+   2 files changed, 22 insertions(+), 14 deletions(-)
+```
