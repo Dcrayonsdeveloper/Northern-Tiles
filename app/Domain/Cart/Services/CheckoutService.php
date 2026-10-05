@@ -62,6 +62,10 @@ class CheckoutService
             // Create order
             $order = Order::create([
                 'user_id' => $cart->user_id,
+                // Kept so the webhook can find this cart later: it arrives
+                // from Stripe with no session and no cookie, so for a guest
+                // there is otherwise nothing to match on.
+                'cart_id' => $cart->id,
                 // Trade flag comes from the CART'S CHANNEL, not the user role.
                 // Before the split this was derived from ->isBuilder(), which
                 // meant a builder buying from the retail storefront had the
@@ -135,8 +139,17 @@ class CheckoutService
                 $cart->markAsRecovered($order->id);
             }
 
-            // Clear the cart
-            $cart->clear();
+            // A card order is not paid yet -- the customer is about to be sent
+            // to Stripe. Emptying the cart here meant anyone who reached the
+            // payment screen and came back without paying returned to nothing,
+            // with no way to recover what they had chosen. The cart is cleared
+            // when the payment actually succeeds instead, in
+            // StripePaymentService::markPaid(). Orders settled out of band --
+            // trade on invoice -- have no payment step to wait for, so they
+            // still clear here.
+            if (($data['payment_method'] ?? null) !== self::PAYMENT_CARD) {
+                $cart->clear();
+            }
 
             return $order;
         });

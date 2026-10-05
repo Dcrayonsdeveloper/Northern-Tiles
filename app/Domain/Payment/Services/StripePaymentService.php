@@ -183,7 +183,41 @@ class StripePaymentService
             // and conflating "paid" with "processing" has burned this before.
         ])->save();
 
+        // Now the basket is genuinely spent. Checkout deliberately leaves it
+        // intact for a card order, because the customer may still abandon the
+        // payment screen and has to come back to what they chose.
+        //
+        // This runs on both routes to paid -- the browser redirect and the
+        // webhook -- because both land here, and the webhook is the only one
+        // that fires when the customer closes the tab mid-payment.
+        $this->clearCartFor($order);
+
         return true;
+    }
+
+    /**
+     * Empty the cart an order was placed from, once it is paid.
+     *
+     * Found by the cart_id stored on the order rather than by session: a
+     * webhook arrives from Stripe with no session and no cookie, so for a
+     * guest there is nothing else to match on.
+     *
+     * Failure here must not fail the payment. The money is taken and the
+     * order is already marked paid by the time this runs; a stale cart is an
+     * annoyance, while throwing would make Stripe retry a delivery that
+     * already succeeded.
+     */
+    protected function clearCartFor(Order $order): void
+    {
+        try {
+            $order->cart?->clear();
+        } catch (\Throwable $e) {
+            Log::warning('Stripe: order paid but its cart could not be cleared', [
+                'order_id' => $order->id,
+                'cart_id' => $order->cart_id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /* ---------------------------------------------------------------------
