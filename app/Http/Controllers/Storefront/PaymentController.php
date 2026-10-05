@@ -26,7 +26,7 @@ class PaymentController extends Controller
      * who needs a different card can come back and retry against the same
      * order rather than rebuilding a cart that has already been emptied.
      */
-    public function show(Request $request, string $order): Response|RedirectResponse
+    public function show(Request $request, string $order): \Symfony\Component\HttpFoundation\Response
     {
         $orderModel = Order::where('order_number', $order)->first();
 
@@ -50,7 +50,15 @@ class PaymentController extends Controller
         // later without this application rendering any of it -- the embedded
         // Payment Element only ever showed what it was explicitly given.
         try {
-            return Redirect::away($this->stripe->createCheckoutSession($orderModel));
+            // Inertia::location, not Redirect::away. Place Order is an Inertia
+            // visit, so this response is consumed by an XHR -- and an XHR
+            // cannot leave the site. Handed a 302 to checkout.stripe.com it
+            // fetched Stripe's HTML, found no Inertia payload and discarded
+            // it, so the button appeared to do nothing at all while the order
+            // was quietly created every time. Inertia::location returns a 409
+            // carrying the url, which the client turns into a real browser
+            // navigation.
+            return Inertia::location($this->stripe->createCheckoutSession($orderModel));
         } catch (\Throwable $e) {
             Log::error('Stripe: could not open a checkout session', [
                 'order_id' => $orderModel->id,
