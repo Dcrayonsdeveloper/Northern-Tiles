@@ -922,3 +922,21 @@ Files changed:
    resources/js/Pages/Builder/Checkout/Index.jsx           | 4 ++--
    3 files changed, 4 insertions(+), 4 deletions(-)
 ```
+
+## 2026-10-05 07:53 UTC — `f1e8360`
+
+**Show card brands on checkout**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (f1e8360)
+- Server: fdfa873 → f1e8360
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   resources/js/Pages/Builder/Checkout/Index.jsx    | 20 ++++++++++++++++++++
+   resources/js/Pages/Storefront/Checkout/Index.jsx | 20 ++++++++++++++++++++
+   2 files changed, 40 insertions(+)
+```
