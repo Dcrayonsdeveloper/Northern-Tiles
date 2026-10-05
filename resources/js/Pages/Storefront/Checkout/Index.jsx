@@ -388,14 +388,14 @@ export default function Index({
                                         {/* One way to pay, so this states it rather than asking the
                                             customer to choose from a list of one. */}
                                         <div className="mt-4 flex items-center gap-4 rounded-lg border border-gray-900 bg-gray-50 p-4">
-                                            <img
-                                                src="/images/payment/paypal.svg"
-                                                alt="PayPal"
-                                                className="h-7 w-auto flex-shrink-0"
-                                            />
+                                            <svg className="h-7 w-auto flex-shrink-0 text-gray-700" viewBox="0 0 24 16" fill="none" stroke="currentColor" aria-hidden="true">
+                                                <rect x="0.75" y="0.75" width="22.5" height="14.5" rx="2" strokeWidth="1.5" />
+                                                <path d="M1 5.5h22" strokeWidth="1.5" />
+                                                <path d="M4 11h4" strokeWidth="1.5" strokeLinecap="round" />
+                                            </svg>
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900">{d('checkout.payment.online', 'Pay Online')}</p>
-                                                <p className="text-xs text-gray-500">{d('checkout.payment.online_hint', 'Pay securely with PayPal, or by card through PayPal')}</p>
+                                                <p className="text-sm font-medium text-gray-900">{paymentMethods[0]?.name ?? 'Credit / Debit Card'}</p>
+                                                <p className="text-xs text-gray-500">{paymentMethods[0]?.description ?? 'Pay securely by card on the next step.'}</p>
                                             </div>
                                         </div>
                                     </div>
