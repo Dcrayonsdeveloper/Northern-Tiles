@@ -981,3 +981,24 @@ Files changed:
    .../Admin/AbandonedCheckoutVisibilityTest.php      | 40 ++++++++++++++++++++++
    4 files changed, 113 insertions(+), 6 deletions(-)
 ```
+
+## 2026-10-05 08:11 UTC — `634d876`
+
+**Abandoned checkouts move to the Abandoned Carts page**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (634d876)
+- Server: 9f918ed → 634d876
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   .../Controllers/Admin/AbandonedCartController.php  | 22 +++++++++
+   app/Http/Controllers/Admin/OrderController.php     | 15 ++----
+   resources/js/Pages/Admin/AbandonedCarts/Index.jsx  | 55 +++++++++++++++++++++-
+   resources/js/Pages/Admin/Orders/Index.jsx          | 27 +----------
+   .../Admin/AbandonedCheckoutVisibilityTest.php      | 23 ++++++---
+   5 files changed, 97 insertions(+), 45 deletions(-)
+```
