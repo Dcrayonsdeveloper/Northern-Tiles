@@ -1076,3 +1076,36 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Payment.jsx | 21 +++++++++++++++++----
    2 files changed, 22 insertions(+), 14 deletions(-)
 ```
+
+## 2026-10-05 11:54 UTC — `6811c13`
+
+**Display dates in Australian time**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (6811c13)
+- Server: fd17992 → 6811c13
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   app/Http/Controllers/Admin/ProductController.php   |  2 +-
+   config/app.php                                     | 14 ++++++
+   resources/js/Pages/Admin/AbandonedCarts/Index.jsx  |  5 +-
+   resources/js/Pages/Admin/AbandonedCarts/Show.jsx   |  3 +-
+   resources/js/Pages/Admin/BuilderCatalog/Orders.jsx |  3 +-
+   resources/js/Pages/Admin/Coupons/Index.jsx         |  3 +-
+   resources/js/Pages/Admin/NotFoundLogs/Index.jsx    |  5 +-
+   resources/js/Pages/Admin/Orders/Index.jsx          |  3 +-
+   resources/js/Pages/Admin/Pages/Edit.jsx            |  5 +-
+   resources/js/Pages/Admin/Pages/Index.jsx           |  3 +-
+   resources/js/Pages/Admin/Posts/Edit.jsx            |  5 +-
+   resources/js/Pages/Admin/Posts/Index.jsx           |  5 +-
+   resources/js/Pages/Admin/Reviews/Index.jsx         |  3 +-
+   resources/js/Pages/Admin/Reviews/Show.jsx          |  7 +--
+   resources/js/Pages/Builder/Dashboard.jsx           |  3 +-
+   resources/js/Utils/datetime.js                     | 53 ++++++++++++++++++++++
+   resources/views/admin/orders/receipt.blade.php     |  2 +-
+   17 files changed, 102 insertions(+), 22 deletions(-)
+```
