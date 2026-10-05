@@ -21,7 +21,10 @@ use Stripe\Exception\SignatureVerificationException;
  *
  * SETUP (see the README section added alongside this file):
  *   1. Stripe Dashboard -> Developers -> Webhooks -> Add endpoint
- *   2. URL:    https://besttiles.shop/stripe/webhook
+ *   2. URL:    https://<your-https-domain>/webhook/stripe
+ *             (the path is /webhook/stripe — routes/web.php names it
+ *              webhook.stripe; /stripe/webhook is a 404 and Stripe will
+ *              retry it for three days against nothing)
  *   3. Events: payment_intent.succeeded
  *              payment_intent.payment_failed
  *              charge.refunded

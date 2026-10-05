@@ -43,4 +43,30 @@ return [
         'api_key' => env('GOOGLE_API_KEY'),
     ],
 
+    /*
+    | Stripe card payments.
+    |
+    | StripePaymentService reads every one of these through
+    | config('services.stripe.*'), and this block did not exist — so all five
+    | resolved to null, isEnabled() returned false, and card payment was hidden
+    | at checkout no matter what STRIPE_* held in .env. The keys were set and
+    | the integration was simply never reachable.
+    |
+    | `enabled` is a separate switch from `secret` on purpose: keys can be in
+    | place while the payment method is still withheld from customers, which is
+    | what you want between configuring Stripe and being ready to take money.
+    */
+    'stripe' => [
+        'enabled' => env('STRIPE_ENABLED', false),
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        // Blank until the endpoint exists in Stripe. The webhook route returns
+        // 503 while it is empty rather than trusting an unsigned payload —
+        // without that, anyone knowing the URL could mark orders paid.
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        // Must match what PricingService computes; Stripe charges in the
+        // order's currency, and orders default to AUD.
+        'currency' => env('STRIPE_CURRENCY', 'aud'),
+    ],
+
 ];

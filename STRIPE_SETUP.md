@@ -71,8 +71,17 @@ state.
 
 2. **Endpoint URL:**
    ```
-   https://besttiles.shop/stripe/webhook
+   https://<your-https-domain>/webhook/stripe
    ```
+
+   The path is **`/webhook/stripe`**, in that order — `routes/web.php`
+   registers it as `webhook.stripe`. This document and the controller comment
+   both said `/stripe/webhook` for months, which is a 404: Stripe would have
+   accepted the endpoint, shown it as active, and retried every delivery for
+   three days against nothing while orders sat `pending`.
+
+   The host must be **HTTPS and must resolve to this server**. Stripe will not
+   deliver to `http://` or to a bare IP address.
 
 3. **Select these three events** (and only these):
    ```
@@ -110,7 +119,7 @@ to trusting the payload.
 
 ```bash
 stripe login
-stripe listen --forward-to localhost:8000/stripe/webhook
+stripe listen --forward-to localhost:8000/webhook/stripe
 # prints a whsec_… for local use — put that in your local .env
 stripe trigger payment_intent.succeeded
 ```

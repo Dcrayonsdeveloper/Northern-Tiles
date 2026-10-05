@@ -121,10 +121,17 @@ ok "assets built"
 # ── 7. deploy the whole tree, then record the revision ──────────────────
 say "7/8  Deploy"
 PKG="/tmp/ship-$(date +%s).tgz"
-tar -czf "$PKG" app routes database/migrations resources public/build public/images tools 2>/dev/null
+# config/ is in this list as of 2026-10-05. It was not, and the server's copy
+# had therefore drifted from git since the first deploy — invisibly, because
+# nothing compares them. That is how config/services.php came to have no stripe
+# block: the fix could be committed and "deployed" and still never arrive.
+# Config files read their values from .env and hold no secrets of their own, so
+# git is the right source of truth for them. .env itself lives in shared/ and is
+# never touched by a deploy.
+tar -czf "$PKG" app config routes database/migrations resources public/build public/images tools 2>/dev/null
 scp -q -i "$KEY" "$PKG" "${HOST}:/tmp/ship.tgz"
 ssh_ "sudo tar -xzf /tmp/ship.tgz -C ${RELEASE} \
-   && sudo chown -R www-data:www-data ${RELEASE}/app ${RELEASE}/routes ${RELEASE}/database ${RELEASE}/resources ${RELEASE}/public/build ${RELEASE}/public/images ${RELEASE}/tools \
+   && sudo chown -R www-data:www-data ${RELEASE}/app ${RELEASE}/config ${RELEASE}/routes ${RELEASE}/database ${RELEASE}/resources ${RELEASE}/public/build ${RELEASE}/public/images ${RELEASE}/tools \
    && php -l ${RELEASE}/routes/web.php > /dev/null"
 ok "files in place ($(du -h "$PKG" | cut -f1))"
 

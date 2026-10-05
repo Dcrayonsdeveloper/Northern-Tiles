@@ -1216,7 +1216,7 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                         className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
                                     />
                                     <span>
-                                        <span className="block text-xs font-medium text-gray-700">Get a Big Sample</span>
+                                        <span className="block text-xs font-medium text-gray-700">Order Full-Sized Sample</span>
                                         <span className="block text-[10px] text-gray-400">
                                             Full-size tile · sends the customer to the contact page
                                         </span>
