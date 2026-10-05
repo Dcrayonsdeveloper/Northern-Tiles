@@ -1206,3 +1206,22 @@ Files changed:
    tests/Feature/Checkout/PaymentRedirectTest.php     | 87 ++++++++++++++++++++++
    2 files changed, 97 insertions(+), 2 deletions(-)
 ```
+
+## 2026-10-05 12:49 UTC — `319761c`
+
+**Remove item from checkout summary, rename to Pay Online**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (319761c)
+- Server: cf6db95 → 319761c
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   app/Domain/Cart/Services/CheckoutService.php     |  6 ++-
+   resources/js/Pages/Builder/Checkout/Index.jsx    | 57 ++++++++++++++++++--
+   resources/js/Pages/Storefront/Checkout/Index.jsx | 67 +++++++++++++++++++++---
+   3 files changed, 119 insertions(+), 11 deletions(-)
+```
