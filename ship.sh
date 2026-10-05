@@ -147,7 +147,12 @@ say "8/8  Smoke test"
 RESULTS=""
 FAILED=0
 for path in / /shop /cart /blog /visualizer; do
-    code="$(ssh_ "curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1${path}' -H 'Host: 52.64.115.58'")"
+    # --resolve, not a plain url: this stays on the box and needs no DNS, while
+    # still exercising the real TLS vhost. The old check asked for the bare IP
+    # over http, which stopped being a 200 the moment certbot added the
+    # https redirect for ntiled.com.au — every deploy would have reported an
+    # outage that was not happening.
+    code="$(ssh_ "curl -s -o /dev/null -w '%{http_code}' --resolve ntiled.com.au:443:127.0.0.1 'https://ntiled.com.au${path}'")"
     RESULTS="${RESULTS} ${path}=${code}"
     if [ "$code" = "200" ]; then ok "${path} ${code}"; else bad "${path} ${code}"; FAILED=1; fi
 done
