@@ -1171,3 +1171,20 @@ Files changed:
    routes/web.php                                     |   3 -
    8 files changed, 156 insertions(+), 336 deletions(-)
 ```
+
+## 2026-10-05 12:38 UTC — `e47a103`
+
+**Fix Stripe logo rendering**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (e47a103)
+- Server: 2366bbe → e47a103
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   public/images/payment/stripe.svg | 20 +++++++++++++-------
+   1 file changed, 13 insertions(+), 7 deletions(-)
+```
