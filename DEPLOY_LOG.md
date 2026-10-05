@@ -1188,3 +1188,21 @@ Files changed:
    public/images/payment/stripe.svg | 20 +++++++++++++-------
    1 file changed, 13 insertions(+), 7 deletions(-)
 ```
+
+## 2026-10-05 12:41 UTC — `cf6db95`
+
+**Fix Place Order not opening Stripe (Inertia location)**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (cf6db95)
+- Server: e47a103 → cf6db95
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   .../Controllers/Storefront/PaymentController.php   | 12 ++-
+   tests/Feature/Checkout/PaymentRedirectTest.php     | 87 ++++++++++++++++++++++
+   2 files changed, 97 insertions(+), 2 deletions(-)
+```
