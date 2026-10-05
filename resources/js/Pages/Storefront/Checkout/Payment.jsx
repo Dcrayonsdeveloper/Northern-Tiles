@@ -59,7 +59,21 @@ function PaymentForm({ order, returnUrl }) {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
-            <PaymentElement onReady={() => setReady(true)} />
+            {/* Country is defaulted to Australia rather than left to Stripe,
+                which guesses from the browser's locale and IP — an admin or
+                customer abroad was shown "India" on an Australian store
+                billing AUD, which reads as the wrong checkout entirely. Every
+                shipping zone this business has is Australian. It stays a
+                dropdown, so a cardholder whose billing address really is
+                overseas can still change it. */}
+            <PaymentElement
+                onReady={() => setReady(true)}
+                options={{
+                    defaultValues: {
+                        billingDetails: { address: { country: 'AU' } },
+                    },
+                }}
+            />
 
             {error && (
                 <div
