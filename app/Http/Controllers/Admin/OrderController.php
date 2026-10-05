@@ -12,10 +12,17 @@ use Inertia\Response;
 
 class OrderController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        // Abandoned card checkouts are hidden by default -- see
+        // Order::scopeExcludingAbandonedCheckouts(). ?abandoned=1 brings them
+        // back rather than hiding them for good, so a payment that lands late
+        // is still reachable.
+        $showAbandoned = $request->boolean('abandoned');
+
         $orders = Order::query()
             ->with(['user:id,name,email'])
+            ->unless($showAbandoned, fn ($q) => $q->excludingAbandonedCheckouts())
             ->orderByDesc('id')
             ->paginate(20)
             ->withQueryString();
@@ -30,6 +37,8 @@ class OrderController extends Controller
 
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
+            'showingAbandoned' => $showAbandoned,
+            'abandonedCount' => Order::abandonedCheckoutCount(),
         ]);
     }
 

@@ -32,6 +32,9 @@ class BuilderOrderController extends Controller
                 });
             })
             ->when($status !== '', fn ($q) => $q->where('status', $status))
+            // Same rule as Store > Orders. Trade orders awaiting payment by
+            // invoice are NOT touched -- only card checkouts nobody completed.
+            ->unless($request->boolean('abandoned'), fn ($q) => $q->excludingAbandonedCheckouts())
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -39,8 +42,14 @@ class BuilderOrderController extends Controller
         return Inertia::render('Admin/BuilderCatalog/Orders', [
             'orders' => $orders,
             'filters' => ['q' => $search, 'status' => $status],
+            'showingAbandoned' => $request->boolean('abandoned'),
+            'abandonedCount' => Order::abandonedCheckoutCount(
+                fn ($q) => $q->where('is_builder_order', true)
+            ),
             'stats' => [
-                'total' => Order::where('is_builder_order', true)->count(),
+                'total' => Order::where('is_builder_order', true)
+                    ->excludingAbandonedCheckouts()
+                    ->count(),
                 'revenue' => (float) Order::where('is_builder_order', true)
                     ->where('payment_status', 'paid')
                     ->sum('total'),

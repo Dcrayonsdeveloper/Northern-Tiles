@@ -49,6 +49,46 @@ class Order extends Model
         'delivered_at'     => 'datetime',
     ];
 
+    /**
+     * Hide checkouts that were started by card and never paid for.
+     *
+     * A card order is created `pending` before the customer is sent to
+     * Stripe, so every abandoned attempt -- a closed tab, a declined card,
+     * someone who changed their mind on the payment screen -- leaves a row
+     * behind. Those are not orders anyone needs to action, and they buried
+     * the real ones in the admin list.
+     *
+     * Narrow on purpose. It keys on the payment METHOD as well as the
+     * status, so an order awaiting payment by invoice -- which is how trade
+     * customers normally buy, and which sits `pending` indefinitely and
+     * legitimately -- is still shown. Excluding every unpaid order would have
+     * emptied the Builder Orders screen completely.
+     *
+     * Nothing is deleted; `withAbandonedCheckouts()` on the admin list brings
+     * them back, so a payment that lands late is still reachable.
+     */
+    public function scopeExcludingAbandonedCheckouts($query)
+    {
+        return $query->whereNot(function ($q) {
+            $q->where('payment_method', 'card')
+                ->where('payment_status', 'pending');
+        });
+    }
+
+    /** Count of what the above is hiding, so it is never silently lost. */
+    public static function abandonedCheckoutCount(?callable $scope = null): int
+    {
+        $query = static::query()
+            ->where('payment_method', 'card')
+            ->where('payment_status', 'pending');
+
+        if ($scope) {
+            $scope($query);
+        }
+
+        return (int) $query->count();
+    }
+
     public function items()
     {
         return $this->hasMany(OrderItem::class);
