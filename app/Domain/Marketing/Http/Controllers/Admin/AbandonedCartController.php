@@ -25,10 +25,32 @@ class AbandonedCartController extends Controller
         $carts = $this->abandonedCartService->getAbandonedCarts($filters);
         $statistics = $this->abandonedCartService->getStatistics(null, $request->input('period', '30d'));
 
+        // Checkouts that reached the payment screen and were never paid.
+        // They are the same failure as an abandoned cart -- a customer who got
+        // further and still did not buy -- so they belong here rather than in
+        // the order list, which is for work to action. Each one is a real
+        // order row, so it links straight through.
+        $abandonedCheckouts = \App\Models\Order::query()
+            ->where('payment_method', 'card')
+            ->where('payment_status', 'pending')
+            ->latest()
+            ->limit(50)
+            ->get(['id', 'order_number', 'customer_name', 'customer_email', 'total', 'is_builder_order', 'created_at'])
+            ->map(fn ($o) => [
+                'id' => $o->id,
+                'order_number' => $o->order_number,
+                'customer' => $o->customer_name ?: 'Guest',
+                'email' => $o->customer_email,
+                'total' => (float) $o->total,
+                'source' => $o->is_builder_order ? 'Trade' : 'Website',
+                'abandoned_at' => $o->created_at?->diffForHumans(),
+            ]);
+
         return Inertia::render('Admin/AbandonedCarts/Index', [
             'carts' => $carts,
             'statistics' => $statistics,
             'filters' => $filters,
+            'abandonedCheckouts' => $abandonedCheckouts,
         ]);
     }
 
