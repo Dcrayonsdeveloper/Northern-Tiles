@@ -34,7 +34,7 @@ function Pagination({ links }) {
     );
 }
 
-export default function Index({ carts, statistics, filters }) {
+export default function Index({ carts, statistics, filters, abandonedCheckouts = [] }) {
     const [search, setSearch] = useState(filters?.search || '');
 
     const debouncedSearch = useCallback(
@@ -196,6 +196,59 @@ export default function Index({ carts, statistics, filters }) {
 
                 <Pagination links={carts?.links} />
             </div>
+
+            {/* Checkouts that reached the payment screen and were never paid.
+                The same failure as an abandoned cart -- a customer who got
+                further and still did not buy -- so they are listed here rather
+                than in Store > Orders, which is for work to action. Each row
+                is a real order, so it links straight through. */}
+            {abandonedCheckouts.length > 0 && (
+                <div className="mt-6 rounded-xl border border-gray-200 bg-white shadow-sm">
+                    <div className="flex items-baseline justify-between gap-3 border-b border-gray-100 px-4 py-3">
+                        <h2 className="text-sm font-semibold text-gray-900">Abandoned checkouts</h2>
+                        <span className="text-[11px] text-gray-500">
+                            Reached the payment screen, never paid
+                        </span>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full text-left">
+                            <thead className="border-b border-gray-200 bg-gray-50">
+                                <tr>
+                                    <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Order</th>
+                                    <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Customer</th>
+                                    <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Source</th>
+                                    <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Value</th>
+                                    <th className="px-4 py-2 text-[11px] font-semibold text-gray-600">Abandoned</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {abandonedCheckouts.map((c) => (
+                                    <tr key={c.id} className="hover:bg-gray-50/80">
+                                        <td className="px-4 py-2.5">
+                                            <Link href={route('admin.orders.show', c.id)} className="text-xs font-medium text-brand hover:underline">
+                                                {c.order_number}
+                                            </Link>
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <div className="text-xs font-medium text-gray-900">{c.customer}</div>
+                                            <div className="text-[11px] text-gray-500">{c.email}</div>
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <span className="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600">
+                                                {c.source}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-2.5 text-xs tabular-nums text-gray-700">
+                                            ${c.total.toFixed(2)}
+                                        </td>
+                                        <td className="px-4 py-2.5 text-[11px] text-gray-500">{c.abandoned_at}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 }

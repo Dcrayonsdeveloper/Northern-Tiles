@@ -14,12 +14,9 @@ class OrderController extends Controller
 {
     public function index(Request $request): Response
     {
-        // Abandoned card checkouts are hidden by default -- see
-        // Order::scopeExcludingAbandonedCheckouts(). ?abandoned=1 brings them
-        // back rather than hiding them for good, so a payment that lands late
-        // is still reachable.
-        $showAbandoned = $request->boolean('abandoned');
-
+        // Abandoned card checkouts never appear here. They are listed on
+        // Marketing > Abandoned Carts, which is where a checkout nobody
+        // finished actually belongs -- an order list is for work to action.
         // Website orders by default; trade is a separate book with its own
         // pricing and its own screen, and mixing the two made it impossible to
         // scan either. 'builder' switches the list over rather than adding to
@@ -28,7 +25,7 @@ class OrderController extends Controller
 
         $orders = Order::query()
             ->with(['user:id,name,email'])
-            ->unless($showAbandoned, fn ($q) => $q->excludingAbandonedCheckouts())
+            ->excludingAbandonedCheckouts()
             ->where('is_builder_order', $source === 'builder')
             ->orderByDesc('id')
             ->paginate(20)
@@ -49,10 +46,6 @@ class OrderController extends Controller
 
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
-            'showingAbandoned' => $showAbandoned,
-            'abandonedCount' => Order::abandonedCheckoutCount(
-                fn ($q) => $q->where('is_builder_order', $source === 'builder')
-            ),
             'source' => $source,
             'sourceCounts' => [
                 'website' => $countFor(false),

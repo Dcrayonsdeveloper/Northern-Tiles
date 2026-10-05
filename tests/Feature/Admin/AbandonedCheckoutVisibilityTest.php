@@ -67,24 +67,33 @@ class AbandonedCheckoutVisibilityTest extends TestCase
         $this->assertSame(1, Order::excludingAbandonedCheckouts()->count());
     }
 
-    public function test_the_admin_list_hides_them_but_can_reveal_them(): void
+    public function test_the_order_list_never_shows_them(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $this->order('card', 'pending');
         $this->order('card', 'paid');
 
+        // No reveal toggle any more: an order list is for work to action, and
+        // these live on Marketing > Abandoned Carts instead.
         $this->actingAs($admin)
             ->get(route('admin.orders.index'))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->where('abandonedCount', 1)
-                ->where('orders.total', 1));
+            ->assertInertia(fn ($page) => $page->where('orders.total', 1));
+    }
 
-        // Nothing is deleted — a payment that lands late is still reachable.
+    public function test_abandoned_carts_lists_the_abandoned_checkouts(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $abandoned = $this->order('card', 'pending');
+        $this->order('card', 'paid');
+        $this->order('online', 'pending');
+
         $this->actingAs($admin)
-            ->get(route('admin.orders.index', ['abandoned' => 1]))
+            ->get(route('admin.abandoned-carts.index'))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->where('orders.total', 2));
+            ->assertInertia(fn ($page) => $page
+                ->has('abandonedCheckouts', 1)
+                ->where('abandonedCheckouts.0.order_number', $abandoned->order_number));
     }
 
     public function test_the_list_shows_website_orders_by_default_and_trade_on_request(): void
