@@ -51,6 +51,7 @@ class AdminAlertService
                 ->where('status', 'pending')
                 ->count(),
             'messages' => ContactMessage::query()->where('is_read', false)->count(),
+            'abandoned-carts' => \App\Domain\Cart\Models\Cart::unpurchased()->count(),
             'builder-accounts' => User::query()
                 ->where('is_builder', true)
                 ->whereNull('builder_approved_at')

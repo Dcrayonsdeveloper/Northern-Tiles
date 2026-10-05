@@ -309,6 +309,29 @@ class Cart extends Model
             ->whereHas('items');
     }
 
+    /**
+     * Carts holding goods that were never bought.
+     *
+     * Deliberately separate from eligibleForAbandonment(), which additionally
+     * demands an email address and an un-set abandoned_at because it drives
+     * the recovery emails — you cannot write to a customer you have no address
+     * for. That made the admin screen show almost nothing: 25 of 26 unbought
+     * carts here are guests who never reached the email field, so nothing
+     * flagged them and nobody could see they existed.
+     *
+     * Being able to SEE an unbought cart and being able to EMAIL about it are
+     * different questions, so they get different scopes.
+     *
+     * The activity threshold keeps someone's live shopping session out of the
+     * list; without it every open browser tab would read as a lost sale.
+     */
+    public function scopeUnpurchased($query, int $thresholdMinutes = 60)
+    {
+        return $query->whereNull('recovered_order_id')
+            ->where('last_activity_at', '<=', now()->subMinutes($thresholdMinutes))
+            ->whereHas('items');
+    }
+
     // Abandoned cart helpers
     public function isAbandoned(): bool
     {
