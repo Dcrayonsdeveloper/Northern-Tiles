@@ -124,9 +124,6 @@ Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])
 Route::get('/checkout/payment/{order}', [\App\Http\Controllers\Storefront\PaymentController::class, 'show'])
     ->middleware('throttle:20,1')
     ->name('checkout.payment');
-Route::post('/checkout/payment/{order}/intent', [\App\Http\Controllers\Storefront\PaymentController::class, 'intent'])
-    ->middleware('throttle:10,1')
-    ->name('checkout.payment.intent');
 Route::get('/checkout/payment/{order}/confirm', [\App\Http\Controllers\Storefront\PaymentController::class, 'confirm'])
     ->middleware('throttle:20,1')
     ->name('checkout.payment.confirm');

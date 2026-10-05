@@ -45,63 +45,23 @@ class PaymentController extends Controller
                 ->with('error', 'Card payment is currently unavailable. We will contact you to arrange payment.');
         }
 
-        return Inertia::render('Storefront/Checkout/Payment', [
-            'order' => [
-                'number' => $orderModel->order_number,
-                'total' => (float) $orderModel->total,
-                'currency' => strtoupper($orderModel->currency),
-                'email' => $orderModel->customer_email,
-            ],
-            'publishableKey' => $this->stripe->publishableKey(),
-            'intentUrl' => route('checkout.payment.intent', ['order' => $orderModel->order_number]),
-            'returnUrl' => route('checkout.payment.confirm', ['order' => $orderModel->order_number]),
-        ]);
-    }
-
-    /**
-     * Hand the browser a client secret so it can confirm the card payment.
-     *
-     * Note what is NOT accepted from the request: the amount. The customer
-     * supplies only which order they are paying for; the charge is always
-     * computed from that order's stored total. Taking an amount from the
-     * client would let anyone pay one cent for any order.
-     */
-    public function intent(Request $request, string $order): JsonResponse
-    {
-        $orderModel = Order::where('order_number', $order)->first();
-
-        if (! $orderModel || ! $this->userOwnsOrder($request, $orderModel)) {
-            // Deliberately identical to the not-found case. Distinguishing
-            // "someone else's order" from "no such order" would let an
-            // attacker enumerate valid order numbers.
-            return response()->json(['message' => 'Order not found.'], 404);
-        }
-
-        if (! $this->stripe->isEnabled()) {
-            return response()->json(['message' => 'Card payment is unavailable.'], 503);
-        }
-
-        if ($orderModel->payment_status === 'paid') {
-            return response()->json(['message' => 'This order is already paid.'], 409);
-        }
-
+        // Stripe's own hosted page, rather than an embedded form. It brings
+        // Apple Pay, Google Pay, Link and anything enabled on the account
+        // later without this application rendering any of it -- the embedded
+        // Payment Element only ever showed what it was explicitly given.
         try {
-            $intent = $this->stripe->createOrRetrieveIntent($orderModel);
+            return Redirect::away($this->stripe->createCheckoutSession($orderModel));
         } catch (\Throwable $e) {
-            Log::error('Stripe: could not create payment intent', [
-                'order_number' => $orderModel->order_number,
+            Log::error('Stripe: could not open a checkout session', [
+                'order_id' => $orderModel->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json(['message' => 'Could not start the payment. Please try again.'], 502);
+            // The order is placed and still owed; say so rather than leaving
+            // the customer on a blank page wondering whether they paid.
+            return Redirect::route($successRoute, ['order' => $orderModel->order_number])
+                ->with('error', 'We could not open the payment page. Your order is saved — please contact us to pay.');
         }
-
-        return response()->json([
-            'client_secret' => $intent->client_secret,
-            'publishable_key' => $this->stripe->publishableKey(),
-            'amount' => $intent->amount,
-            'currency' => $intent->currency,
-        ]);
     }
 
     /**
@@ -117,6 +77,13 @@ class PaymentController extends Controller
 
         if (! $orderModel || ! $this->userOwnsOrder($request, $orderModel)) {
             return Redirect::route('shop.index')->with('error', 'Order not found.');
+        }
+
+        // Checkout Sessions create the payment intent, so the order does not
+        // know which one to verify until the session is resolved. The webhook
+        // does the same thing from its own copy of the session.
+        if ($sessionId = $request->string('session_id')->toString()) {
+            $this->stripe->attachIntentFromSession($orderModel, $sessionId);
         }
 
         $paid = $this->stripe->confirmPayment($orderModel);

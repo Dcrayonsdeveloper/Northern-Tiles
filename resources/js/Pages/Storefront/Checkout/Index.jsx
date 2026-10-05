@@ -389,8 +389,8 @@ export default function Index({
                                             customer to choose from a list of one. */}
                                         <div className="mt-4 flex items-center gap-4 rounded-lg border border-gray-900 bg-gray-50 p-4">
                                             <img
-                                                src="/images/payment/paypal.svg"
-                                                alt="PayPal"
+                                                src="/images/payment/stripe.svg"
+                                                alt="Stripe"
                                                 className="h-7 w-auto flex-shrink-0"
                                             />
                                             <div className="min-w-0">
