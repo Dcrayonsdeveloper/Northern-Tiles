@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
     Elements,
+    ExpressCheckoutElement,
     PaymentElement,
     useElements,
     useStripe,
@@ -27,6 +28,10 @@ function PaymentForm({ order, returnUrl }) {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [ready, setReady] = useState(false);
+    // Null until the element reports back. It renders nothing at all when the
+    // browser has no wallet to offer, so the divider below must not be drawn
+    // before we know -- an "OR" above an empty space reads as a broken page.
+    const [hasWallets, setHasWallets] = useState(false);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -58,8 +63,53 @@ function PaymentForm({ order, returnUrl }) {
         setSubmitting(false);
     };
 
+    // Apple Pay, Google Pay and Link, as one-tap buttons. The PaymentElement
+    // alone never shows these -- it is the card form, and the prominent wallet
+    // buttons are a separate element that has to be rendered deliberately.
+    // That is why the checkout looked sparse next to a Stripe-hosted page.
+    //
+    // It draws nothing when the browser has no wallet available, which is the
+    // common desktop case, so nothing here is conditional on guessing the
+    // device: Stripe decides and tells us via onReady.
+    const handleExpressConfirm = async () => {
+        if (!stripe || !elements) return;
+
+        setError(null);
+
+        const { error: stripeError } = await stripe.confirmPayment({
+            elements,
+            confirmParams: { return_url: returnUrl },
+        });
+
+        if (stripeError) {
+            setError(
+                stripeError.type === 'card_error' || stripeError.type === 'validation_error'
+                    ? stripeError.message
+                    : 'Something went wrong while processing your payment. You have not been charged.'
+            );
+        }
+    };
+
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
+            <ExpressCheckoutElement
+                onConfirm={handleExpressConfirm}
+                onReady={({ availablePaymentMethods }) =>
+                    setHasWallets(Boolean(availablePaymentMethods))
+                }
+                options={{ layout: { maxRows: 1 } }}
+            />
+
+            {hasWallets && (
+                <div className="flex items-center gap-3">
+                    <span className="h-px flex-1 bg-gray-200" />
+                    <span className="text-[11px] font-medium uppercase tracking-widest text-gray-400">
+                        Or pay by card
+                    </span>
+                    <span className="h-px flex-1 bg-gray-200" />
+                </div>
+            )}
+
             {/* Country is defaulted to Australia rather than left to Stripe,
                 which guesses from the browser's locale and IP — an admin or
                 customer abroad was shown "India" on an Australian store
