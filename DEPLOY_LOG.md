@@ -1109,3 +1109,20 @@ Files changed:
    resources/views/admin/orders/receipt.blade.php     |  2 +-
    17 files changed, 102 insertions(+), 22 deletions(-)
 ```
+
+## 2026-10-05 12:07 UTC — `19705b2`
+
+**Render Apple Pay / Google Pay wallet buttons**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (19705b2)
+- Server: 6811c13 → 19705b2
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   resources/js/Pages/Storefront/Checkout/Payment.jsx | 50 ++++++++++++++++++++++
+   1 file changed, 50 insertions(+)
+```
