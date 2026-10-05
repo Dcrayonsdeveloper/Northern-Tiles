@@ -29,6 +29,7 @@ function LockIcon({ className }) {
 }
 
 export default function Index({
+    paymentMethods = [],
     items = [],
     totals = {},
     shippingZones = [],
@@ -66,7 +67,11 @@ export default function Index({
             country: 'Australia',
         },
         billing_same_as_shipping: true,
-        payment_method: 'online',
+        // Whatever the server says it can take. Hardcoding 'online' meant a
+        // card order never identified itself as one, so checkout skipped the
+        // Stripe step and sent the customer to 'Order placed successfully'
+        // without charging them.
+        payment_method: paymentMethods[0]?.id ?? 'online',
         notes: '',
         marketing_opt_in: false,
     });

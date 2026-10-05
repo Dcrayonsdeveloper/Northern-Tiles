@@ -2,6 +2,8 @@
 
 namespace App\Domain\Cart\Services;
 
+use App\Domain\Payment\Services\StripePaymentService;
+
 use App\Domain\Cart\Models\Cart;
 use App\Domain\Catalog\Services\ProductUnitResolver;
 use App\Domain\Marketing\Services\CouponService;
@@ -17,7 +19,8 @@ class CheckoutService
         protected CartService $cartService,
         protected PricingService $pricingService,
         protected CouponService $couponService,
-        protected ProductUnitResolver $unitResolver
+        protected ProductUnitResolver $unitResolver,
+        protected StripePaymentService $stripe
     ) {}
 
     /**
@@ -165,7 +168,9 @@ class CheckoutService
             // No longer chosen by the customer -- the delivery postcode decides it.
             // Left nullable so a stale open tab posting the old field still checks out.
             'shipping_method' => 'nullable|string|max:50',
-            'payment_method' => 'required|string|in:online',
+            // 'online' stays accepted so a stale open tab, which posted that
+            // before card existed, still checks out.
+            'payment_method' => 'required|string|in:card,online',
             'billing_same_as_shipping' => 'boolean',
             'notes' => 'nullable|string|max:500',
         ];
@@ -202,15 +207,39 @@ class CheckoutService
      */
     public function getPaymentMethods(): array
     {
+        // Card first, and only when Stripe can actually take it. This used to
+        // return one hardcoded "Pay Online ... through PayPal" option -- a
+        // gateway this application has never integrated -- regardless of
+        // whether Stripe was configured. So the only method a customer could
+        // choose led nowhere, and the working Stripe flow was never offered.
+        if ($this->stripe->isEnabled()) {
+            return [
+                [
+                    'id' => self::PAYMENT_CARD,
+                    'name' => 'Credit / Debit Card',
+                    'description' => 'Pay securely by card on the next step.',
+                    'icon' => 'card',
+                ],
+            ];
+        }
+
+        // Stripe off: the order is still placed, and someone follows it up.
+        // Better than offering a card form that cannot charge anything.
         return [
             [
-                'id' => 'online',
-                'name' => 'Pay Online',
-                'description' => 'Pay securely with PayPal, or by card through PayPal',
-                'icon' => 'paypal',
+                'id' => self::PAYMENT_OFFLINE,
+                'name' => 'Pay on invoice',
+                'description' => 'We will contact you to arrange payment.',
+                'icon' => 'invoice',
             ],
         ];
     }
+
+    /** Routed to Stripe after the order is created. */
+    public const PAYMENT_CARD = 'card';
+
+    /** Order is placed and payment arranged out of band. */
+    public const PAYMENT_OFFLINE = 'online';
 
     /**
      * Generate unique order number.
