@@ -2,6 +2,7 @@ import BuilderLayout from '@/Layouts/BuilderLayout';
 import Container from '@/Components/Container';
 import ProductImage from '@/Components/Catalog/ProductImage';
 import { Link, usePage } from '@inertiajs/react';
+import { formatDate } from '@/Utils/datetime';
 
 const money = (v) => `$${parseFloat(v || 0).toFixed(2)}`;
 
@@ -241,7 +242,7 @@ export default function BuilderDashboard({ featuredProducts = [], recentOrders =
                                                 </Link>
                                             </td>
                                             <td className="px-4 py-3 text-gray-600">
-                                                {new Date(order.created_at).toLocaleDateString()}
+                                                {formatDate(order.created_at)}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${STATUS_STYLES[order.status] ?? 'bg-gray-100 text-gray-700'}`}>

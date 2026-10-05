@@ -1,6 +1,7 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { formatDate } from '@/Utils/datetime';
 
 function SearchIcon({ className }) {
     return (
@@ -353,7 +354,7 @@ export default function Index({ reviews, stats, filters }) {
                                                 <StatusBadge status={review.status} />
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-500">
-                                                {new Date(review.created_at).toLocaleDateString()}
+                                                {formatDate(review.created_at)}
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">

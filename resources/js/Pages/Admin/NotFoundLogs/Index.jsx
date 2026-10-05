@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { formatDateTime } from '@/Utils/datetime';
 
 function CreateRedirectFromLogModal({ log, statusCodes, onClose }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -239,8 +240,8 @@ export default function Index({ logs, statusCodes, filters, stats }) {
                                 </td>
                                 <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                     {log.last_seen_at
-                                        ? new Date(log.last_seen_at).toLocaleString()
-                                        : new Date(log.created_at).toLocaleString()}
+                                        ? formatDateTime(log.last_seen_at)
+                                        : formatDateTime(log.created_at)}
                                 </td>
                                 <td className="whitespace-nowrap px-6 py-4">
                                     {log.is_ignored ? (

@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { formatDate } from '@/Utils/datetime';
 
 export default function Index({ posts, categories, filters }) {
     const [search, setSearch] = useState(filters?.search || '');
@@ -157,8 +158,8 @@ export default function Index({ posts, categories, filters }) {
                                 </td>
                                 <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                                     {post.published_at
-                                        ? new Date(post.published_at).toLocaleDateString()
-                                        : new Date(post.created_at).toLocaleDateString()}
+                                        ? formatDate(post.published_at)
+                                        : formatDate(post.created_at)}
                                 </td>
                                 <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                                     <div className="flex items-center justify-end gap-2">

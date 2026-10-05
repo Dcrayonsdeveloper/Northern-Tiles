@@ -2,6 +2,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import TagInput from '@/Components/Forms/TagInput';
+import { formatDate } from '@/Utils/datetime';
 
 function extractBodyHtml(bodyJson) {
     if (!bodyJson) return '';
@@ -261,8 +262,8 @@ export default function Edit({ post, authors, categories, selectedTags }) {
                                 </div>
 
                                 <div className="text-xs text-gray-500">
-                                    <p>Created: {new Date(post.created_at).toLocaleDateString()}</p>
-                                    <p>Updated: {new Date(post.updated_at).toLocaleDateString()}</p>
+                                    <p>Created: {formatDate(post.created_at)}</p>
+                                    <p>Updated: {formatDate(post.updated_at)}</p>
                                 </div>
 
                                 <div className="flex gap-2">

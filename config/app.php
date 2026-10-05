@@ -68,6 +68,20 @@ return [
     'timezone' => 'UTC',
 
     /*
+    | Where the business is, for DISPLAY only.
+    |
+    | Storage stays UTC above -- one unambiguous instant per row, no
+    | daylight-saving gaps, nothing offsetless to misread later. Changing
+    | 'timezone' would start writing local times into tables full of UTC ones
+    | with nothing to tell them apart.
+    |
+    | This is the counterpart of BUSINESS_TIMEZONE in resources/js/Utils/
+    | datetime.js; the two must agree or a receipt and the screen it was
+    | printed from will disagree about when an order was placed.
+    */
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'Australia/Melbourne'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
