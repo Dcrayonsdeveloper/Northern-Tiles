@@ -1023,3 +1023,21 @@ Files changed:
    tests/Feature/Admin/UnpurchasedCartsTest.php       | 107 +++++++++++++++++++++
    5 files changed, 155 insertions(+), 6 deletions(-)
 ```
+
+## 2026-10-05 08:25 UTC — `cecfc89`
+
+**PayPal logo on the checkout payment panel**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (cecfc89)
+- Server: 17a7d2a → cecfc89
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   resources/js/Pages/Builder/Checkout/Index.jsx    | 10 +++++-----
+   resources/js/Pages/Storefront/Checkout/Index.jsx | 10 +++++-----
+   2 files changed, 10 insertions(+), 10 deletions(-)
+```
