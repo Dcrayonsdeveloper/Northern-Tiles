@@ -961,3 +961,23 @@ Files changed:
    .../Admin/AbandonedCheckoutVisibilityTest.php      | 89 ++++++++++++++++++++++
    5 files changed, 175 insertions(+), 5 deletions(-)
 ```
+
+## 2026-10-05 08:07 UTC — `9f918ed`
+
+**Builder Orders badge, Website/Builders order filter**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (9f918ed)
+- Server: 4017e82 → 9f918ed
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   .../Dashboard/Services/AdminAlertService.php       | 18 +++++++++-
+   app/Http/Controllers/Admin/OrderController.php     | 21 +++++++++++-
+   resources/js/Pages/Admin/Orders/Index.jsx          | 40 +++++++++++++++++++---
+   .../Admin/AbandonedCheckoutVisibilityTest.php      | 40 ++++++++++++++++++++++
+   4 files changed, 113 insertions(+), 6 deletions(-)
+```
