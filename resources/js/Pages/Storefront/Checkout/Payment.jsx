@@ -8,6 +8,7 @@ import {
     useStripe,
 } from '@stripe/react-stripe-js';
 import PublicLayout from '@/Layouts/PublicLayout';
+import { csrfHeaders, SESSION_EXPIRED, SESSION_EXPIRED_MESSAGE } from '@/Utils/csrf';
 
 function formatMoney(amount, currency) {
     try {
@@ -118,15 +119,27 @@ export default function Payment({ order, publishableKey, intentUrl, returnUrl })
         try {
             const response = await fetch(intentUrl, {
                 method: 'POST',
-                headers: {
+                // csrfHeaders() prefers the XSRF-TOKEN cookie, which is
+                // refreshed on every response. This read the csrf-token meta
+                // tag instead -- written once when the page was rendered, so a
+                // session that rotated afterwards left the tag stale and the
+                // request came back 419. On the payment screen that meant
+                // "CSRF token mismatch" and no way to pay at all.
+                headers: csrfHeaders({
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN':
-                        document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                },
+                }),
                 credentials: 'same-origin',
             });
+
+            if (response.status === SESSION_EXPIRED) {
+                // A token mismatch is a dead session, not a payment problem.
+                // Say so, because "Try again" against the same stale page
+                // cannot fix it -- the page has to be reloaded.
+                setLoadError(SESSION_EXPIRED_MESSAGE);
+                return;
+            }
 
             const payload = await response.json().catch(() => ({}));
 

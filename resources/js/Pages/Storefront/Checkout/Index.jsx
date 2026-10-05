@@ -538,16 +538,11 @@ export default function Index({
                                                             : '—'}
                                                 </span>
                                             </div>
-                                            {/* Only while the rate is still provisional. Once a city
-                                                is chosen the figure beside "Shipping" is the answer,
-                                                and naming the zone under it just repeated the
-                                                delivery note already shown beside the address. */}
-                                            {shippingZone && !shippingWaived
-                                                && !String(data.shipping_address.city || '').trim() && (
-                                                <p className="-mt-1 text-xs text-gray-500">
-                                                    {shippingZone.label} — select a city to confirm
-                                                </p>
-                                            )}
+                                            {/* No zone line at all. The delivery rates are already
+                                                spelled out beside the address field, so repeating
+                                                the zone under the figure was noise -- and the
+                                                "select a city to confirm" variant read as a warning
+                                                about a number that was already correct. */}
                                             {totals.sample_count > 0 && (
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-600">
