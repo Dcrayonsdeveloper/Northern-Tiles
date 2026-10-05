@@ -848,3 +848,23 @@ Files changed:
    ship.sh       |  7 ++++++-
    3 files changed, 70 insertions(+), 2 deletions(-)
 ```
+
+## 2026-10-05 07:34 UTC — `61346d2`
+
+**Checkout routes card orders to Stripe**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (61346d2)
+- Server: 90938c3 → 61346d2
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   app/Domain/Cart/Services/CheckoutService.php       | 41 ++++++++++++++++++----
+   .../Controllers/Storefront/CheckoutController.php  | 19 +++++++++-
+   resources/js/Pages/Builder/Checkout/Index.jsx      |  7 +++-
+   resources/js/Pages/Storefront/Checkout/Index.jsx   |  7 +++-
+   4 files changed, 65 insertions(+), 9 deletions(-)
+```
