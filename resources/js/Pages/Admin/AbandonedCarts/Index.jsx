@@ -144,10 +144,16 @@ export default function Index({ carts, statistics, filters, abandonedCheckouts =
                                 carts.data.map((cart) => (
                                     <tr key={cart.id} className="hover:bg-gray-50/50">
                                         <td className="px-4 py-3">
-                                            <div className="text-xs font-medium text-gray-900">{cart.email || 'No email'}</div>
-                                            {cart.customer && (
-                                                <div className="text-[11px] text-gray-500">{cart.customer.name}</div>
-                                            )}
+                                            {/* Name first: most of these carts belong to a
+                                                signed-in customer, and 'No email' as the headline
+                                                read as though the row were broken rather than as
+                                                a guest who never reached the email field. */}
+                                            <div className="text-xs font-medium text-gray-900">
+                                                {cart.customer?.name || 'Guest'}
+                                            </div>
+                                            <div className="text-[11px] text-gray-500">
+                                                {cart.email || cart.customer?.email || 'No email captured'}
+                                            </div>
                                         </td>
                                         <td className="px-4 py-3 text-xs text-gray-600">
                                             {cart.items_count} items
@@ -156,7 +162,15 @@ export default function Index({ carts, statistics, filters, abandonedCheckouts =
                                             ${cart.items?.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}
                                         </td>
                                         <td className="px-4 py-3 text-xs text-gray-600">
-                                            {cart.abandoned_at ? new Date(cart.abandoned_at).toLocaleDateString() : '-'}
+                                            {/* A cart only gets abandoned_at once the detection
+                                                job flags it, and that job skips anyone without an
+                                                email — so most rows had a dash. Last activity is
+                                                known for every cart. */}
+                                            {cart.abandoned_at
+                                                ? new Date(cart.abandoned_at).toLocaleDateString()
+                                                : cart.last_activity_at
+                                                    ? new Date(cart.last_activity_at).toLocaleDateString()
+                                                    : '-'}
                                         </td>
                                         <td className="px-4 py-3">
                                             {cart.recovered_order_id ? (

@@ -153,7 +153,11 @@ class AbandonedCartService
      */
     public function getAbandonedCarts(array $filters = [], int $perPage = 20)
     {
-        $query = Cart::abandoned()
+        // Every cart holding goods nobody bought -- see Cart::scopeUnpurchased.
+        // Cart::abandoned() was used here, which only matches carts the
+        // detection job has flagged, and that job skips anyone without an
+        // email address. The screen therefore showed 1 of 26.
+        $query = Cart::unpurchased()
             ->with(['items.product', 'customer', 'abandonedCartMessages'])
             ->withCount('items');
 
