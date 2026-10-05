@@ -940,3 +940,24 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Index.jsx | 20 ++++++++++++++++++++
    2 files changed, 40 insertions(+)
 ```
+
+## 2026-10-05 08:04 UTC — `4017e82`
+
+**Hide abandoned card checkouts from admin order lists**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (4017e82)
+- Server: f1e8360 → 4017e82
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   .../Controllers/Admin/BuilderOrderController.php   | 11 ++-
+   app/Http/Controllers/Admin/OrderController.php     | 11 ++-
+   app/Models/Order.php                               | 40 ++++++++++
+   resources/js/Pages/Admin/Orders/Index.jsx          | 29 ++++++-
+   .../Admin/AbandonedCheckoutVisibilityTest.php      | 89 ++++++++++++++++++++++
+   5 files changed, 175 insertions(+), 5 deletions(-)
+```
