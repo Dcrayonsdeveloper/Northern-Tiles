@@ -131,9 +131,30 @@ Route::get('/checkout/payment/{order}/confirm', [\App\Http\Controllers\Storefron
     ->middleware('throttle:20,1')
     ->name('checkout.payment.confirm');
 
-// Stripe webhook (no CSRF verification, signed by Stripe)
+// Stripe webhook. Stripe signs the body; there is no session and no CSRF token,
+// so the whole stateful half of the web stack has to come off the route.
+//
+// This used to exclude \App\Http\Middleware\VerifyCsrfToken — the Laravel 10
+// class name, which does not exist in this application. withoutMiddleware()
+// silently removes nothing when handed a class that is not in the stack, so
+// CSRF stayed on and every delivery from Stripe was answered with 419. Nothing
+// surfaced it: Laravel skips CSRF entirely under `runningUnitTests()`, so a
+// feature test posting here passes while production rejects the real thing.
+// Stripe retries a failing endpoint for three days and then disables it, with
+// orders left `pending` the whole time.
+//
+// Sessions go too, per STRIPE_SETUP.md §5: dropping only the token comparison
+// still leaves middleware calling $request->session(), and starting a session
+// per delivery costs a query and hands Stripe a cookie it will never use.
 Route::post('/webhook/stripe', [\App\Http\Controllers\Storefront\StripeWebhookController::class, 'handle'])
-    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
+    ->withoutMiddleware([
+        \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+        \App\Http\Middleware\HandleInertiaRequests::class,
+    ])
     ->name('webhook.stripe');
 
 Route::get('/about', [PublicPageController::class, 'show'])
