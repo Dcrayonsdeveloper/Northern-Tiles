@@ -13,6 +13,7 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
+        'cart_id',
         'is_builder_order',
         'order_number',
         'status',
@@ -92,6 +93,12 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /** The cart this order was placed from, kept until payment succeeds. */
+    public function cart()
+    {
+        return $this->belongsTo(\App\Domain\Cart\Models\Cart::class);
     }
 
     public function user()
