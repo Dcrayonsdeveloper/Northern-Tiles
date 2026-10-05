@@ -1002,3 +1002,24 @@ Files changed:
    .../Admin/AbandonedCheckoutVisibilityTest.php      | 23 ++++++---
    5 files changed, 97 insertions(+), 45 deletions(-)
 ```
+
+## 2026-10-05 08:22 UTC — `17a7d2a`
+
+**Show all unpurchased carts, badge Abandoned Carts**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (17a7d2a)
+- Server: 634d876 → 17a7d2a
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   app/Domain/Cart/Models/Cart.php                    |  23 +++++
+   .../Dashboard/Services/AdminAlertService.php       |   1 +
+   .../Marketing/Services/AbandonedCartService.php    |   6 +-
+   resources/js/Pages/Admin/AbandonedCarts/Index.jsx  |  24 ++++-
+   tests/Feature/Admin/UnpurchasedCartsTest.php       | 107 +++++++++++++++++++++
+   5 files changed, 155 insertions(+), 6 deletions(-)
+```
