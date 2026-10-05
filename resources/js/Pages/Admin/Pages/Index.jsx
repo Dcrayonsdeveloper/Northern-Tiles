@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, Fragment, useMemo } from 'react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { formatDate } from '@/Utils/datetime';
 
 // Icons
 function ChevronRightIcon({ className }) {
@@ -141,7 +142,7 @@ function PageRow({ page, depth = 0, isTrashed, selectedIds, onToggleSelect, onDe
                     <StatusBadge status={page.status} />
                 </td>
                 <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {new Date(page.updated_at).toLocaleDateString()}
+                    {formatDate(page.updated_at)}
                 </td>
                 <td className="whitespace-nowrap px-4 py-2">
                     <div className="flex items-center gap-1">

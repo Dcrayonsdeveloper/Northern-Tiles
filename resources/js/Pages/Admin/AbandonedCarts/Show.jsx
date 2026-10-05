@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { useD } from '@/Support/dictionary';
+import { formatDate, formatDateTime } from '@/Utils/datetime';
 
 export default function Show({ cart }) {
     const d = useD();
@@ -14,7 +15,7 @@ export default function Show({ cart }) {
 
     const formatDate = (date) => {
         if (!date) return '-';
-        return new Date(date).toLocaleString();
+        return formatDateTime(date);
     };
 
     return (

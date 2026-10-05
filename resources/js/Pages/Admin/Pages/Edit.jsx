@@ -1,6 +1,7 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { useState, useCallback, useRef } from 'react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { formatDateTime } from '@/Utils/datetime';
 
 // Icons
 function ChevronLeftIcon({ className }) {
@@ -450,8 +451,8 @@ export default function Edit({ page, authors, templates, parentPages }) {
                                 </div>
 
                                 <div className="text-[10px] text-gray-500 pt-2 border-t border-gray-100">
-                                    <p>Created: {new Date(page.created_at).toLocaleString()}</p>
-                                    <p>Updated: {new Date(page.updated_at).toLocaleString()}</p>
+                                    <p>Created: {formatDateTime(page.created_at)}</p>
+                                    <p>Updated: {formatDateTime(page.updated_at)}</p>
                                     {page.created_by_user && <p>By: {page.created_by_user.name}</p>}
                                 </div>
 

@@ -1,5 +1,6 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link } from '@inertiajs/react';
+import { formatDateTime } from '@/Utils/datetime';
 
 const orderStatusClasses = {
     pending:    'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200',
@@ -127,7 +128,7 @@ export default function Index({ orders, source = 'website', sourceCounts = {} })
                                             </span>
                                         </td>
                                         <td className="px-4 py-2 text-xs text-gray-600">
-                                            {o.created_at}
+                                            {formatDateTime(o.created_at)}
                                         </td>
                                         <td className="px-4 py-2">
                                             <Link

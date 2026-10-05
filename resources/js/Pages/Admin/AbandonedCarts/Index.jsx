@@ -2,6 +2,7 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, useCallback } from 'react';
 import debounce from 'lodash/debounce';
+import { formatDate } from '@/Utils/datetime';
 
 function StatCard({ label, value, subvalue, color = 'brand' }) {
     return (
@@ -167,9 +168,9 @@ export default function Index({ carts, statistics, filters, abandonedCheckouts =
                                                 email — so most rows had a dash. Last activity is
                                                 known for every cart. */}
                                             {cart.abandoned_at
-                                                ? new Date(cart.abandoned_at).toLocaleDateString()
+                                                ? formatDate(cart.abandoned_at)
                                                 : cart.last_activity_at
-                                                    ? new Date(cart.last_activity_at).toLocaleDateString()
+                                                    ? formatDate(cart.last_activity_at)
                                                     : '-'}
                                         </td>
                                         <td className="px-4 py-3">

@@ -1,5 +1,6 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
+import { formatDate, formatDateTime } from '@/Utils/datetime';
 
 function ArrowLeftIcon({ className }) {
     return (
@@ -184,7 +185,7 @@ export default function Show({ review, customerReviews }) {
 
                             {/* Submitted Date */}
                             <div className="mt-4 text-sm text-gray-500">
-                                Submitted on {new Date(review.created_at).toLocaleString()}
+                                Submitted on {formatDateTime(review.created_at)}
                             </div>
                         </div>
 
@@ -199,7 +200,7 @@ export default function Show({ review, customerReviews }) {
                                             {review.admin_reply}
                                         </div>
                                         <div className="mt-2 text-xs text-gray-500">
-                                            Replied on {new Date(review.admin_replied_at).toLocaleString()}
+                                            Replied on {formatDateTime(review.admin_replied_at)}
                                         </div>
                                     </div>
                                     <div className="mt-4 flex gap-2">
@@ -367,7 +368,7 @@ export default function Show({ review, customerReviews }) {
                                                 {otherReview.product?.name || 'Unknown Product'}
                                             </div>
                                             <div className="mt-1 text-xs text-gray-500">
-                                                {new Date(otherReview.created_at).toLocaleDateString()}
+                                                {formatDate(otherReview.created_at)}
                                             </div>
                                         </Link>
                                     ))}

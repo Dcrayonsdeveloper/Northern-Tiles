@@ -471,7 +471,7 @@ class ProductController extends Controller
         $ids = $request->input('ids');
         $ids = empty($ids) ? null : array_map('intval', $ids);
 
-        $filename = 'products-' . ($ids ? 'selection-' : '') . now()->format('Y-m-d') . '.csv';
+        $filename = 'products-' . ($ids ? 'selection-' : '') . now()->timezone(config('app.display_timezone'))->format('Y-m-d') . '.csv';
 
         return $this->exportService->download($filename, $ids);
     }

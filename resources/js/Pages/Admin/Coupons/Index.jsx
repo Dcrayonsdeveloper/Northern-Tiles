@@ -1,6 +1,7 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { formatDate } from '@/Utils/datetime';
 
 function PlusIcon({ className }) {
     return (
@@ -445,7 +446,7 @@ export default function Index({ coupons, stats, filters, types }) {
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-500">
                                                 {coupon.expires_at
-                                                    ? new Date(coupon.expires_at).toLocaleDateString()
+                                                    ? formatDate(coupon.expires_at)
                                                     : 'Never'}
                                             </td>
                                             <td className="px-6 py-4 text-right">

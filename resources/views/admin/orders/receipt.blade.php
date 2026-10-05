@@ -188,7 +188,7 @@
         <div class="receipt-title">
             <h1>RECEIPT</h1>
             <div class="order-number">{{ $order->order_number }}</div>
-            <div class="order-date">{{ $order->created_at->format('d M Y, h:i A') }}</div>
+            <div class="order-date">{{ $order->created_at->timezone(config('app.display_timezone'))->format('d M Y, h:i A') }}</div>
             <div style="margin-top: 10px;">
                 <span class="status-badge status-{{ $order->status }}">{{ $order->status }}</span>
             </div>
