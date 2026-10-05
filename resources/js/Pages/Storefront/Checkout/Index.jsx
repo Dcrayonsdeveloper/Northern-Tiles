@@ -538,10 +538,14 @@ export default function Index({
                                                             : '—'}
                                                 </span>
                                             </div>
-                                            {shippingZone && !shippingWaived && (
+                                            {/* Only while the rate is still provisional. Once a city
+                                                is chosen the figure beside "Shipping" is the answer,
+                                                and naming the zone under it just repeated the
+                                                delivery note already shown beside the address. */}
+                                            {shippingZone && !shippingWaived
+                                                && !String(data.shipping_address.city || '').trim() && (
                                                 <p className="-mt-1 text-xs text-gray-500">
-                                                    {shippingZone.label}
-                                                    {!String(data.shipping_address.city || '').trim() && ' — select a city to confirm'}
+                                                    {shippingZone.label} — select a city to confirm
                                                 </p>
                                             )}
                                             {totals.sample_count > 0 && (
