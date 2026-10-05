@@ -1,8 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 50" role="img" aria-label="Stripe">
-  <rect width="120" height="50" rx="8" fill="#635BFF"/>
-  <path fill="#fff" d="M33.9 20.2c0-1.2 1-1.7 2.6-1.7 2.3 0 5.2.7 7.5 1.9v-7.1c-2.5-1-5-1.4-7.5-1.4-6.1 0-10.2 3.2-10.2 8.5 0 8.3 11.4 7 11.4 10.6 0 1.4-1.2 1.9-2.9 1.9-2.5 0-5.7-1-8.2-2.4v7.2c2.8 1.2 5.6 1.7 8.2 1.7 6.3 0 10.6-3.1 10.6-8.5 0-9-11.5-7.4-11.5-10.7z"/>
-  <path fill="#fff" d="M54.6 7.5l-7.3 1.6v24c0 4.4 3.3 7.7 7.7 7.7 2.5 0 4.3-.5 5.3-1v-6.1c-1 .4-5.7 1.8-5.7-2.6V19.3h5.7v-6.4h-5.7V7.5z"/>
-  <path fill="#fff" d="M70.4 15.1l-.5-2.2h-6.6v27.3h7.5V21.7c1.8-2.3 4.8-1.9 5.7-1.6v-7.2c-1-.4-4.5-1-6.1 2.2z"/>
-  <path fill="#fff" d="M80.1 12.9h7.6v27.3h-7.6zM80.1 4.1l7.6-1.6v6.4l-7.6 1.6z"/>
-  <path fill="#fff" d="M103.5 12.4c-3 0-4.9 1.4-6 2.4l-.4-1.9h-6.6v36.1l7.5-1.6v-8.7c1.1.8 2.7 1.9 5.4 1.9 5.4 0 10.4-4.4 10.4-14.1 0-8.9-5-14.1-10.3-14.1zm-1.8 21.7c-1.8 0-2.9-.6-3.6-1.4l-.1-11.4c.8-.9 1.9-1.5 3.7-1.5 2.8 0 4.8 3.2 4.8 7.1 0 4.1-1.9 7.2-4.8 7.2z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 44" width="110" height="44" role="img" aria-label="Stripe">
+  <title>Stripe</title>
+  <rect width="110" height="44" rx="7" fill="#635BFF"/>
+  <!-- Set as text rather than traced paths: the hand-built outlines rendered
+       as a clipped "strip". A system-font wordmark is legible at every size
+       and needs no font file. -->
+  <text x="55" y="29"
+        text-anchor="middle"
+        font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="19"
+        font-weight="700"
+        letter-spacing="-0.6"
+        fill="#ffffff">stripe</text>
 </svg>
