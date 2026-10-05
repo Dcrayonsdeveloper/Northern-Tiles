@@ -868,3 +868,21 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Index.jsx   |  7 +++-
    4 files changed, 65 insertions(+), 9 deletions(-)
 ```
+
+## 2026-10-05 07:39 UTC — `e03d7e5`
+
+**Checkout shows the real payment method**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (e03d7e5)
+- Server: 61346d2 → e03d7e5
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   resources/js/Pages/Builder/Checkout/Index.jsx    | 14 +++++++-------
+   resources/js/Pages/Storefront/Checkout/Index.jsx | 14 +++++++-------
+   2 files changed, 14 insertions(+), 14 deletions(-)
+```
