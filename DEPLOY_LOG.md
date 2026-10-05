@@ -903,3 +903,22 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Payment.jsx | 16 +++++++++++++++-
    1 file changed, 15 insertions(+), 1 deletion(-)
 ```
+
+## 2026-10-05 07:50 UTC — `fdfa873`
+
+**Fix literal JSX on trade checkout, remove dropdown glow**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (fdfa873)
+- Server: 52669d3 → fdfa873
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   resources/js/Components/Storefront/StorefrontHeader.jsx | 2 +-
+   resources/js/Layouts/DashboardLayout.jsx                | 2 +-
+   resources/js/Pages/Builder/Checkout/Index.jsx           | 4 ++--
+   3 files changed, 4 insertions(+), 4 deletions(-)
+```
