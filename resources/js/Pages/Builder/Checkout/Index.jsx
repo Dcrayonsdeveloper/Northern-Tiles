@@ -360,8 +360,8 @@ export default function Index({
                                                 <path d="M4 11h4" strokeWidth="1.5" strokeLinecap="round" />
                                             </svg>
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-gray-900">paymentMethods[0]?.name ?? 'Credit / Debit Card'</p>
-                                                <p className="text-xs text-gray-500">paymentMethods[0]?.description ?? 'Pay securely by card on the next step.'</p>
+                                                <p className="text-sm font-medium text-gray-900">{paymentMethods[0]?.name ?? 'Credit / Debit Card'}</p>
+                                                <p className="text-xs text-gray-500">{paymentMethods[0]?.description ?? 'Pay securely by card on the next step.'}</p>
                                             </div>
                                         </div>
                                     </div>
