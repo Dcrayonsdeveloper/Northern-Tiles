@@ -1147,3 +1147,27 @@ Files changed:
    .../Checkout/CartSurvivesUnpaidCheckoutTest.php    | 98 ++++++++++++++++++++++
    5 files changed, 200 insertions(+), 2 deletions(-)
 ```
+
+## 2026-10-05 12:29 UTC — `2366bbe`
+
+**Move to Stripe-hosted Checkout**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (2366bbe)
+- Server: e448360 → 2366bbe
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   .../Payment/Services/StripePaymentService.php      | 104 ++++++++
+   .../Controllers/Storefront/PaymentController.php   |  69 ++---
+   .../Storefront/StripeWebhookController.php         |  22 ++
+   public/images/payment/stripe.svg                   |   8 +
+   resources/js/Pages/Builder/Checkout/Index.jsx      |   4 +-
+   resources/js/Pages/Storefront/Checkout/Index.jsx   |   4 +-
+   resources/js/Pages/Storefront/Checkout/Payment.jsx | 278 ---------------------
+   routes/web.php                                     |   3 -
+   8 files changed, 156 insertions(+), 336 deletions(-)
+```
