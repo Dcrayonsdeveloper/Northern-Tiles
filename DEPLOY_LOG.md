@@ -1041,3 +1041,20 @@ Files changed:
    resources/js/Pages/Storefront/Checkout/Index.jsx | 10 +++++-----
    2 files changed, 10 insertions(+), 10 deletions(-)
 ```
+
+## 2026-10-05 08:28 UTC — `0b64169`
+
+**Hide the shipping zone label once a city is chosen**
+
+- Shipped by: `rahuldcrayons`
+- GitHub: pushed to `main` (0b64169)
+- Server: cecfc89 → 0b64169
+- Migrations: INFO Nothing to migrate.
+- Smoke test: /=200 /shop=200 /cart=200 /blog=200 /visualizer=200
+
+Files changed:
+```
+  
+   resources/js/Pages/Storefront/Checkout/Index.jsx | 10 +++++++---
+   1 file changed, 7 insertions(+), 3 deletions(-)
+```
