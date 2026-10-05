@@ -86,4 +86,44 @@ class AbandonedCheckoutVisibilityTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('orders.total', 2));
     }
+
+    public function test_the_list_shows_website_orders_by_default_and_trade_on_request(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->order('online', 'pending', ['is_builder_order' => false]);
+        $this->order('online', 'pending', ['is_builder_order' => true]);
+        $this->order('online', 'pending', ['is_builder_order' => true]);
+
+        // Trade is a separate book with its own pricing; mixing the two made
+        // either impossible to scan.
+        $this->actingAs($admin)
+            ->get(route('admin.orders.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('source', 'website')
+                ->where('orders.total', 1)
+                ->where('sourceCounts.website', 1)
+                ->where('sourceCounts.builder', 2));
+
+        $this->actingAs($admin)
+            ->get(route('admin.orders.index', ['source' => 'builder']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('source', 'builder')
+                ->where('orders.total', 2));
+    }
+
+    public function test_the_sidebar_counts_each_source_separately(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->order('online', 'pending', ['is_builder_order' => false]);
+        $this->order('online', 'pending', ['is_builder_order' => true]);
+        // Abandoned: work nobody has to do, so it is in neither badge.
+        $this->order('card', 'pending', ['is_builder_order' => true]);
+
+        $alerts = app(\App\Domain\Dashboard\Services\AdminAlertService::class)->forUser($admin);
+
+        $this->assertSame(1, $alerts['orders']);
+        $this->assertSame(1, $alerts['builder-orders']);
+    }
 }

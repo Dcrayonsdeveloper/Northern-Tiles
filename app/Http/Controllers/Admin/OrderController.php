@@ -20,12 +20,24 @@ class OrderController extends Controller
         // is still reachable.
         $showAbandoned = $request->boolean('abandoned');
 
+        // Website orders by default; trade is a separate book with its own
+        // pricing and its own screen, and mixing the two made it impossible to
+        // scan either. 'builder' switches the list over rather than adding to
+        // it, which is what the toggle in the header reads as.
+        $source = $request->input('source') === 'builder' ? 'builder' : 'website';
+
         $orders = Order::query()
             ->with(['user:id,name,email'])
             ->unless($showAbandoned, fn ($q) => $q->excludingAbandonedCheckouts())
+            ->where('is_builder_order', $source === 'builder')
             ->orderByDesc('id')
             ->paginate(20)
             ->withQueryString();
+
+        $countFor = fn (bool $builder) => Order::query()
+            ->excludingAbandonedCheckouts()
+            ->where('is_builder_order', $builder)
+            ->count();
 
         // Whether a note exists, not the note itself — the list only needs to
         // show an icon, and staff remarks do not belong in a page payload that
@@ -38,7 +50,14 @@ class OrderController extends Controller
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
             'showingAbandoned' => $showAbandoned,
-            'abandonedCount' => Order::abandonedCheckoutCount(),
+            'abandonedCount' => Order::abandonedCheckoutCount(
+                fn ($q) => $q->where('is_builder_order', $source === 'builder')
+            ),
+            'source' => $source,
+            'sourceCounts' => [
+                'website' => $countFor(false),
+                'builder' => $countFor(true),
+            ],
         ]);
     }
 

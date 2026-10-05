@@ -33,7 +33,23 @@ class AdminAlertService
         }
 
         return Cache::remember('admin:alerts', self::TTL_SECONDS, fn () => array_filter([
-            'orders' => Order::query()->where('status', 'pending')->count(),
+            // Split by source so each sidebar item counts what its own screen
+            // lists. Store > Orders defaults to website orders and Builder
+            // Orders shows trade, so one combined badge would have sent an
+            // admin to a list that did not contain the thing it was counting.
+            //
+            // Both skip abandoned card checkouts, for the same reason the
+            // lists do: an order nobody completed is not work waiting.
+            'orders' => Order::query()
+                ->excludingAbandonedCheckouts()
+                ->where('is_builder_order', false)
+                ->where('status', 'pending')
+                ->count(),
+            'builder-orders' => Order::query()
+                ->excludingAbandonedCheckouts()
+                ->where('is_builder_order', true)
+                ->where('status', 'pending')
+                ->count(),
             'messages' => ContactMessage::query()->where('is_read', false)->count(),
             'builder-accounts' => User::query()
                 ->where('is_builder', true)
