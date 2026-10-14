@@ -5,6 +5,23 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
+        @if ($googleSiteVerification = config('services.google.site_verification'))
+            {{-- Search Console drops the property if this tag ever disappears. --}}
+            <meta name="google-site-verification" content="{{ $googleSiteVerification }}">
+        @endif
+
+        @if (($googleAnalyticsId = config('services.google.analytics_id')) && ! app()->environment('local'))
+            {{-- Skipped locally so development traffic stays out of the reports. --}}
+            <script async src="https://www.googletagmanager.com/gtag/js?id={{ $googleAnalyticsId }}"></script>
+            <script>
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+
+                gtag('config', '{{ $googleAnalyticsId }}');
+            </script>
+        @endif
+
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Favicon -->
