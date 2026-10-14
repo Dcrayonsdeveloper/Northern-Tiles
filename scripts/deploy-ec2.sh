@@ -52,8 +52,12 @@ if [ -f .env ]; then
     done < <(grep -E '^(EC2_HOST|EC2_KEY|EC2_BASE|HEALTH_HOST)=' .env || true)
 fi
 
-EC2_HOST="${EC2_HOST:-ubuntu@52.62.171.34}"
-EC2_KEY="${EC2_KEY:-Northern Tile Distributors.pem}"
+# The box was rebuilt on a new AWS account (079716036738) on 2026-09-15 after
+# the first one was closed. 52.62.171.34 and "Northern Tile Distributors.pem"
+# belonged to that dead account and can never work again. This address is an
+# Elastic IP, so it survives a stop/start.
+EC2_HOST="${EC2_HOST:-ubuntu@52.64.115.58}"
+EC2_KEY="${EC2_KEY:-northern-tiles-key.pem}"
 BASE="${EC2_BASE:-/var/www/ntiled}"
 HEALTH_HOST="${HEALTH_HOST:-besttiles.shop}"
 
