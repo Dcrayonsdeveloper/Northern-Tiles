@@ -41,6 +41,16 @@ return [
 
     'google' => [
         'api_key' => env('GOOGLE_API_KEY'),
+
+        /*
+        | Both of these are public identifiers that ship in the page HTML, so
+        | they are defaulted here rather than left to env: Search Console drops
+        | the site the moment its meta tag disappears, and an unset analytics id
+        | fails silently, which is exactly how a tag goes missing for months.
+        | Set the env vars to override (or to blank them out).
+        */
+        'analytics_id' => env('GOOGLE_ANALYTICS_ID', 'G-H5DR51PSRF'),
+        'site_verification' => env('GOOGLE_SITE_VERIFICATION', 'bP8t3WlrJ-7p9HEHXGe7WljE9JER7crnhS08IjtUFwI'),
     ],
 
     /*
