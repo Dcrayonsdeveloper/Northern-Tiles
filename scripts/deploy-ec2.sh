@@ -59,7 +59,10 @@ fi
 EC2_HOST="${EC2_HOST:-ubuntu@52.64.115.58}"
 EC2_KEY="${EC2_KEY:-northern-tiles-key.pem}"
 BASE="${EC2_BASE:-/var/www/ntiled}"
-HEALTH_HOST="${HEALTH_HOST:-besttiles.shop}"
+# The live domain is ntiled.com.au, and the TLS cert on the box is issued for
+# it. besttiles.shop was the stand-in while the real domain was pending; its
+# DNS still points at the closed account's IP, so health-checking it fails.
+HEALTH_HOST="${HEALTH_HOST:-ntiled.com.au}"
 
 [ -f "$EC2_KEY" ] || { echo "SSH key not found: $EC2_KEY" >&2; exit 1; }
 
