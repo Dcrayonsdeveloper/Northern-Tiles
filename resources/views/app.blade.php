@@ -22,6 +22,17 @@
             </script>
         @endif
 
+        @if (($clarityProjectId = config('services.clarity.project_id')) && ! app()->environment('local'))
+            {{-- Microsoft Clarity. Skipped locally so development sessions are not recorded. --}}
+            <script type="text/javascript">
+                (function(c,l,a,r,i,t,y){
+                    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+                })(window, document, "clarity", "script", "{{ $clarityProjectId }}");
+            </script>
+        @endif
+
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <!-- Favicon -->
