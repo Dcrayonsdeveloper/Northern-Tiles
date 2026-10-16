@@ -83,18 +83,41 @@ function RoomSceneRenderer({ room, selectedTile, tileScale, groutColor, groutWid
     const [tileImage, setTileImage] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Load room image
+    // Load room image.
+    //
+    // Clearing roomImage up front matters: without it a failed or slow load
+    // leaves the *previous* room painted on the canvas, so switching rooms
+    // appears to do nothing and every room looks like the first one. Better to
+    // show nothing than to show confidently the wrong room.
     useEffect(() => {
+        let cancelled = false;
+
         setIsLoading(true);
+        setRoomImage(null);
+
+        if (!room?.image) {
+            setIsLoading(false);
+            return;
+        }
+
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
+            if (cancelled) return;          // a newer room won the race
             setRoomImage(img);
             setIsLoading(false);
         };
-        img.onerror = () => setIsLoading(false);
+        img.onerror = () => {
+            if (cancelled) return;
+            setRoomImage(null);
+            setIsLoading(false);
+        };
         img.src = room.image;
-    }, [room.image]);
+
+        // Room images differ wildly in weight, so a slow one can resolve after
+        // the user has already clicked elsewhere. Ignore anything stale.
+        return () => { cancelled = true; };
+    }, [room?.image]);
 
     // Load tile image
     useEffect(() => {
@@ -115,10 +138,19 @@ function RoomSceneRenderer({ room, selectedTile, tileScale, groutColor, groutWid
         if (!canvas || !roomImage) return;
 
         const ctx = canvas.getContext('2d');
-        const imgWidth = roomImage.naturalWidth;
-        const imgHeight = roomImage.naturalHeight;
-        
-        // Set canvas size to match image
+
+        // Cap the backing store. Room scenes get uploaded straight off a camera
+        // or a stock site — one of them is 6645x4071, which is a 108 MB canvas
+        // and large enough for a browser to refuse to allocate, leaving a blank
+        // preview. 2400px is still well above the ~900px it renders at, and the
+        // floor bounds are percentages so scaling costs us no accuracy.
+        const MAX_EDGE = 2400;
+        const naturalW = roomImage.naturalWidth;
+        const naturalH = roomImage.naturalHeight;
+        const scale = Math.min(1, MAX_EDGE / Math.max(naturalW, naturalH));
+        const imgWidth = Math.round(naturalW * scale);
+        const imgHeight = Math.round(naturalH * scale);
+
         canvas.width = imgWidth;
         canvas.height = imgHeight;
 
