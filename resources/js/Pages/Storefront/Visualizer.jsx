@@ -101,7 +101,10 @@ function RoomSceneRenderer({ room, selectedTile, tileScale, groutColor, groutWid
         }
 
         const img = new Image();
-        img.crossOrigin = 'anonymous';
+        // No crossOrigin here. These images are served from our own origin, so
+        // they never taint the canvas and the download still works. Asking for
+        // CORS on a response that carries no Access-Control-Allow-Origin is the
+        // one way to turn a perfectly good same-origin image into a load error.
         img.onload = () => {
             if (cancelled) return;          // a newer room won the race
             setRoomImage(img);
@@ -126,7 +129,6 @@ function RoomSceneRenderer({ room, selectedTile, tileScale, groutColor, groutWid
             return;
         }
         const img = new Image();
-        img.crossOrigin = 'anonymous';
         img.onload = () => setTileImage(img);
         img.onerror = () => setTileImage(null);
         img.src = selectedTile.image_url;
@@ -135,9 +137,18 @@ function RoomSceneRenderer({ room, selectedTile, tileScale, groutColor, groutWid
     // Render canvas
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas || !roomImage) return;
+        if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
+
+        // Wipe before bailing out. Returning early here left the previous
+        // room's pixels sitting on the canvas, so a room whose image failed to
+        // load looked exactly like the room before it -- which is why every
+        // room appeared to show the first one.
+        if (!roomImage) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
 
         // Cap the backing store. Room scenes get uploaded straight off a camera
         // or a stock site — one of them is 6645x4071, which is a 108 MB canvas
@@ -157,12 +168,17 @@ function RoomSceneRenderer({ room, selectedTile, tileScale, groutColor, groutWid
         // Clear canvas
         ctx.clearRect(0, 0, imgWidth, imgHeight);
 
-        // Calculate floor bounds in pixels
-        const bounds = room.floorBounds;
-        const floorX = (bounds.x / 100) * imgWidth;
-        const floorY = (bounds.y / 100) * imgHeight;
-        const floorW = (bounds.width / 100) * imgWidth;
-        const floorH = (bounds.height / 100) * imgHeight;
+        // Calculate floor bounds in pixels. The admin stores these as strings
+        // while the seeded room has numbers, so coerce rather than trust them.
+        const bounds = room.floorBounds || { x: 0, y: 0, width: 100, height: 100 };
+        const pct = (v, fallback) => {
+            const n = parseFloat(v);
+            return Number.isFinite(n) ? n : fallback;
+        };
+        const floorX = (pct(bounds.x, 0) / 100) * imgWidth;
+        const floorY = (pct(bounds.y, 0) / 100) * imgHeight;
+        const floorW = (pct(bounds.width, 100) / 100) * imgWidth;
+        const floorH = (pct(bounds.height, 100) / 100) * imgHeight;
 
         // Draw tile pattern on floor area first
         if (tileImage && selectedTile) {
