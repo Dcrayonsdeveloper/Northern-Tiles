@@ -296,7 +296,15 @@ export default function Footer({ minimal = false }) {
                         <img src="/images/ntiled_logo.png" alt={brandName} className="h-8 w-auto brightness-0 invert opacity-70" />
                     </Link>
                     <p className="text-[12px] text-[#aaa]">
-                        &copy; {year} {brandName}. All rights reserved.
+                        &copy; {year} {brandName}. All rights reserved.{' '}
+                        <a
+                            href="https://dcrayon.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline underline-offset-2 transition-colors hover:text-white"
+                        >
+                            Created by Dcrayons Inc
+                        </a>
                     </p>
                 </div>
             </div>
