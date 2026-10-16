@@ -54,6 +54,16 @@ return [
     ],
 
     /*
+    | Microsoft Clarity — session recordings and heatmaps. The project id is a
+    | public identifier that ships in the page HTML, so it is defaulted here
+    | for the same reason as the Google ids above: an unset env var fails
+    | silently and the tag just stops recording with nothing to show for it.
+    */
+    'clarity' => [
+        'project_id' => env('CLARITY_PROJECT_ID', 'yvdv44h1aa'),
+    ],
+
+    /*
     | Stripe card payments.
     |
     | StripePaymentService reads every one of these through
