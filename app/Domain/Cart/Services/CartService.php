@@ -170,11 +170,22 @@ class CartService
 
         $userCart = Cart::where('user_id', $userId)
             ->where('channel', Cart::CHANNEL_RETAIL)
-            ->active()
             ->first();
 
+        // Expiry is not part of the (user_id, channel) unique key, so a lapsed
+        // cart still holds the user's slot: handing the guest cart over would
+        // collide with it, and the guest's items would be lost at sign-in.
+        // Reuse the lapsed row instead, as Cart::getOrCreate does.
+        if ($userCart?->isExpired()) {
+            $userCart->revive();
+        }
+
+        // touchActivity() stamps the owner's email, as getOrCreate does for
+        // every signed-in cart; a cart that was a guest's until now has none,
+        // and abandoned-cart recovery can only write to a cart that has one.
         if (!$userCart) {
             $guestCart->update(['user_id' => $userId, 'session_id' => null]);
+            $guestCart->touchActivity();
             return;
         }
 
@@ -205,6 +216,7 @@ class CartService
         }
 
         $guestCart->delete();
+        $userCart->touchActivity();
     }
 
     public function validateCart(Cart $cart): array
