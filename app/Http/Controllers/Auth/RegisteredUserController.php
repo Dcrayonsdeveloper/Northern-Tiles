@@ -44,10 +44,25 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
+        // Read before Auth::login(), which regenerates the session: the guest
+        // cart is keyed by this id. See AuthenticatedSessionController::store.
+        $guestSessionId = $request->session()->getId();
+
         Auth::login($user);
 
-        // New sign-ups are regular customers — send them to the storefront,
-        // not the member dashboard.
-        return redirect(route('home', absolute: false));
+        // A guest who filled a cart signs up at checkout, so their cart has
+        // to come with them into the new account.
+        try {
+            app(\App\Domain\Cart\Services\CartService::class)
+                ->mergeGuestCart($user->id, $guestSessionId);
+        } catch (\Throwable $e) {
+            // Never fail a sign-up because a cart merge went wrong.
+            \Log::warning('Guest cart merge on registration failed', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+        }
+
+        // New sign-ups are regular customers — send them back to checkout if
+        // that is what asked them to sign in, otherwise to the storefront,
+        // never the member dashboard.
+        return redirect()->intended(route('home', absolute: false));
     }
 }

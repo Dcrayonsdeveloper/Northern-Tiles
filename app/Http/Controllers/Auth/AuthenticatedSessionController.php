@@ -22,6 +22,9 @@ class AuthenticatedSessionController extends Controller
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status'           => session('status'),
+            // Sent here by the Checkout button: signing in is the last step
+            // of their order, not a detour, and the page says so.
+            'fromCheckout'     => session('url.intended') === route('checkout.index'),
         ]);
     }
 
@@ -39,6 +42,13 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // Capture the guest session id BEFORE authenticate(). The guest cart
+        // row is keyed by it (session_id = OLD_SID, user_id = NULL), and
+        // Auth::attempt() regenerates the session as it logs the user in —
+        // read it any later and the merge below looks up an id no cart has,
+        // so the cart a guest filled before checkout is silently orphaned.
+        $oldSessionId = $request->session()->getId();
+
         try {
             $request->authenticate();
         } catch (ValidationException $e) {
@@ -54,13 +64,6 @@ class AuthenticatedSessionController extends Controller
             // Wrong credentials — let Inertia handle it normally.
             throw $e;
         }
-
-        // Capture the guest session id BEFORE regenerate() — otherwise the
-        // guest cart row (session_id = OLD_SID, user_id = NULL) is orphaned
-        // when regenerate() mints a fresh id, its items vanish from the badge,
-        // and the abandoned-cart job later emails the user about the empty
-        // cart they're staring at.
-        $oldSessionId = $request->session()->getId();
 
         $request->session()->regenerate();
 

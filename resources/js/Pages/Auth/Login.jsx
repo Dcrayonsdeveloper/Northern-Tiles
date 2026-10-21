@@ -51,7 +51,7 @@ function useLoginCountdown(retryAfter) {
     return { countdown, isLocked: countdown > 0 };
 }
 
-export default function Login({ status, canResetPassword }) {
+export default function Login({ status, canResetPassword, fromCheckout = false }) {
     const d = useD();
     const { flash } = usePage().props;
     const { countdown, isLocked } = useLoginCountdown(flash?.retry_after);
@@ -85,7 +85,11 @@ export default function Login({ status, canResetPassword }) {
                     {d('auth.sign_in.title')}
                 </div>
                 <div className="mt-1 text-[13px] text-gray-600">
-                    {d('auth.sign_in.subtitle')}
+                    {/* Arrived from the Checkout button: this may be their
+                        first visit, so "welcome back" is the wrong greeting. */}
+                    {fromCheckout
+                        ? 'Sign in or create an account to place your order. Your cart is saved.'
+                        : d('auth.sign_in.subtitle')}
                 </div>
             </div>
 

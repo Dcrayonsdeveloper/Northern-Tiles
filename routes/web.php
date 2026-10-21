@@ -52,22 +52,21 @@ Route::get('/visualizer', [VisualizerController::class, 'index'])->name('visuali
 
 // Cart routes (Inertia pages)
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-// Buying requires an account. Enforced here rather than in the UI: the
-// buttons are on a dozen pages and an unguarded endpoint is still an
-// unguarded endpoint. A guest posting is redirected to login, and Laravel
-// returns them to the page they came from afterwards.
-Route::post('/cart', [CartController::class, 'store'])->name('cart.store')->middleware(['auth', EnsureUserIsActive::class]);
-Route::patch('/cart/{item}', [CartController::class, 'update'])->name('cart.update')->middleware('auth');
-Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.destroy')->middleware('auth');
+// Guests can fill a cart; signing in is the last step, at checkout. Their
+// cart is keyed by session id, and login/sign-up merge it into the account
+// (CartService::mergeGuestCart), so nothing is lost on the way through.
+Route::post('/cart', [CartController::class, 'store'])->name('cart.store')->middleware(EnsureUserIsActive::class);
+Route::patch('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.destroy');
 
 // Cart API routes (JSON endpoints for AJAX - must be in web routes for session access)
 Route::prefix('api/cart')->name('api.cart.')->group(function () {
     Route::get('count', [\App\Http\Controllers\Api\CartController::class, 'count'])->name('count');
     Route::get('/', [\App\Http\Controllers\Api\CartController::class, 'index'])->name('index');
-    // Same gate as the Inertia routes — these answer JSON, so a guest gets
-    // a 401 the caller turns into a trip to the login page.
-    Route::post('add', [\App\Http\Controllers\Api\CartController::class, 'add'])->name('add')->middleware(['auth', EnsureUserIsActive::class]);
-    Route::post('buy-now', [\App\Http\Controllers\Api\CartController::class, 'buyNow'])->name('buy-now')->middleware(['auth', EnsureUserIsActive::class]);
+    // Open to guests like the Inertia routes. Buy Now answers with /checkout,
+    // which is where a guest is asked to sign in.
+    Route::post('add', [\App\Http\Controllers\Api\CartController::class, 'add'])->name('add')->middleware(EnsureUserIsActive::class);
+    Route::post('buy-now', [\App\Http\Controllers\Api\CartController::class, 'buyNow'])->name('buy-now')->middleware(EnsureUserIsActive::class);
 
     // Coupon routes — MUST be declared before the {item} wildcard routes.
     // If placed after, DELETE api/cart/coupon would match {item}="coupon" (string)
@@ -113,7 +112,9 @@ Route::prefix('api/reviews')->name('api.reviews.')->group(function () {
     Route::post('{reviewId}/helpful', [\App\Http\Controllers\Api\ReviewController::class, 'markHelpful'])->name('helpful');
 });
 
-// Guest checkout is off: an order must belong to an account.
+// Guest checkout is off: an order must belong to an account. This is the one
+// step of buying that needs a sign-in — a guest is sent to /login with
+// /checkout as the intended URL and comes straight back with their cart.
 Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.index')->middleware('auth');
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store')->middleware(['auth', EnsureUserIsActive::class]);
 Route::get('/checkout/success/{order}', [CheckoutController::class, 'success'])
