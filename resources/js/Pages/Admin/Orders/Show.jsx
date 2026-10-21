@@ -58,9 +58,9 @@ function OrderTracking({ order }) {
                 <div className="flex items-center gap-2 text-xs">
                     <span className="text-gray-500">Order</span>
                     <span className="font-mono font-semibold text-gray-900">{order.order_number}</span>
-                    {order.shipping_method ? (
-                        <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-medium capitalize text-blue-700">
-                            {String(order.shipping_method).replace(/-/g, ' ')}
+                    {order.delivery_label ? (
+                        <span className="rounded bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                            {order.delivery_label}
                         </span>
                     ) : null}
                 </div>
@@ -250,6 +250,7 @@ function CustomerDetails({ order }) {
 
 /* ── Payment Summary ───────────────────────────────────────────────── */
 function PaymentSummary({ order }) {
+    const quoted = order.delivery_quote_status != null;
     const rows = [
         { label: 'Subtotal', value: order.subtotal },
         { label: 'Discount', value: order.discount, negative: true },
@@ -273,12 +274,118 @@ function PaymentSummary({ order }) {
                         </span>
                     </div>
                 ))}
+                {quoted ? (
+                    <div className="flex justify-between text-xs">
+                        <span className="text-gray-600">Delivery</span>
+                        <span className="font-medium text-amber-700">
+                            {order.delivery_quote != null ? `${money(order.delivery_quote, order.currency)} quoted` : 'To be quoted'}
+                        </span>
+                    </div>
+                ) : null}
             </div>
 
             <div className="mt-3 flex items-center justify-between border-t border-gray-200 pt-3">
                 <span className="text-sm font-semibold text-gray-900">Total Amount</span>
                 <span className="text-base font-bold text-gray-900">{money(order.total, order.currency)}</span>
             </div>
+            {quoted ? (
+                <p className="mt-1 text-right text-[11px] text-gray-500">
+                    Charged at checkout. Delivery is collected separately.
+                </p>
+            ) : null}
+        </div>
+    );
+}
+
+/* ── Delivery Quote ────────────────────────────────────────────────── */
+/**
+ * Tile orders are paid for at checkout without delivery, which the team
+ * quotes afterwards and collects by phone or invoice. This records that
+ * quote. It never changes the order total: that is what the card was
+ * charged, and Stripe reconciles against it.
+ */
+const QUOTE_BADGES = {
+    awaiting: ['Needs a quote', 'bg-amber-50 text-amber-700 ring-amber-200'],
+    quoted: ['Quoted · unpaid', 'bg-blue-50 text-blue-700 ring-blue-200'],
+    paid: ['Paid', 'bg-emerald-50 text-emerald-700 ring-emerald-200'],
+};
+
+function DeliveryQuote({ order }) {
+    const { data, setData, put, processing, errors } = useForm({
+        delivery_quote: order.delivery_quote ?? '',
+        delivery_quote_paid: !!order.delivery_quote_paid_at,
+    });
+
+    const [saved, setSaved] = useState(false);
+    // Compared as amounts: the server sends "150.00" back for a typed "150".
+    const blank = (v) => v === '' || v == null;
+    const sameQuote = blank(data.delivery_quote) || blank(order.delivery_quote)
+        ? blank(data.delivery_quote) && blank(order.delivery_quote)
+        : Number(data.delivery_quote) === Number(order.delivery_quote);
+    const dirty = !sameQuote || data.delivery_quote_paid !== !!order.delivery_quote_paid_at;
+    const [badge, tone] = QUOTE_BADGES[order.delivery_quote_status] ?? [];
+
+    const submit = (e) => {
+        e.preventDefault();
+        put(route('admin.orders.update', order.id), {
+            preserveScroll: true,
+            onSuccess: () => { setSaved(true); setTimeout(() => setSaved(false), 2000); },
+        });
+    };
+
+    return (
+        <div className="admin-card">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Icon path={TruckPath} className="h-4 w-4 text-gray-400" />
+                    <span className="text-sm font-semibold text-gray-900">Delivery Quote</span>
+                </div>
+                {saved ? (
+                    <span className="text-[11px] text-emerald-600">Saved</span>
+                ) : badge ? (
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ${tone}`}>{badge}</span>
+                ) : null}
+            </div>
+
+            <p className="mt-0.5 text-[11px] text-gray-500">
+                The customer paid for the goods only. Quote delivery to their address, then collect it by phone or invoice.
+            </p>
+
+            <form onSubmit={submit} className="mt-3 space-y-3">
+                <div>
+                    <label className="block text-xs font-medium text-gray-700">Delivery quote ({order.currency})</label>
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={data.delivery_quote}
+                        onChange={(e) => setData('delivery_quote', e.target.value)}
+                        placeholder="0.00"
+                        className="admin-input mt-1 w-full text-xs"
+                    />
+                    {errors.delivery_quote ? (
+                        <p className="mt-1 text-[11px] text-red-600">{errors.delivery_quote}</p>
+                    ) : null}
+                </div>
+
+                <label className="flex items-center gap-2 text-xs text-gray-700">
+                    <input
+                        type="checkbox"
+                        checked={data.delivery_quote_paid}
+                        onChange={(e) => setData('delivery_quote_paid', e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                    />
+                    Customer has paid for delivery
+                    {order.delivery_quote_paid_at ? (
+                        <span className="text-gray-400">· {when(order.delivery_quote_paid_at)}</span>
+                    ) : null}
+                </label>
+
+                <button type="submit" disabled={processing || !dirty} className="btn-primary w-full disabled:opacity-50">
+                    {processing ? 'Saving…' : 'Save delivery quote'}
+                </button>
+            </form>
         </div>
     );
 }
@@ -412,7 +519,7 @@ function OrderInfo({ order }) {
                     : 'bg-yellow-50 text-yellow-700 ring-yellow-200',
         },
         { label: 'Payment Method', value: paymentLabel },
-        { label: 'Delivery Zone', value: order.shipping_method ? String(order.shipping_method).replace(/-/g, ' ') : null, capitalize: true },
+        { label: 'Delivery', value: order.delivery_label },
         { label: 'Shipped', value: when(order.shipped_at) },
         { label: 'Delivered', value: when(order.delivered_at) },
         { label: 'Customer', value: order.user ? 'Account' : 'Guest checkout' },
@@ -485,6 +592,7 @@ export default function Show({ order, statuses, paymentStatuses }) {
                 </div>
 
                 <div className="space-y-4">
+                    {order.delivery_quote_status != null ? <DeliveryQuote order={order} /> : null}
                     <AdminNote order={order} />
                     <UpdateStatus order={order} statuses={statuses} paymentStatuses={paymentStatuses} />
                     <OrderInfo order={order} />

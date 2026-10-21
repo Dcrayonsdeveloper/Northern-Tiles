@@ -86,13 +86,10 @@ class CheckoutService
                 'total' => $totals['grand_total'],
                 'shipping_address' => $data['shipping_address'] ?? null,
                 'billing_address' => $data['billing_address'] ?? $data['shipping_address'] ?? null,
-                // The zone this order was priced at, so the charge can be explained
-                // later even if the rate card changes.
-                'shipping_method' => \App\Domain\Cart\Services\PricingService::zoneForPostcode(
-                    $data['shipping_address']['postal_code'] ?? null,
-                    $data['shipping_address']['state'] ?? null,
-                    $data['shipping_address']['city'] ?? null
-                )['key'],
+                // How delivery was priced -- the flat sample fee, quoted by
+                // the team, or waived by a coupon -- so the orders still
+                // waiting on a delivery quote can be found.
+                'shipping_method' => $totals['shipping_method'],
                 'payment_method' => $data['payment_method'] ?? 'online',
                 'payment_status' => 'pending',
                 'notes' => $data['notes'] ?? null,
@@ -180,7 +177,7 @@ class CheckoutService
             'shipping_address.postal_code' => 'required|string|max:20',
             'shipping_address.country' => 'required|string|in:Australia',
             'shipping_address.phone' => 'nullable|string|max:20',
-            // No longer chosen by the customer -- the delivery postcode decides it.
+            // No longer chosen by the customer -- what is in the cart decides it.
             // Left nullable so a stale open tab posting the old field still checks out.
             'shipping_method' => 'nullable|string|max:50',
             // 'online' stays accepted so a stale open tab, which posted that
@@ -204,17 +201,6 @@ class CheckoutService
         }
 
         return $rules;
-    }
-
-    /**
-     * The delivery rate card shown at checkout.
-     *
-     * Comes straight from PricingService so the figure on screen is the same
-     * one the order is charged at.
-     */
-    public function getShippingZones(): array
-    {
-        return \App\Domain\Cart\Services\PricingService::shippingZones();
     }
 
     /**
@@ -316,13 +302,11 @@ class CheckoutService
         });
 
         $totals = $this->pricingService->computeTotals($cart, $shippingData);
-        $shippingZones = $this->getShippingZones();
         $paymentMethods = $this->getPaymentMethods();
 
         return [
             'items' => $items,
             'totals' => $totals,
-            'shipping_zones' => $shippingZones,
             'payment_methods' => $paymentMethods,
         ];
     }

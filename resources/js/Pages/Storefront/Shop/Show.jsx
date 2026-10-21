@@ -735,8 +735,10 @@ function VariantFamilySelector({ familyVariants }) {
 /* ═══════════════════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════════════════ */
-export default function Show({ product, relatedProducts, availableCoupons = [], familyVariants = null, isWishlisted = false }) {
+export default function Show({ product, relatedProducts, availableCoupons = [], familyVariants = null, isWishlisted = false, sampleShipping = 20 }) {
     const { settings, auth } = usePage().props;
+    // "$20" rather than "$20.00" in the sample copy; cents only when there are some.
+    const sampleShippingLabel = `$${Number(sampleShipping) % 1 === 0 ? Number(sampleShipping) : Number(sampleShipping).toFixed(2)}`;
     const [quantity, setQuantity] = useState(1);
     const [area, setArea] = useState(1);
     const [wastage, setWastage] = useState(true);
@@ -1125,7 +1127,7 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                         {addingSample ? 'Adding...' : 'Get a Sample'}
                                     </span>
                                     <span className="block text-[10px] font-normal normal-case tracking-normal leading-tight text-gray-500 group-hover:text-gray-300">
-                                        Free samples · Max 5 per order · Flat $9.99 shipping
+                                        Free samples · Max 5 per order · Flat {sampleShippingLabel} shipping
                                     </span>
                                 </button>
                                 )}
@@ -1285,13 +1287,13 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 </svg>
                             </div>
 
-                            <h3 className="text-center text-2xl font-extrabold text-gray-900 tracking-tight">Order samples for just $9.99</h3>
-                            <p className="mt-2 text-center text-[12px] font-semibold uppercase tracking-wider text-brand">Free samples · Flat $9.99 shipping</p>
+                            <h3 className="text-center text-2xl font-extrabold text-gray-900 tracking-tight">Order samples for just {sampleShippingLabel}</h3>
+                            <p className="mt-2 text-center text-[12px] font-semibold uppercase tracking-wider text-brand">Free samples · Flat {sampleShippingLabel} shipping</p>
 
                             <div className="mt-5 space-y-3 text-[14px] leading-relaxed text-gray-700">
                                 <div className="flex items-start gap-3">
                                     <div className="flex-shrink-0 w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-[12px] font-bold">✓</div>
-                                    <p><strong className="text-gray-900">Samples themselves are FREE.</strong> You only pay flat $9.99 shipping — no matter how many samples you order.</p>
+                                    <p><strong className="text-gray-900">Samples themselves are FREE.</strong> You only pay flat {sampleShippingLabel} shipping — no matter how many samples you order.</p>
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <div className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-[12px] font-bold">!</div>
@@ -1299,7 +1301,7 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[12px] font-bold">$</div>
-                                    <p>Order 1 sample or all 5 — shipping is always <strong className="text-gray-900">$9.99 flat</strong>.</p>
+                                    <p>Order 1 sample or all 5 — shipping is always <strong className="text-gray-900">{sampleShippingLabel} flat</strong>.</p>
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-[12px] font-bold">◇</div>

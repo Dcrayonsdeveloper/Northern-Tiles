@@ -36,12 +36,19 @@ function CartCrossSell({ products, onAdd, disabled }) {
     );
 }
 
-export default function Index({ items: initialItems, subtotal: initialSubtotal, crossSellProducts }) {
+export default function Index({ items: initialItems, subtotal: initialSubtotal, totals: initialTotals = null, crossSellProducts }) {
     const { auth } = usePage().props;
     const isInactive = !!auth?.user && auth.user.is_active === false;
 
     const [items, setItems] = useState(initialItems ?? []);
     const [subtotal, setSubtotal] = useState(initialSubtotal ?? 0);
+    const [totals, setTotals] = useState(initialTotals);
+
+    // Delivery comes from what is in the cart, so it can be stated here:
+    // samples alone ship for a flat fee, anything else is quoted after the
+    // order is placed.
+    const deliveryQuoted = !!totals?.shipping_quote_required;
+    const shippingCost = parseFloat(totals?.shipping || 0);
     const [updating, setUpdating] = useState(null);
 
     const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content;
@@ -64,6 +71,7 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal, 
                 const data = await response.json();
                 setItems(data.items || []);
                 setSubtotal(data.totals?.subtotal || 0);
+                setTotals(data.totals ?? null);
             }
         } catch (error) {
             console.error('Failed to fetch cart:', error);
@@ -321,6 +329,18 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal, 
                             </span>
                         </div>
                         <div className="mt-2 flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Shipping</span>
+                            <span className="font-semibold text-gray-900">
+                                {deliveryQuoted
+                                    ? <span className="text-amber-700">To be quoted</span>
+                                    : shippingCost > 0
+                                        ? `$${shippingCost.toFixed(2)}`
+                                        : totals?.shipping_method === 'free-shipping'
+                                            ? <span className="text-green-600">Free</span>
+                                            : '—'}
+                            </span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-sm">
                             <span className="text-gray-600">Tax</span>
                             <span className="font-semibold text-gray-900">Calculated at checkout</span>
                         </div>
@@ -329,9 +349,14 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal, 
                                 Total
                             </span>
                             <span className="text-lg font-bold text-gray-900">
-                                ${parseFloat(subtotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ${(parseFloat(subtotal || 0) + shippingCost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         </div>
+                        {deliveryQuoted && (
+                            <p className="mt-1 text-right text-xs text-gray-500">
+                                Excludes delivery, which is quoted after you order.
+                            </p>
+                        )}
                         {isInactive ? (
                             <button
                                 type="button"

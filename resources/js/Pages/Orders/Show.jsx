@@ -220,7 +220,15 @@ function OrderItems({ items, currency }) {
 // ── Order Summary ─────────────────────────────────────────────────────────────
 
 function OrderSummary({ order }) {
-    const { currency, subtotal, discount, shipping_cost, tax, total } = order;
+    const { currency, subtotal, discount, shipping_cost, tax, total, delivery_quote_status: quote } = order;
+
+    // Delivery the card did not cover: quoted by the team after the order and
+    // paid separately, so it is never part of the total below.
+    const shippingValue = quote === 'awaiting'
+        ? 'To be quoted'
+        : quote
+            ? `${fmt(currency, order.delivery_quote)} (${quote === 'paid' ? 'paid' : 'payable'} separately)`
+            : shipping_cost > 0 ? fmt(currency, shipping_cost) : 'Free';
 
     return (
         <SectionCard title="Order Summary">
@@ -237,9 +245,7 @@ function OrderSummary({ order }) {
                 )}
                 <div className="flex justify-between">
                     <span className="text-gray-500">Shipping</span>
-                    <span className="font-medium text-gray-900">
-                        {shipping_cost > 0 ? fmt(currency, shipping_cost) : 'Free'}
-                    </span>
+                    <span className="text-right font-medium text-gray-900">{shippingValue}</span>
                 </div>
                 {tax > 0 && (
                     <div className="flex justify-between">
@@ -276,7 +282,7 @@ function PaymentInfo({ order }) {
                     <div className="flex items-start justify-between gap-4">
                         <span className="shrink-0 text-gray-500">Shipping</span>
                         <span className="text-right font-medium text-gray-900">
-                            {SHIPPING_METHOD_LABELS[order.shipping_method] ?? order.shipping_method}
+                            {SHIPPING_METHOD_LABELS[order.shipping_method] ?? order.delivery_label ?? order.shipping_method}
                         </span>
                     </div>
                 )}

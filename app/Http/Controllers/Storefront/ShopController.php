@@ -242,6 +242,9 @@ class ShopController extends Controller
             'relatedProducts' => $relatedProducts,
             'availableCoupons' => $availableCoupons,
             'familyVariants' => $familyVariants,
+            // The sample copy quotes this, so it cannot drift from what the
+            // cart charges the way the hardcoded "$9.99" did.
+            'sampleShipping' => \App\Domain\Cart\Services\PricingService::SAMPLE_SHIPPING_FLAT,
         ]);
     }
 }

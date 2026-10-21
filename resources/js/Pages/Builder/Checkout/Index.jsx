@@ -33,7 +33,6 @@ export default function Index({
     paymentMethods = [],
     items = [],
     totals = {},
-    shippingZones = [],
     isGuest = true,
     user = null,
 }) {
@@ -43,9 +42,9 @@ export default function Index({
     const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
 
     // Remove a line without leaving checkout. A reload rather than local state:
-    // trade pricing, shipping and the free-delivery threshold are all computed
-    // on the server from the whole basket, so dropping the row client-side
-    // would leave the totals beside it wrong until the next full visit.
+    // trade pricing and delivery are both computed on the server from the
+    // whole basket, so dropping the row client-side would leave the totals
+    // beside it wrong until the next full visit.
     const [removingId, setRemovingId] = useState(null);
 
     const removeItem = async (itemId) => {
@@ -133,36 +132,13 @@ export default function Index({
         post(route('builder.checkout.store'));
     };
 
-    // Delivery is priced by destination, from the same server-side rate card the
-    // retail checkout uses, so a trade order to Parramatta is not quoted one
-    // figure here and charged another.
     const cityOptions = citiesForState(data.shipping_address.state);
 
-    const shippingZone = (() => {
-        const fallback = shippingZones[shippingZones.length - 1] ?? null;
-
-        // The city the customer picked decides it. A postcode that disagrees is
-        // more likely a typo than a correction, so it is only consulted before a
-        // city has been chosen.
-        const city = String(data.shipping_address.city || '').toLowerCase();
-        if (city) {
-            return shippingZones.find((z) => (z.cities ?? []).some((c) => c.toLowerCase() === city)) ?? fallback;
-        }
-
-        const digits = String(data.shipping_address.postal_code || '').replace(/\D/g, '');
-        if (digits) {
-            const code = parseInt(digits, 10);
-            return shippingZones.find((z) => (z.ranges ?? []).some(([from, to]) => code >= from && code <= to)) ?? fallback;
-        }
-
-        const state = String(data.shipping_address.state || '').toUpperCase();
-        return shippingZones.find((z) => (z.states ?? []).includes(state)) ?? fallback;
-    })();
-
-    const nonSampleShipping = parseFloat(totals.shipping || 0) - parseFloat(totals.sample_shipping || 0);
-    const shippingWaived = parseFloat(totals.subtotal || 0) > 0 && nonSampleShipping <= 0;
-    const shippingCost = shippingWaived ? 0 : parseFloat(shippingZone?.price ?? 0);
-    const grandTotal = (totals.subtotal || 0) + shippingCost + (totals.tax || 0) - (totals.discount || 0);
+    // Delivery is quoted after the order, the same as on the retail checkout,
+    // so the server's totals are already final and are shown as sent.
+    const deliveryQuoted = !!totals.shipping_quote_required;
+    const shippingCost = parseFloat(totals.shipping || 0);
+    const grandTotal = parseFloat(totals.grand_total || 0);
 
     const isEmpty = items.length === 0;
 
@@ -381,8 +357,9 @@ export default function Index({
                                                 />
                                             </div>
                                             <p className="sm:col-span-2 text-xs text-gray-500">
-                                                Delivery: {shippingZones.map((z) => `${z.label} $${parseFloat(z.price).toFixed(0)}`).join(', ')}. For any other delivery
-                                                quotes, please contact the sales team.
+                                                {deliveryQuoted
+                                                    ? 'Delivery is quoted to this address after you order. Our team will contact you with the price and arrange payment for it separately.'
+                                                    : 'Delivery is free with your coupon.'}
                                             </p>
                                         </div>
                                     </div>
@@ -523,16 +500,11 @@ export default function Index({
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-600">Shipping</span>
                                                 <span className="font-medium text-gray-900">
-                                                    {(() => {
-                                                        const nonSampleShipping = Math.max(0, parseFloat(totals.shipping || 0) - parseFloat(totals.sample_shipping || 0));
-                                                        if (nonSampleShipping > 0) {
-                                                            return `$${nonSampleShipping.toFixed(2)}`;
-                                                        }
-                                                        if (parseFloat(totals.subtotal || 0) > 0) {
-                                                            return <span className="text-green-600">Free</span>;
-                                                        }
-                                                        return '—';
-                                                    })()}
+                                                    {deliveryQuoted
+                                                        ? <span className="text-amber-700">To be quoted</span>
+                                                        : shippingCost > 0
+                                                            ? `$${shippingCost.toFixed(2)}`
+                                                            : <span className="text-green-600">Free</span>}
                                                 </span>
                                             </div>
                                             {totals.tax > 0 && (
@@ -554,6 +526,11 @@ export default function Index({
                                                     ${grandTotal?.toLocaleString()}
                                                 </span>
                                             </div>
+                                            {deliveryQuoted && (
+                                                <p className="mt-1 text-right text-xs text-gray-500">
+                                                    Excludes delivery, which is quoted after you order.
+                                                </p>
+                                            )}
                                         </div>
 
                                         {/* Place Order Button */}

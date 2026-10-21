@@ -31,6 +31,7 @@ class CartController extends Controller
 
         $items = collect();
         $subtotal = 0;
+        $totals = null;
 
         if ($cart) {
             $cart->load(['items.product', 'items.variant']);
@@ -68,6 +69,9 @@ class CartController extends Controller
         return Inertia::render('Storefront/Cart/Index', [
             'items' => $items,
             'subtotal' => $subtotal,
+            // Delivery depends only on what is in the cart, so the summary
+            // can state it here instead of leaving it as a surprise at checkout.
+            'totals' => $totals,
             'crossSellProducts' => $crossSellProducts,
         ]);
     }

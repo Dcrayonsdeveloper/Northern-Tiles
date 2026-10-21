@@ -113,9 +113,11 @@ export default function Success({ order }) {
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">{d('cart.shipping', 'Shipping')}</span>
                                     <span className="text-gray-900">
-                                        {order.shipping_cost > 0
-                                            ? `${currency}${order.shipping_cost?.toLocaleString()}`
-                                            : d('cart.free', 'Free')}
+                                        {order.delivery_quote_required
+                                            ? d('checkout.delivery.to_be_quoted', 'To be quoted')
+                                            : order.shipping_cost > 0
+                                                ? `${currency}${order.shipping_cost?.toLocaleString()}`
+                                                : d('cart.free', 'Free')}
                                     </span>
                                 </div>
                                 {order.tax > 0 && (
@@ -179,6 +181,19 @@ export default function Success({ order }) {
                             </p>
                         </div>
                     </div>
+
+                    {/* The card paid for the goods only, so spell out what
+                        happens next with delivery. */}
+                    {order.delivery_quote_required && (
+                        <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                            <p className="text-sm font-semibold text-amber-900">
+                                {d('checkout.success.delivery_quote_title', 'Delivery will be quoted separately')}
+                            </p>
+                            <p className="mt-1 text-sm text-amber-800">
+                                {d('checkout.success.delivery_quote_body', 'Your payment covers the goods. Our team will contact you with a delivery quote for your address and arrange payment for it.')}
+                            </p>
+                        </div>
+                    )}
 
                     {/* Customer Info */}
                     <div className="mt-6 bg-blue-50 rounded-lg p-4">
