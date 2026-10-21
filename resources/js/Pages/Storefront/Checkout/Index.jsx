@@ -258,14 +258,18 @@ export default function Index({
                                             </div>
                                             <div>
                                                 <label className="text-xs font-medium text-gray-600">
-                                                    {d('checkout.contact.phone', 'Phone')}
+                                                    {d('checkout.contact.phone', 'Phone')} *
                                                 </label>
                                                 <input
                                                     type="tel"
                                                     value={data.contact.phone}
                                                     onChange={(e) => updateContact('phone', e.target.value)}
                                                     className="mt-1 w-full rounded-md border-gray-200 text-sm shadow-sm focus:border-gray-900 focus:ring-gray-900"
+                                                    required
                                                 />
+                                                {errors['contact.phone'] && (
+                                                    <p className="mt-1 text-xs text-red-600">{errors['contact.phone']}</p>
+                                                )}
                                             </div>
                                         </div>
 
