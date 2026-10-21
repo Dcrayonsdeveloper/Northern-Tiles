@@ -7,7 +7,6 @@ use App\Domain\CMS\Models\PageSection;
 use App\Domain\CMS\Models\SectionRegistry;
 use App\Jobs\RebuildPageSlugsJob;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class PageService
@@ -289,15 +288,14 @@ class PageService
 
     /**
      * Flush the CMSService public cache for a page so edits show immediately.
+     *
+     * Runs again after the sections are written: the model's own flush fires
+     * on the page update, before syncSections(), and a request landing in
+     * between would re-cache the old sections.
      */
     protected function flushPageCache(Page $page): void
     {
-        foreach ([$page->slug, $page->full_slug] as $key) {
-            if ($key) {
-                Cache::forget("page.{$key}");
-                Cache::forget("page.preview.{$key}");
-            }
-        }
+        $page->forgetCachedCopies();
     }
 
     /**

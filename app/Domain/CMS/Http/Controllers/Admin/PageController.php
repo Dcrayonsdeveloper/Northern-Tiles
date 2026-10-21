@@ -285,7 +285,13 @@ class PageController extends Controller
             return back()->with('error', 'Cannot delete pages that have child pages. Move or delete children first.');
         }
 
+        // Read before the mass delete: it fires no model events, and trashed
+        // pages drop out of the query afterwards.
+        $pages = Page::whereIn('id', $request->ids)->get();
+
         Page::whereIn('id', $request->ids)->delete();
+
+        $pages->each->forgetCachedCopies();
 
         return redirect()
             ->route('admin.pages.index')
@@ -304,6 +310,9 @@ class PageController extends Controller
             'status' => $request->status,
             'published_at' => $request->status === 'published' ? now() : null,
         ]);
+
+        // A mass update fires no model events either.
+        Page::whereIn('id', $request->ids)->get()->each->forgetCachedCopies();
 
         return redirect()
             ->route('admin.pages.index')

@@ -4,6 +4,7 @@ namespace App\Domain\Catalog\Services;
 
 use App\Domain\Catalog\Models\Collection;
 use App\Domain\Catalog\Models\CollectionProduct;
+use App\Domain\Home\Services\HomeService;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -153,6 +154,13 @@ class CollectionIndexService
             }
         }
 
+        // These pivot writes go through DB::table, so no Collection event
+        // clears the home tile finder's counts. This runs queued after the
+        // product save, which has already cleared it once — too early.
+        if (array_intersect($results, ['added', 'removed'])) {
+            HomeService::clearCache();
+        }
+
         return $results;
     }
 
@@ -259,6 +267,11 @@ class CollectionIndexService
                 DB::table('collection_products')->insert($inserts);
             }
         });
+
+        // The controllers save the collection first, so its own event clears
+        // the home tile finder before this membership is written; a home page
+        // visit in between cached the old counts. Clear it again now.
+        HomeService::clearCache();
     }
 
     /**

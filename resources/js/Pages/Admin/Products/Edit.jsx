@@ -160,34 +160,39 @@ function MediaUploader({ product, media = [], onUpdate }) {
         }
     };
 
-    const handleDelete = async (mediaId) => {
-        if (!confirm('Delete this media?')) return;
-
+    // Delete and set-primary used to reload whatever came back, so a refused
+    // request — an expired session, a 500 — left the gallery as it was with
+    // no word of why. Same reporting as the upload above.
+    const mediaAction = async (url, method, failure) => {
         try {
-            await fetch(route('admin.products.media.delete', [product.id, mediaId]), {
-                method: 'DELETE',
+            const response = await fetch(url, {
+                method,
                 headers: csrfHeaders({
                     'Content-Type': 'application/json',
                 }),
             });
+
+            if (!response.ok) {
+                setError(response.status === SESSION_EXPIRED
+                    ? SESSION_EXPIRED_MESSAGE
+                    : `${failure} (${response.status})`);
+                return;
+            }
+
+            setError(null);
             router.reload({ only: ['product'] });
         } catch (error) {
-            console.error('Delete failed:', error);
+            setError(`${failure} — check the connection and try again.`);
         }
     };
 
-    const handleSetPrimary = async (mediaId) => {
-        try {
-            await fetch(route('admin.products.media.primary', [product.id, mediaId]), {
-                method: 'POST',
-                headers: csrfHeaders({
-                    'Content-Type': 'application/json',
-                }),
-            });
-            router.reload({ only: ['product'] });
-        } catch (error) {
-            console.error('Set primary failed:', error);
-        }
+    const handleDelete = (mediaId) => {
+        if (!confirm('Delete this media?')) return;
+        mediaAction(route('admin.products.media.delete', [product.id, mediaId]), 'DELETE', 'Delete failed');
+    };
+
+    const handleSetPrimary = (mediaId) => {
+        mediaAction(route('admin.products.media.primary', [product.id, mediaId]), 'POST', 'Setting the primary image failed');
     };
 
     const handleDrop = (e) => {
@@ -675,7 +680,11 @@ export default function Edit({ product, categories, vendors, popularTags, status
         noindex: Boolean(product?.noindex),
         is_active: product?.is_active !== false,
         is_featured: Boolean(product?.is_featured),
-        tags: product?.tags ?? [],
+        // No `tags` here. This page has no tag field, yet it used to post the
+        // product's tags back as {id, name, source} objects, which the
+        // request's `tags.*` string rule rejects — so every tagged product
+        // (about a fifth of the catalogue) silently failed to save. Leaving the
+        // field out leaves existing tags untouched.
     });
 
     const [lastSaved, setLastSaved] = useState(null);

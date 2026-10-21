@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -88,6 +89,16 @@ class UserController extends Controller
         $user->load('roles:id,name,slug');
         $roles = Role::orderBy('name')->get(['id', 'name', 'slug', 'description']);
 
+        // is_admin is what grants access; the admin role is how this form
+        // shows and edits it. The existing admins were made by setting the
+        // flag and hold no roles, so their box opened unticked — and saving
+        // the form unchanged wrote is_admin = false and locked them out.
+        $roleIds = $user->roles->pluck('id');
+        $adminRole = $roles->firstWhere('slug', 'admin');
+        if ($user->is_admin && $adminRole) {
+            $roleIds->push($adminRole->id);
+        }
+
         return Inertia::render('Admin/Users/Edit', [
             'user' => [
                 'id'                => $user->id,
@@ -96,7 +107,7 @@ class UserController extends Controller
                 'email_verified_at' => $user->email_verified_at,
                 'is_admin'          => (bool) $user->is_admin,
                 'is_active'         => (bool) $user->is_active,
-                'role_ids'          => $user->roles->pluck('id')->toArray(),
+                'role_ids'          => $roleIds->unique()->values()->toArray(),
             ],
             'roles' => $roles,
         ]);
@@ -111,11 +122,19 @@ class UserController extends Controller
             'role_ids.*' => ['exists:roles,id'],
         ]);
 
-        // Determine is_admin based on roles
-        $isAdmin = false;
-        if (!empty($validated['role_ids'])) {
-            $adminRole = Role::where('slug', 'admin')->first();
-            $isAdmin = $adminRole && in_array($adminRole->id, $validated['role_ids']);
+        // Determine is_admin based on roles. With no admin role to read it
+        // from, the flag is left as it is rather than revoked.
+        $adminRole = Role::where('slug', 'admin')->first();
+        $isAdmin = $adminRole
+            ? in_array($adminRole->id, $validated['role_ids'] ?? [])
+            : (bool) $user->is_admin;
+
+        // Unticking your own admin box took effect on the redirect — straight
+        // into a 403, with no way back in to undo it.
+        if ($user->is($request->user()) && $user->is_admin && ! $isAdmin) {
+            throw ValidationException::withMessages([
+                'role_ids' => 'You cannot remove your own administrator access.',
+            ]);
         }
 
         $user->update([

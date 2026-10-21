@@ -48,6 +48,10 @@ class MediaService
             $storedMedia[] = $media;
         }
 
+        if ($type === 'image') {
+            $this->syncProductImage($product);
+        }
+
         return $storedMedia;
     }
 
@@ -195,6 +199,10 @@ class MediaService
             }
         }
 
+        if ($type === 'image' && ($product = Product::find($productId))) {
+            $this->syncProductImage($product);
+        }
+
         return true;
     }
 
@@ -213,7 +221,45 @@ class MediaService
             $media->update(['is_primary' => true]);
         });
 
+        if ($media->type === 'image' && ($product = Product::find($media->product_id))) {
+            $this->syncProductImage($product);
+        }
+
         return $media->fresh();
+    }
+
+    /**
+     * Point products.image_url at the gallery's primary image.
+     *
+     * The product page shows the gallery, but the home strips, search, the
+     * cart, related products and the range selector read this column, which
+     * only the image imports ever set. A new primary chosen in the editor
+     * never reached them, and deleting the old one left a broken link.
+     *
+     * With the gallery empty, the column is cleared only if it points at a
+     * local file that is gone; a remote image the gallery never held stays.
+     */
+    protected function syncProductImage(Product $product): void
+    {
+        $current = $product->getRawOriginal('image_url');
+
+        $url = $product->media()   // primary first, then gallery order
+            ->where('type', 'image')
+            ->get()
+            ->first(fn (ProductMedia $media) => $media->fileExists())
+            ?->url;
+
+        if ($url === null) {
+            $dead = $current
+                && str_starts_with($current, '/storage/')
+                && ! Storage::disk('public')->exists(substr($current, strlen('/storage/')));
+
+            $url = $dead ? null : $current;
+        }
+
+        if ($url !== $current) {
+            $product->update(['image_url' => $url]);
+        }
     }
 
     /**

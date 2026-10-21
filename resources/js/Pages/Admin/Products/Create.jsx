@@ -200,7 +200,7 @@ function MediaPicker({ files, onChange, error }) {
 }
 
 export default function Create({ categories, vendors, popularTags, statuses, collections = [] }) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, transform } = useForm({
         media: [],
         name: '',
         slug: '',
@@ -240,6 +240,9 @@ export default function Create({ categories, vendors, popularTags, statuses, col
 
     const submit = (e) => {
         e.preventDefault();
+        // TagInput keeps {name, source} objects for its chips; the request
+        // takes tag names, and rejected the objects outright.
+        transform((form) => ({ ...form, tags: form.tags.map((tag) => tag.name) }));
         post(route('admin.products.store'));
     };
 

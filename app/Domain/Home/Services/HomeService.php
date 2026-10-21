@@ -22,6 +22,16 @@ class HomeService
     ];
 
     /**
+     * Every cache the home page reads, cleared together by clearCache().
+     */
+    public const CACHE_KEYS = [
+        'home.page_data',
+        'home.trending_products',
+        'home.root_categories',
+        'home.tile_finder',
+    ];
+
+    /**
      * The home page's "Trending Products" strip.
      *
      * Hand-picked: whatever the admin has ticked as trending, in catalogue
@@ -335,7 +345,11 @@ class HomeService
     }
 
     /**
-     * Resolve category carousel data with cached categories.
+     * Resolve category carousel data.
+     *
+     * Not cached on its own: it only runs inside home.page_data. A nested cache
+     * keyed by the section's settings outlived every flush of the page data,
+     * and its key could not be rebuilt to forget it.
      */
     protected function resolveCategoryCarousel(array $data): array
     {
@@ -343,24 +357,20 @@ class HomeService
         $categoryIds = $data['category_ids'] ?? [];
         $limit = $data['limit'] ?? 12;
 
-        $cacheKey = 'home.categories.' . md5(json_encode($categoryIds) . $limit);
+        $query = Category::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->limit($limit);
 
-        $categories = Cache::remember($cacheKey, 300, function () use ($categoryIds, $limit) {
-            $query = Category::query()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->limit($limit);
+        if (!empty($categoryIds)) {
+            $query->whereIn('id', $categoryIds);
+        }
 
-            if (!empty($categoryIds)) {
-                $query->whereIn('id', $categoryIds);
-            }
-
-            return $query->get([
-                'id',
-                'name',
-                'slug',
-            ]);
-        });
+        $categories = $query->get([
+            'id',
+            'name',
+            'slug',
+        ]);
 
         return [
             'title_key' => $titleKey,
@@ -369,7 +379,8 @@ class HomeService
     }
 
     /**
-     * Resolve new arrivals data with cached products.
+     * Resolve new arrivals data. Cached as part of home.page_data only — see
+     * resolveCategoryCarousel().
      */
     protected function resolveNewArrivals(array $data): array
     {
@@ -377,28 +388,24 @@ class HomeService
         $limit = $data['limit'] ?? 8;
         $categoryId = $data['category_id'] ?? null;
 
-        $cacheKey = 'home.new_arrivals.' . ($categoryId ?? 'all') . '.' . $limit;
+        $query = Product::query()
+            ->where('is_active', true)
+            ->orderByDesc('created_at')
+            ->limit($limit);
 
-        $products = Cache::remember($cacheKey, 3600, function () use ($limit, $categoryId) {
-            $query = Product::query()
-                ->where('is_active', true)
-                ->orderByDesc('created_at')
-                ->limit($limit);
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
 
-            if ($categoryId) {
-                $query->where('category_id', $categoryId);
-            }
-
-            return $query->get([
-                'id',
-                'name',
-                'slug',
-                'short_description',
-                'price',
-                'compare_at_price',
-                'image_url',
-            ]);
-        });
+        $products = $query->get([
+            'id',
+            'name',
+            'slug',
+            'short_description',
+            'price',
+            'compare_at_price',
+            'image_url',
+        ]);
 
         return [
             'title_key' => $titleKey,
@@ -437,7 +444,8 @@ class HomeService
     }
 
     /**
-     * Resolve discount tile carousel data with cached discounted products.
+     * Resolve discount tile carousel data. Cached as part of home.page_data
+     * only — see resolveCategoryCarousel().
      */
     protected function resolveDiscountTileCarousel(array $data): array
     {
@@ -445,27 +453,23 @@ class HomeService
         $limit = $data['limit'] ?? 10;
         $minDiscountPercent = $data['min_discount_percent'] ?? 10;
 
-        $cacheKey = 'home.discounts.' . $limit . '.' . $minDiscountPercent;
-
-        $products = Cache::remember($cacheKey, 3600, function () use ($limit, $minDiscountPercent) {
-            return Product::query()
-                ->where('is_active', true)
-                ->whereNotNull('compare_at_price')
-                ->whereColumn('compare_at_price', '>', 'price')
-                ->whereRaw('((compare_at_price - price) / compare_at_price * 100) >= ?', [$minDiscountPercent])
-                ->orderByRaw('((compare_at_price - price) / compare_at_price) DESC')
-                ->orderByDesc('created_at')
-                ->limit($limit)
-                ->get([
-                    'id',
-                    'name',
-                    'slug',
-                    'short_description',
-                    'price',
-                    'compare_at_price',
-                    'image_url',
-                ]);
-        });
+        $products = Product::query()
+            ->where('is_active', true)
+            ->whereNotNull('compare_at_price')
+            ->whereColumn('compare_at_price', '>', 'price')
+            ->whereRaw('((compare_at_price - price) / compare_at_price * 100) >= ?', [$minDiscountPercent])
+            ->orderByRaw('((compare_at_price - price) / compare_at_price) DESC')
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get([
+                'id',
+                'name',
+                'slug',
+                'short_description',
+                'price',
+                'compare_at_price',
+                'image_url',
+            ]);
 
         return [
             'title_key' => $titleKey,
@@ -501,18 +505,17 @@ class HomeService
     }
 
     /**
-     * Clear all home page caches.
+     * Clear every home page cache.
+     *
+     * Called from the model events of everything the home page shows — product,
+     * category, collection, the home CMS page — and after the bulk writes that
+     * skip those events. It used to forget three keys that did not match the
+     * real ones and had no callers, so home page edits waited out the TTLs.
      */
-    public function clearCache(): void
+    public static function clearCache(): void
     {
-        Cache::forget('home.page_data');
-        // Clear related caches with pattern
-        $patterns = ['home.categories.*', 'home.new_arrivals.*', 'home.discounts.*'];
-        foreach ($patterns as $pattern) {
-            // For simple implementations, clear known keys
-            Cache::forget('home.categories.all');
-            Cache::forget('home.new_arrivals.all.8');
-            Cache::forget('home.discounts.10.10');
+        foreach (self::CACHE_KEYS as $key) {
+            Cache::forget($key);
         }
     }
 }

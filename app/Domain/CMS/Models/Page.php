@@ -2,12 +2,14 @@
 
 namespace App\Domain\CMS\Models;
 
+use App\Domain\Home\Services\HomeService;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 
 class Page extends Model
 {
@@ -75,6 +77,43 @@ class Page extends Model
                 $page->updated_by = auth()->id();
             }
         });
+
+        // Only the editor's Save used to clear the page cache. Trash, archive,
+        // publish, unpublish and restore went straight to the model, so the
+        // public page kept its last state for up to an hour. Soft delete and
+        // force delete both fire `deleted`; restore and the slug rebuild for
+        // child pages both fire `saved`.
+        static::saved(fn (Page $page) => $page->forgetCachedCopies());
+        static::deleted(fn (Page $page) => $page->forgetCachedCopies());
+    }
+
+    /**
+     * Drop every cached copy of this page.
+     *
+     * CMSService::getPage caches under whichever path was requested — the slug
+     * or the full path — so both are forgotten, as they were and as they are
+     * now: forgetting only the new ones left a renamed page serving its last
+     * copy at the old URL. A home-template page feeds the home page's cache
+     * instead. Mass updates fire no model events, so the bulk actions call
+     * this themselves.
+     */
+    public function forgetCachedCopies(): void
+    {
+        $paths = array_unique(array_filter([
+            $this->slug,
+            $this->full_slug,
+            $this->getOriginal('slug'),
+            $this->getOriginal('full_slug'),
+        ]));
+
+        foreach ($paths as $path) {
+            Cache::forget("page.{$path}");
+            Cache::forget("page.preview.{$path}");
+        }
+
+        if ($this->template === 'home' || $this->getOriginal('template') === 'home') {
+            HomeService::clearCache();
+        }
     }
 
     // Relationships

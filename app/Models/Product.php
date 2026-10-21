@@ -15,6 +15,7 @@ use App\Domain\Catalog\Models\ProductReview;
 use App\Domain\Catalog\Models\ProductVariant;
 use App\Domain\Catalog\Models\Tag;
 use App\Domain\Catalog\Models\VariantFamily;
+use App\Domain\Home\Services\HomeService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -131,15 +132,19 @@ class Product extends Model
         static::saved(function (self $product) {
             Cache::forget("product.{$product->slug}");
             // The home strips are hand-picked from product flags, so ticking
-            // "Trending" has to show up without waiting out a cache window.
-            Cache::forget('home.trending_products');
-            Cache::forget('home.root_categories');
+            // "Trending" has to show up without waiting out a cache window —
+            // and so does a rename, a reprice or a draft, in every strip, not
+            // just the two this used to clear.
+            HomeService::clearCache();
             // Reindex automated collections when product attributes change
             ReindexCollectionsForProductJob::dispatch($product->id)->onQueue('collections');
         });
 
         static::deleted(function (self $product) {
             Cache::forget("product.{$product->slug}");
+            // A deleted product otherwise stayed in the home strips, linking
+            // to a 404, until their cache ran out.
+            HomeService::clearCache();
             // Remove from all collections when deleted
             $product->collections()->detach();
         });
@@ -266,9 +271,17 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class)->where('is_default', true);
     }
 
+    /**
+     * Primary first, then gallery order.
+     *
+     * The shop grid, search, wishlist and trade pages all want the primary
+     * image up front and asked for it with orderByDesc('is_primary') — but
+     * that lands after an orderBy('sort') declared here, so sort decided on
+     * its own and "Set as primary" changed nothing they showed.
+     */
     public function media(): HasMany
     {
-        return $this->hasMany(ProductMedia::class)->orderBy('sort');
+        return $this->hasMany(ProductMedia::class)->orderByDesc('is_primary')->orderBy('sort');
     }
 
     public function images(): HasMany
