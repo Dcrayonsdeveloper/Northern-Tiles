@@ -2,6 +2,7 @@
 
 namespace App\Domain\CMS\Models;
 
+use App\Domain\CMS\Services\CMSService;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,6 +37,21 @@ class Author extends Model
         'is_verified' => 'boolean',
         'expertise_json' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        // The public author page is cached for an hour. Only the editor's
+        // update cleared it, and only under the new slug: a deleted author
+        // stayed up, and a renamed one kept its old page alive.
+        $forget = function (Author $author) {
+            foreach (array_unique(array_filter([$author->slug, $author->getOriginal('slug')])) as $slug) {
+                app(CMSService::class)->flushAuthorCache($slug);
+            }
+        };
+
+        static::saved($forget);
+        static::deleted($forget);
+    }
 
     public function user(): BelongsTo
     {

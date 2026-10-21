@@ -2,6 +2,8 @@
 
 namespace App\Domain\CMS\Models;
 
+use App\Domain\Catalog\Models\Tag;
+use App\Domain\CMS\Services\CMSService;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,6 +44,41 @@ class Post extends Model
     ];
 
     protected $appends = ['featured_image_url', 'content'];
+
+    protected static function booted(): void
+    {
+        // The public post is cached for an hour (CMSService::getPost). Delete
+        // and unpublish went straight to the model and skipped the flush, so a
+        // removed post stayed readable at its URL, and a renamed one kept its
+        // last copy at the old slug. The author page embeds the latest posts.
+        $forget = function (Post $post) {
+            $cms = app(CMSService::class);
+
+            foreach (array_unique(array_filter([$post->slug, $post->getOriginal('slug')])) as $slug) {
+                $cms->flushPostCache($slug);
+            }
+
+            if ($authorSlug = $post->author?->slug) {
+                $cms->flushAuthorCache($authorSlug);
+            }
+        };
+
+        static::saved($forget);
+        static::deleted($forget);
+    }
+
+    /**
+     * Replace the post's tags with these names, creating any that are new.
+     *
+     * CMSService calls this whenever the form sends tags, but Post never had
+     * it: saving a post with a tag stored the other fields, then threw.
+     */
+    public function syncTags(array $tagNames): void
+    {
+        $tagIds = collect($tagNames)->map(fn ($name) => Tag::findOrCreateByName($name)->id);
+
+        $this->tags()->sync($tagIds);
+    }
 
     public function getFeaturedImageUrlAttribute(): ?string
     {
@@ -104,7 +141,7 @@ class Post extends Model
 
     public function tags(): MorphToMany
     {
-        return $this->morphToMany(\App\Domain\Catalog\Models\Tag::class, 'taggable')
+        return $this->morphToMany(Tag::class, 'taggable')
             ->withPivot('metadata_json')
             ->withTimestamps();
     }

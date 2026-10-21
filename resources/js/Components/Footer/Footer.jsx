@@ -77,11 +77,14 @@ const TikTokIcon = () => (
 );
 
 export default function Footer({ minimal = false }) {
-    const { footerConfig, categoryNav } = usePage().props;
+    const { footerConfig, categoryNav, socialLinks } = usePage().props;
 
     const brand = footerConfig?.brand ?? {};
     const menus = footerConfig?.menus ?? {};
-    const social = footerConfig?.social ?? {};
+    // Configuration > Social arrives as the shared socialLinks prop. This read
+    // footerConfig.social, which the server never sends, so the links saved
+    // there never reached the footer and the defaults below always won.
+    const social = socialLinks ?? {};
 
     const brandName = brand.name || 'Northern TILE Distributors';
     const address = brand.address || '19/324 Settlement Road, Thomastown VIC 3074';

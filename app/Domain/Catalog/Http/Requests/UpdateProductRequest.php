@@ -61,8 +61,12 @@ class UpdateProductRequest extends FormRequest
             'cost' => ['nullable', 'numeric', 'min:0'],
             'default_currency' => ['nullable', 'string', 'size:3'],
 
-            // Inventory
-            'inventory_quantity' => ['nullable', 'integer', 'min:0'],
+            // Inventory. No min:0: under "Continue selling" checkout keeps
+            // decrementing past zero (CheckoutService, OrderService), and the
+            // editor posts the stored count straight back. With a floor here
+            // every oversold product was rejected on Save — on a field the
+            // page shows no error for — so nothing about it could be edited.
+            'inventory_quantity' => ['nullable', 'integer'],
             'inventory_policy' => ['nullable', Rule::in(['deny', 'continue'])],
 
             // Shipping & dimensions
@@ -122,7 +126,8 @@ class UpdateProductRequest extends FormRequest
             'variants.*.price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.compare_at_price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.cost' => ['nullable', 'numeric', 'min:0'],
-            'variants.*.inventory_quantity' => ['nullable', 'integer', 'min:0'],
+            // Variants oversell the same way (ProductVariant::canPurchase).
+            'variants.*.inventory_quantity' => ['nullable', 'integer'],
             'variants.*.inventory_policy' => ['nullable', Rule::in(['deny', 'continue'])],
             'variants.*.track_inventory' => ['nullable', 'boolean'],
             'variants.*.requires_shipping' => ['nullable', 'boolean'],

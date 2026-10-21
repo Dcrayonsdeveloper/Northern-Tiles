@@ -6,6 +6,7 @@ use App\Domain\Catalog\Models\ProductMedia;
 use App\Domain\Catalog\Models\ProductOption;
 use App\Domain\Catalog\Models\ProductOptionValue;
 use App\Domain\Catalog\Models\ProductVariant;
+use App\Domain\Home\Services\HomeService;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -397,11 +398,14 @@ class ProductService
 
     /**
      * Flush product cache.
+     *
+     * The home keys used to be spelled 'home.new_arrivals.all' and
+     * 'home.discounts', which never existed, so this cleared nothing on the
+     * home page.
      */
     protected function flushProductCache(Product $product): void
     {
         Cache::forget("product.{$product->slug}");
-        Cache::forget('home.new_arrivals.all');
-        Cache::forget('home.discounts');
+        HomeService::clearCache();
     }
 }

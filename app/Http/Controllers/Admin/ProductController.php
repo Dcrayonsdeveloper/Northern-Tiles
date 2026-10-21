@@ -18,6 +18,7 @@ use App\Domain\Catalog\Services\ProductExportService;
 use App\Domain\Catalog\Services\ProductService;
 use App\Domain\Catalog\Services\TagService;
 use App\Domain\Catalog\Services\VariantService;
+use App\Domain\Home\Services\HomeService;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
@@ -533,6 +534,10 @@ class ProductController extends Controller
 
         $deleted = Product::whereIn('id', $request->ids)->delete();
 
+        // A mass delete fires no model events, so the home strips are cleared
+        // here rather than by Product::deleted.
+        HomeService::clearCache();
+
         return redirect()
             ->route('admin.products.index')
             ->with('success', $deleted . ' products deleted successfully.');
@@ -559,6 +564,10 @@ class ProductController extends Controller
             // sellable on the storefront.
             'is_active' => $request->status === 'published',
         ]);
+
+        // Same reason: drafted products would otherwise stay in the home
+        // strips until their cache ran out.
+        HomeService::clearCache();
 
         return redirect()
             ->route('admin.products.index')

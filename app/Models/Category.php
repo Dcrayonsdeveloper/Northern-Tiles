@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Home\Services\HomeService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,6 +29,16 @@ class Category extends Model
         'sort' => 'integer',
         'is_active' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        // The home page's "Shop by Category" cards are cached. The header nav
+        // reads categories live, so a rename used to show there at once while
+        // the home cards kept the old name — and the old slug, which links to
+        // an empty page — until their cache ran out.
+        static::saved(fn () => HomeService::clearCache());
+        static::deleted(fn () => HomeService::clearCache());
+    }
 
     public function products(): HasMany
     {

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Catalog\Models;
 
+use App\Domain\Home\Services\HomeService;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -62,8 +63,9 @@ class Collection extends Model
         // The home page's "Find your perfect tile" section is built from these,
         // so adding a product to one has to show there without waiting out a
         // cache window. addProduct/removeProduct both write products_count,
-        // which lands here.
-        $flush = fn () => \Illuminate\Support\Facades\Cache::forget('home.tile_finder');
+        // which lands here. Membership written straight to the pivot clears it
+        // in CollectionIndexService instead.
+        $flush = fn () => HomeService::clearCache();
         static::saved($flush);
         static::deleted($flush);
     }

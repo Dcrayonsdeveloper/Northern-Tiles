@@ -30,7 +30,12 @@ class FooterConfigService
             'name' => $this->settings->getText('site.title', config('app.name', 'Northern TILE Distributors')),
             'logoUrl' => $footerLogoUrl ?? $siteLogoUrl,
             'tagline' => $this->resolveText('footer.tagline', "Melbourne's wholesale tile & flooring specialists"),
-            'address' => $this->resolveText('company.address', '19/324 Settlement Road, Thomastown VIC 3074'),
+            // Configuration edits the address as a setting, which resolveText()
+            // only reads when the dictionary has nothing — and the dictionary
+            // has a company.address row, so a saved change never reached the
+            // footer. Setting first; the dictionary row is the fallback.
+            'address' => $this->settings->getText('company.address')
+                ?: $this->resolveText('company.address', '19/324 Settlement Road, Thomastown VIC 3074'),
             'email' => $this->settings->getText('company.email', 'info@ntiled.com.au'),
             'phone' => $this->settings->getText('company.phone', '(03) 9464 6623'),
         ];

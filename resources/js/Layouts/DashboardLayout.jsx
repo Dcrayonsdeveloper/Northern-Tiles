@@ -43,6 +43,65 @@ function FlashMessage() {
     );
 }
 
+/* Every validation error the server sent back, whichever form sent it.
+   Pages print errors beside the fields they know about — the product editor
+   did so for three of its thirty-odd — and a rejection on any other field showed
+   nothing at all: the button went back to "Save", nothing was stored, and the
+   change never reached the site. Listing them all here means a refused save
+   can't pass for a successful one. */
+const MAX_LISTED_ERRORS = 8;
+
+function ValidationErrors() {
+    const { errors } = usePage().props;
+    const ref = useRef(null);
+    const [dismissedFor, setDismissedFor] = useState(null);
+
+    // Field => first message, or one level deeper under an error bag.
+    const messages = useMemo(() => {
+        const flat = Object.values(errors ?? {}).flatMap((value) =>
+            value && typeof value === 'object' ? Object.values(value) : [value]
+        );
+        return [...new Set(flat.filter(Boolean))];
+    }, [errors]);
+
+    // A form that keeps its scroll position on submit would leave this above
+    // the fold, which is as silent as not showing it.
+    useEffect(() => {
+        if (!messages.length) return;
+        ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        ref.current?.focus({ preventScroll: true });
+    }, [messages]);
+
+    // Keyed to this set of errors, so the next failed submit shows again.
+    if (!messages.length || dismissedFor === errors) return null;
+
+    return (
+        <div
+            ref={ref}
+            role="alert"
+            tabIndex={-1}
+            className="mb-4 scroll-mt-16 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 focus:outline-none"
+        >
+            <div className="flex items-start justify-between">
+                <p className="font-medium">Not saved — please fix the following and try again.</p>
+                <button type="button" onClick={() => setDismissedFor(errors)} className="ml-4 shrink-0 opacity-60 hover:opacity-100" aria-label="Dismiss">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-[13px]">
+                {messages.slice(0, MAX_LISTED_ERRORS).map((message) => (
+                    <li key={message}>{message}</li>
+                ))}
+                {messages.length > MAX_LISTED_ERRORS && (
+                    <li>…and {messages.length - MAX_LISTED_ERRORS} more</li>
+                )}
+            </ul>
+        </div>
+    );
+}
+
 const SIDEBAR_SCROLL_KEY = 'admin_sidebar_scroll';
 
 function IconDashboard(props) {
@@ -913,6 +972,7 @@ export default function DashboardLayout({ title, children }) {
 
                 <main className="mx-auto max-w-7xl p-3 md:p-4 overflow-visible">
                     <FlashMessage />
+                    <ValidationErrors />
                     {children}
                 </main>
             </div>

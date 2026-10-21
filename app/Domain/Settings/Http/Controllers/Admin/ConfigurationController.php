@@ -121,13 +121,14 @@ class ConfigurationController
         $settings->setText('tracking.ga4_id', $validated['tracking_ga4_id'] ?? '', 'tracking');
         $settings->setText('tracking.meta_pixel_id', $validated['tracking_meta_pixel_id'] ?? '', 'tracking');
 
-        // Menus
-        $settings->setJson('menu.header_top', ['items' => $validated['menu_header_top'] ?? []], 'menus');
-        $settings->setJson('menu.header_main', ['items' => $validated['menu_header_main'] ?? []], 'menus');
-        $settings->setJson('menu.footer_shop', ['items' => $validated['menu_footer_shop'] ?? []], 'menus');
-        $settings->setJson('menu.footer_company', ['items' => $validated['menu_footer_company'] ?? []], 'menus');
-        $settings->setJson('menu.footer_help', ['items' => $validated['menu_footer_help'] ?? []], 'menus');
-        $settings->setJson('menu.footer_policies', ['items' => $validated['menu_footer_policies'] ?? []], 'menus');
+        // Menus — only those the form sent. The page has no Menus tab, so
+        // writing `?? []` for all six emptied every menu on each save of any
+        // other tab.
+        foreach (['header_top', 'header_main', 'footer_shop', 'footer_company', 'footer_help', 'footer_policies'] as $menu) {
+            if ($request->has("menu_{$menu}")) {
+                $settings->setJson("menu.{$menu}", ['items' => $validated["menu_{$menu}"] ?? []], 'menus');
+            }
+        }
 
         // Clear all relevant caches
         $this->clearCaches();
