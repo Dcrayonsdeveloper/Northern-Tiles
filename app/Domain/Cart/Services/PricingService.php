@@ -11,8 +11,8 @@ class PricingService
     /** Maximum samples allowed per order — hard cap, not a target. */
     public const SAMPLE_MAX_QUANTITY = 5;
 
-    /** Flat shipping charge for a sample order, regardless of how many samples (1–5). */
-    public const SAMPLE_SHIPPING_FLAT = 9.99;
+    /** Flat shipping charge for a samples-only order, regardless of how many samples (1–5). */
+    public const SAMPLE_SHIPPING_FLAT = 20.00;
 
     /**
      * Compute all totals for a cart (server-authoritative).
@@ -21,22 +21,28 @@ class PricingService
     public const SHIPPING_STANDARD = 'standard';
     public const SHIPPING_EXPRESS = 'express';
 
-    /** Delivery zones. What a customer pays is decided by where it is going. */
-    public const ZONE_SYDNEY_METRO = 'sydney-metro';
-    public const ZONE_MELBOURNE_METRO = 'melbourne-metro';
-    public const ZONE_REST_OF_AUSTRALIA = 'rest-of-australia';
+    /**
+     * How an order's delivery was priced. Stored on orders.shipping_method.
+     *
+     * Samples on their own go out for a flat fee. Anything else is quoted by
+     * the team once the order is in -- tiles are too heavy and too varied for
+     * a flat rate -- and collected separately, so checkout charges nothing for
+     * it. A free-shipping coupon is the one thing that settles it upfront.
+     */
+    public const DELIVERY_SAMPLE_FLAT = 'sample-flat';
+    public const DELIVERY_QUOTE = 'delivery-quote';
+    public const DELIVERY_FREE = 'free-shipping';
 
     public function computeTotals(Cart $cart, array $shippingData = [], ?string $shippingMethod = null): array
     {
         $subtotal = $this->calculateSubtotal($cart);
         $discount = $this->calculateDiscount($cart, $subtotal);
 
-        $sampleShipping = $this->calculateSampleShipping($cart);
-        // $shippingMethod is ignored: the destination decides the rate now. The
-        // parameter stays so existing callers keep working unchanged.
-        $zone = self::zoneForPostcode($shippingData['postal_code'] ?? null, $shippingData['state'] ?? null, $shippingData['city'] ?? null);
-        $nonSampleShipping = $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null, $shippingData['state'] ?? null, $shippingData['city'] ?? null);
-        $shipping = $sampleShipping + $nonSampleShipping;
+        // What is in the cart decides delivery, not where it is going, so
+        // neither the address nor $shippingMethod changes it. Both parameters
+        // stay so existing callers keep working unchanged.
+        $delivery = $this->deliveryFor($cart);
+        $shipping = $delivery['amount'];
 
         $taxableAmount = $subtotal - $discount;
         $tax = $this->calculateTax($taxableAmount, $shippingData);
@@ -53,9 +59,11 @@ class PricingService
             'subtotal' => round($subtotal, 2),
             'discount' => round($discount, 2),
             'shipping' => round($shipping, 2),
-            'shipping_zone' => $zone['key'],
-            'shipping_zone_label' => $zone['label'],
-            'sample_shipping' => round($sampleShipping, 2),
+            'shipping_method' => $delivery['method'],
+            // Delivery still to be quoted. `shipping` is then 0 because
+            // nothing is charged for it at checkout -- not because it is free.
+            'shipping_quote_required' => $delivery['method'] === self::DELIVERY_QUOTE,
+            'sample_shipping' => round($delivery['method'] === self::DELIVERY_SAMPLE_FLAT ? $shipping : 0, 2),
             'tax' => round($tax, 2),
             'grand_total' => round($grandTotal, 2),
             'item_count' => $cart->getItemCount(),
@@ -82,17 +90,6 @@ class PricingService
     }
 
     /**
-     * Non-sample subtotal — used for free-shipping threshold calculation.
-     * A cart loaded with free samples should NOT trigger free non-sample shipping.
-     */
-    protected function calculateNonSampleSubtotal(Cart $cart): float
-    {
-        return $cart->items
-            ->filter(fn ($item) => ! $item->is_sample)
-            ->sum(fn ($item) => $item->price * $item->quantity);
-    }
-
-    /**
      * Count sample units in the cart.
      */
     protected function getSampleCount(Cart $cart): int
@@ -116,157 +113,42 @@ class PricingService
     }
 
     /**
-     * The delivery rate card.
+     * How this cart's delivery is priced: one of the DELIVERY_* methods and
+     * the amount charged for it at checkout.
      *
-     * One definition, read by the checkout page as well as by the totals below,
-     * so the price quoted on screen and the price charged cannot drift apart.
-     * Prices come from settings, so they can be changed without a deploy; the
-     * postcode ranges are the metropolitan areas the flat rates apply to, and
-     * anything outside them is Rest of Australia.
+     * Samples travel free with anything else in the cart -- one delivery is
+     * going out either way -- so the flat sample fee only applies to an order
+     * of nothing but samples.
      */
-    public static function shippingZones(): array
-    {
-        return [
-            [
-                'key' => self::ZONE_SYDNEY_METRO,
-                'label' => 'Metropolitan Sydney',
-                'price' => (float) Setting::getValue('shipping.rate_sydney_metro', 10),
-                'ranges' => [[1000, 2249], [2555, 2574], [2740, 2786]],
-                'states' => ['NSW'],
-                'cities' => ['Sydney'],
-            ],
-            [
-                'key' => self::ZONE_MELBOURNE_METRO,
-                'label' => 'Metropolitan Melbourne',
-                'price' => (float) Setting::getValue('shipping.rate_melbourne_metro', 10),
-                'ranges' => [[3000, 3207], [8000, 8499]],
-                'states' => ['VIC'],
-                'cities' => ['Melbourne'],
-            ],
-            [
-                'key' => self::ZONE_REST_OF_AUSTRALIA,
-                'label' => 'Rest of Australia',
-                'price' => (float) Setting::getValue('shipping.rate_rest_of_australia', 20),
-                'ranges' => [],
-                'states' => [],
-                'cities' => [],
-            ],
-        ];
-    }
-
-    /**
-     * Which zone an address falls in.
-     *
-     * The city the customer picked decides it. It is chosen from a list, so it
-     * says plainly where the order is going, and a postcode that disagrees is
-     * more likely a typo than a correction -- 3074 is a Melbourne suburb, and
-     * letting it override a selected Geelong quoted metropolitan rates for a
-     * regional delivery.
-     *
-     * The postcode and then the state are only consulted when no city has been
-     * chosen, which is how orders arriving from the API and older saved
-     * addresses still get priced.
-     */
-    public static function zoneForPostcode(?string $postcode, ?string $state = null, ?string $city = null): array
-    {
-        $zones = self::shippingZones();
-
-        $city = strtolower(trim((string) $city));
-        if ($city !== '') {
-            foreach ($zones as $zone) {
-                foreach ($zone['cities'] as $known) {
-                    if (strtolower($known) === $city) {
-                        return $zone;
-                    }
-                }
-            }
-
-            return end($zones);
-        }
-
-        $digits = preg_replace('/\D/', '', (string) $postcode);
-        if ($digits !== '') {
-            $code = (int) $digits;
-            foreach ($zones as $zone) {
-                foreach ($zone['ranges'] as [$from, $to]) {
-                    if ($code >= $from && $code <= $to) {
-                        return $zone;
-                    }
-                }
-            }
-
-            return end($zones);
-        }
-
-        $state = strtoupper(trim((string) $state));
-        if ($state !== '') {
-            foreach ($zones as $zone) {
-                if (in_array($state, $zone['states'], true)) {
-                    return $zone;
-                }
-            }
-        }
-
-        return end($zones);
-    }
-
-    /**
-     * Non-sample shipping, priced by where the order is going.
-     *
-     * Operates on the non-sample subtotal only, so samples keep their own flat
-     * rate rather than being charged twice.
-     */
-    public function nonSampleShippingFor(Cart $cart, ?string $postcode = null, ?string $state = null, ?string $city = null): float
+    public function deliveryFor(Cart $cart): array
     {
         if ($cart->isEmpty()) {
-            return 0;
+            return ['method' => null, 'amount' => 0.0];
         }
 
-        $nonSampleSubtotal = $this->calculateNonSampleSubtotal($cart);
-
-        // If there are no non-sample items, no non-sample shipping
-        if ($nonSampleSubtotal <= 0) {
-            return 0;
+        if (! $cart->items->contains(fn ($item) => ! $item->is_sample)) {
+            return ['method' => self::DELIVERY_SAMPLE_FLAT, 'amount' => self::SAMPLE_SHIPPING_FLAT];
         }
 
-        // Check if coupon gives free shipping
-        if ($cart->coupon_id) {
-            $coupon = Coupon::find($cart->coupon_id);
-            if ($coupon && $coupon->givesFreeShipping()) {
-                return 0;
-            }
+        // A free-shipping coupon is an offer the business chose to make, and
+        // the coupon box has already told the customer it applies. Quoting
+        // them for delivery afterwards would go back on that.
+        if ($this->hasFreeShippingCoupon($cart)) {
+            return ['method' => self::DELIVERY_FREE, 'amount' => 0.0];
         }
 
-        // The spend-over threshold still waives delivery; it sits on top of the
-        // rate card rather than replacing it.
-        $freeShippingThreshold = (float) Setting::getValue('shipping.free_threshold', 999);
-
-        if ($nonSampleSubtotal >= $freeShippingThreshold) {
-            return 0;
-        }
-
-        return (float) self::zoneForPostcode($postcode, $state, $city)['price'];
+        return ['method' => self::DELIVERY_QUOTE, 'amount' => 0.0];
     }
 
-    /**
-     * Calculate sample shipping.
-     * Flat $9.99 for any number of samples from 1 to MAX. No samples → no charge.
-     * No tiering — adding the 5th sample doesn't cost more than the 1st.
-     */
-    protected function calculateSampleShipping(Cart $cart): float
+    protected function hasFreeShippingCoupon(Cart $cart): bool
     {
-        $sampleCount = $this->getSampleCount($cart);
+        if (! $cart->coupon_id) {
+            return false;
+        }
 
-        return $sampleCount > 0 ? self::SAMPLE_SHIPPING_FLAT : 0;
-    }
+        $coupon = Coupon::find($cart->coupon_id);
 
-    /**
-     * Kept for back-compat — returns the combined shipping.
-     */
-    protected function calculateShipping(Cart $cart, array $shippingData, ?string $method = null): float
-    {
-        return $this->calculateSampleShipping($cart)
-            + $this->nonSampleShippingFor($cart, $shippingData['postal_code'] ?? null, $shippingData['state'] ?? null, $shippingData['city'] ?? null);
+        return $coupon !== null && $coupon->givesFreeShipping();
     }
 
     /**
@@ -335,41 +217,22 @@ class PricingService
     }
 
     /**
-     * Get shipping estimate (before full address is provided).
-     * Free-shipping progress bar is based on non-sample subtotal only —
-     * samples should not count toward the free-shipping threshold.
+     * Shipping summary for the cart drawer.
+     *
+     * There is no spend threshold to count towards any more -- tile delivery
+     * is quoted rather than charged -- so the free-shipping progress bar this
+     * used to feed has nothing left to show.
      */
     public function getShippingEstimate(Cart $cart): array
     {
-        $nonSampleSubtotal = $this->calculateNonSampleSubtotal($cart);
-        $freeShippingThreshold = (float) Setting::getValue('shipping.free_threshold', 999);
-        $flatRate = (float) Setting::getValue('shipping.flat_rate', 50);
-
-        // Free-shipping coupon makes non-sample shipping $0 regardless of subtotal
-        $hasFreeShippingCoupon = false;
-        if ($cart->coupon_id) {
-            $coupon = Coupon::find($cart->coupon_id);
-            if ($coupon && $coupon->givesFreeShipping()) {
-                $hasFreeShippingCoupon = true;
-            }
-        }
-
-        $estimatedNonSampleShipping = (!$hasFreeShippingCoupon && $nonSampleSubtotal > 0 && $nonSampleSubtotal < $freeShippingThreshold)
-            ? $flatRate
-            : 0;
-
-        $amountForFreeShipping = $hasFreeShippingCoupon ? 0 : max(0, $freeShippingThreshold - $nonSampleSubtotal);
-
-        $sampleShipping = $this->calculateSampleShipping($cart);
+        $delivery = $this->deliveryFor($cart);
 
         return [
-            'estimated' => round($estimatedNonSampleShipping + $sampleShipping, 2),
-            'non_sample_shipping' => round($estimatedNonSampleShipping, 2),
-            'sample_shipping' => round($sampleShipping, 2),
-            'free_threshold' => $freeShippingThreshold,
-            'amount_for_free' => round($amountForFreeShipping, 2),
-            'is_free' => $estimatedNonSampleShipping === 0.0 && $sampleShipping === 0.0,
-            'coupon_free_shipping' => $hasFreeShippingCoupon,
+            'estimated' => round($delivery['amount'], 2),
+            'method' => $delivery['method'],
+            'quote_required' => $delivery['method'] === self::DELIVERY_QUOTE,
+            'is_free' => $delivery['method'] === self::DELIVERY_FREE,
+            'coupon_free_shipping' => $delivery['method'] === self::DELIVERY_FREE,
         ];
     }
 }

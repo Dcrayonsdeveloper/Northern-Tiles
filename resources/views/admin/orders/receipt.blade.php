@@ -229,7 +229,7 @@
         </div>
         <div class="info-section">
             <h3>Shipping</h3>
-            <p><strong>Method:</strong> {{ ucfirst($order->shipping_method ?? 'Standard') }}</p>
+            <p><strong>Method:</strong> {{ $order->deliveryLabel() ?? 'Standard' }}</p>
         </div>
     </div>
 
@@ -290,7 +290,9 @@
         <div class="totals-row">
             <span class="totals-label">Shipping</span>
             <span class="totals-value">
-                @if($order->shipping_cost > 0)
+                @if($order->isDeliveryQuoted())
+                    Quoted separately
+                @elseif($order->shipping_cost > 0)
                     ${{ number_format($order->shipping_cost, 2) }}
                 @else
                     FREE
@@ -307,6 +309,17 @@
             <span class="totals-label">Total</span>
             <span class="totals-value">${{ number_format($order->total, 2) }} AUD</span>
         </div>
+        {{-- The quote is paid apart from the card total above, so it is listed
+             under it rather than added into it. --}}
+        @if($order->isDeliveryQuoted() && $order->delivery_quote !== null)
+            <div class="totals-row">
+                <span class="totals-label">Delivery (quoted)</span>
+                <span class="totals-value">
+                    ${{ number_format($order->delivery_quote, 2) }}
+                    {{ $order->delivery_quote_paid_at ? '· paid' : '· unpaid' }}
+                </span>
+            </div>
+        @endif
     </div>
 
     @if($order->notes)

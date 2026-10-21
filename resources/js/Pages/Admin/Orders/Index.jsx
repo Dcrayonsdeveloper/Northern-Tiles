@@ -115,6 +115,13 @@ export default function Index({ orders, source = 'website', sourceCounts = {} })
                                         </td>
                                         <td className="px-4 py-2 text-xs text-gray-700">
                                             {o.currency} {o.total}
+                                            {/* Delivery left to quote is not in the total, so it
+                                                is flagged until the customer has paid it. */}
+                                            {o.delivery_quote_status === 'awaiting' ? (
+                                                <span className="mt-0.5 block text-[11px] font-medium text-amber-700">+ delivery to quote</span>
+                                            ) : o.delivery_quote_status === 'quoted' ? (
+                                                <span className="mt-0.5 block text-[11px] font-medium text-blue-700">+ {o.currency} {o.delivery_quote} delivery due</span>
+                                            ) : null}
                                         </td>
                                         <td className="px-4 py-2 text-xs">
                                             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${orderStatusClasses[o.status] ?? 'bg-gray-50 text-gray-700 ring-1 ring-gray-200'}`}>

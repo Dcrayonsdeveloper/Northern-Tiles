@@ -61,7 +61,6 @@ class CheckoutController extends Controller
         return Inertia::render($this->checkoutInertiaComponent(), [
             'items' => $summary['items'],
             'totals' => $summary['totals'],
-            'shippingZones' => $summary['shipping_zones'],
             'paymentMethods' => $summary['payment_methods'],
             'isGuest' => !$user,
             'user' => $user ? [
@@ -263,6 +262,9 @@ class CheckoutController extends Controller
                 'subtotal' => $orderModel->subtotal,
                 'tax' => $orderModel->tax,
                 'shipping_cost' => $orderModel->shipping_cost,
+                // Delivery the card did not cover, so the page can say it is
+                // still to come rather than calling it free.
+                'delivery_quote_required' => $orderModel->isDeliveryQuoted(),
                 'discount' => $orderModel->discount,
                 'total' => $orderModel->total,
                 'shipping_address' => $orderModel->shipping_address,

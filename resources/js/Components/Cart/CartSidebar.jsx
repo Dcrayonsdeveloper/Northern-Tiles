@@ -34,6 +34,9 @@ function SampleBanner({ totals }) {
     const sampleShipping = parseFloat(totals.sample_shipping || 0).toFixed(2);
     const currency = totals.currency_symbol || '$';
     const pct = Math.min(100, (count / max) * 100);
+    // Samples in a cart with anything else go out with that delivery, so the
+    // flat sample fee only applies to a cart of nothing but samples.
+    const withOrder = !!totals.shipping_method && totals.shipping_method !== 'sample-flat';
 
     // State 1: At maximum
     if (isAtMax) {
@@ -43,7 +46,9 @@ function SampleBanner({ totals }) {
                     ✅ Maximum samples reached — {count} of {max}
                 </p>
                 <p className="mt-1 text-[11px] text-green-700">
-                    Flat {currency}{sampleShipping} shipping covers all your samples.
+                    {withOrder
+                        ? 'Your samples ship free with the rest of your order.'
+                        : `Flat ${currency}${sampleShipping} shipping covers all your samples.`}
                 </p>
                 <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-green-200">
                     <div className="h-full rounded-full bg-green-500" style={{ width: '100%' }} />
@@ -56,10 +61,10 @@ function SampleBanner({ totals }) {
     return (
         <div className="mb-4 rounded-lg border-2 border-amber-200 bg-amber-50 p-3">
             <p className="text-sm font-bold text-amber-900">
-                🎁 {count} of {max} samples · flat {currency}{sampleShipping} shipping
+                🎁 {count} of {max} samples · {withOrder ? 'ship free with your order' : `flat ${currency}${sampleShipping} shipping`}
             </p>
             <p className="mt-1 text-[11px] text-amber-800">
-                Add up to {remaining} more sample{remaining !== 1 ? 's' : ''} — shipping stays at {currency}{sampleShipping}.
+                Add up to {remaining} more sample{remaining !== 1 ? 's' : ''}{withOrder ? '.' : ` — shipping stays at ${currency}${sampleShipping}.`}
             </p>
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-amber-200">
                 <div
@@ -99,9 +104,9 @@ export default function CartSidebar({ open, onClose, scope = 'retail' }) {
         },
         shipping_estimate: {
             estimated: 0,
-            free_threshold: 999,
-            amount_for_free: 999,
+            quote_required: false,
             is_free: false,
+            coupon_free_shipping: false,
         },
         upsells: { items: [], title_key: '', type: '' },
         bundles: [],
@@ -332,28 +337,21 @@ export default function CartSidebar({ open, onClose, scope = 'retail' }) {
                                                     {/* Sample pack status banner */}
                                                     <SampleBanner totals={cart.totals} />
 
-                                                    {/* Free shipping progress (non-sample only) */}
+                                                    {/* Tile delivery is quoted after the order, so say so
+                                                        here rather than let the total look like it
+                                                        includes it. There is no spend threshold left to
+                                                        show progress towards. */}
                                                     {cart.shipping_estimate.coupon_free_shipping ? (
                                                         <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3">
                                                             <p className="text-sm font-medium text-green-800">✓ Free shipping applied</p>
                                                         </div>
-                                                    ) : (!cart.shipping_estimate.is_free && cart.shipping_estimate.amount_for_free > 0 && cart.totals.subtotal > 0 && (
+                                                    ) : cart.shipping_estimate.quote_required ? (
                                                         <div className="mb-4 rounded-lg bg-amber-50 p-3">
                                                             <p className="text-sm text-amber-800">
-                                                                {d('cart.free_shipping_notice', 'Add')} {cart.totals.currency_symbol}
-                                                                {cart.shipping_estimate.amount_for_free.toLocaleString()}{' '}
-                                                                {d('cart.free_shipping_notice_suffix', 'more for free shipping!')}
+                                                                {d('cart.delivery_quote_notice', 'Delivery is quoted to your address after you order.')}
                                                             </p>
-                                                            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-amber-200">
-                                                                <div
-                                                                    className="h-full rounded-full bg-amber-500 transition-all"
-                                                                    style={{
-                                                                        width: `${Math.min(100, (cart.totals.subtotal / cart.shipping_estimate.free_threshold) * 100)}%`,
-                                                                    }}
-                                                                />
-                                                            </div>
                                                         </div>
-                                                    ))}
+                                                    ) : null}
 
                                                     {/* Cart items */}
                                                     <div className="space-y-4">

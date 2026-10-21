@@ -7,6 +7,7 @@ use App\Models\Order;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -42,6 +43,9 @@ class OrderController extends Controller
         $orders->getCollection()->each(function ($order) {
             $order->setAttribute('has_admin_note', filled($order->admin_note));
             $order->makeHidden('admin_note');
+            // Delivery left to quote is not in the total, so the list flags
+            // it until the customer has paid for it.
+            $order->setAttribute('delivery_quote_status', $order->deliveryQuoteStatus());
         });
 
         return Inertia::render('Admin/Orders/Index', [
@@ -84,6 +88,9 @@ class OrderController extends Controller
             $item->setAttribute('image_url', $image);
         });
 
+        $order->setAttribute('delivery_label', $order->deliveryLabel());
+        $order->setAttribute('delivery_quote_status', $order->deliveryQuoteStatus());
+
         return Inertia::render('Admin/Orders/Show', [
             'order' => $order,
             'statuses' => ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'],
@@ -98,7 +105,22 @@ class OrderController extends Controller
             'payment_status' => ['nullable', Rule::in(['pending', 'paid', 'failed', 'refunded'])],
             // Staff-only. Separate from orders.notes, which is the customer's.
             'admin_note' => ['nullable', 'string', 'max:2000'],
+            // The delivery checkout left to quote, and whether the customer
+            // has paid it. Neither touches `total`: that is what the card was
+            // charged, and Stripe reconciles against it.
+            'delivery_quote' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'delivery_quote_paid' => ['nullable', 'boolean'],
         ]);
+
+        $quote = array_key_exists('delivery_quote', $validated)
+            ? $validated['delivery_quote']
+            : $order->delivery_quote;
+
+        if (($validated['delivery_quote_paid'] ?? false) && $quote === null) {
+            throw ValidationException::withMessages([
+                'delivery_quote' => 'Enter the quoted amount before marking delivery as paid.',
+            ]);
+        }
 
         try {
             $updates = [];
@@ -128,6 +150,20 @@ class OrderController extends Controller
             // erase the note, and "" is empty.
             if (array_key_exists('admin_note', $validated)) {
                 $updates['admin_note'] = $validated['admin_note'] ?: null;
+            }
+
+            // Only an order whose delivery was left to quote has one to record.
+            if ($order->isDeliveryQuoted()) {
+                if (array_key_exists('delivery_quote', $validated)) {
+                    $updates['delivery_quote'] = $validated['delivery_quote'];
+                }
+
+                if (array_key_exists('delivery_quote_paid', $validated)) {
+                    // Keep the first paid date when the box is saved again.
+                    $updates['delivery_quote_paid_at'] = $validated['delivery_quote_paid']
+                        ? ($order->delivery_quote_paid_at ?? now())
+                        : null;
+                }
             }
 
             if (!empty($updates)) {

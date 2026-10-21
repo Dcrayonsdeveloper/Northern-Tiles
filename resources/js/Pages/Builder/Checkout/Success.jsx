@@ -23,6 +23,7 @@ export default function Success({ order }) {
                         <p className="mt-2 text-sm text-gray-700">
                             Order <span className="font-semibold">#{order.order_number}</span> has been placed.
                             You'll get a dispatch confirmation once we start picking.
+                            {order.delivery_quote_required && ' We will quote delivery to your site separately.'}
                         </p>
                     </div>
 
@@ -69,7 +70,14 @@ export default function Success({ order }) {
                         <div className="mt-6 space-y-2 border-t pt-4 text-sm">
                             <Row label="Subtotal" value={order.subtotal} />
                             {order.discount > 0 && <Row label="Discount" value={-Math.abs(order.discount)} />}
-                            <Row label="Shipping" value={order.shipping_cost} />
+                            {order.delivery_quote_required ? (
+                                <div className="flex justify-between text-gray-700">
+                                    <span>Shipping</span>
+                                    <span>To be quoted</span>
+                                </div>
+                            ) : (
+                                <Row label="Shipping" value={order.shipping_cost} />
+                            )}
                             <Row label="Tax" value={order.tax} />
                             <div className="flex justify-between border-t pt-3 text-base font-bold text-gray-900">
                                 <span>Total</span>

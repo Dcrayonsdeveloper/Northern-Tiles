@@ -1203,7 +1203,7 @@ export default function Edit({ product, categories, vendors, popularTags, status
                                     <span>
                                         <span className="block text-xs font-medium text-gray-700">Get a Sample</span>
                                         <span className="block text-[10px] text-gray-400">
-                                            Free sample · max 5 per order · flat $9.99 shipping
+                                            Free sample · max 5 per order · flat-rate shipping
                                         </span>
                                     </span>
                                 </label>

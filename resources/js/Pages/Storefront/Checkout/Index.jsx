@@ -29,7 +29,6 @@ export default function Index({
     paymentMethods = [],
     items = [],
     totals = {},
-    shippingZones = [],
     appliedCoupon = null,
     isGuest = true,
     user = null,
@@ -135,42 +134,18 @@ export default function Index({
         post(route('checkout.store'));
     };
 
-    // Delivery is priced by where it is going. The zones come from the server so
-    // the figure shown here is the one the order is actually charged at.
     const cityOptions = citiesForState(data.shipping_address.state);
 
-    const shippingZone = (() => {
-        const fallback = shippingZones[shippingZones.length - 1] ?? null;
-
-        // The city the customer picked decides it. A postcode that disagrees is
-        // more likely a typo than a correction, so it is only consulted before a
-        // city has been chosen.
-        const city = String(data.shipping_address.city || '').toLowerCase();
-        if (city) {
-            return shippingZones.find((z) => (z.cities ?? []).some((c) => c.toLowerCase() === city)) ?? fallback;
-        }
-
-        const digits = String(data.shipping_address.postal_code || '').replace(/\D/g, '');
-        if (digits) {
-            const code = parseInt(digits, 10);
-            return shippingZones.find((z) => (z.ranges ?? []).some(([from, to]) => code >= from && code <= to)) ?? fallback;
-        }
-
-        const state = String(data.shipping_address.state || '').toUpperCase();
-        return shippingZones.find((z) => (z.states ?? []).includes(state)) ?? fallback;
-    })();
-
-    // Free delivery over the spend threshold, and coupons that include it, are
-    // decided by the cart rather than the address — so whether it is waived can
-    // be read off the totals the server already sent, whatever the postcode.
-    const nonSampleShipping = parseFloat(totals.shipping || 0) - parseFloat(totals.sample_shipping || 0);
-    const shippingWaived = parseFloat(totals.subtotal || 0) > 0 && nonSampleShipping <= 0;
-    const shippingCost = shippingWaived ? 0 : parseFloat(shippingZone?.price ?? 0);
-    // Sample shipping is charged on top of the chosen method and was missing
-    // here, so a cart with samples showed a total lower than it was billed.
-    const sampleShipping = parseFloat(totals.sample_shipping || 0);
-    const grandTotal = (parseFloat(totals.subtotal || 0) - parseFloat(totals.discount || 0))
-        + shippingCost + sampleShipping + parseFloat(totals.tax || 0);
+    // What is in the cart decides delivery, not the address: samples on their
+    // own ship for a flat fee, and anything else is quoted after the order is
+    // placed. So the server's totals are already final and are shown as sent.
+    // Re-deriving delivery here from the address is what once put the $20 tile
+    // rate on screen for a samples-only order while the card was charged the
+    // sample fee alone.
+    const deliveryQuoted = !!totals.shipping_quote_required;
+    const samplesOnly = totals.shipping_method === 'sample-flat';
+    const shippingCost = parseFloat(totals.shipping || 0);
+    const grandTotal = parseFloat(totals.grand_total || 0);
 
     const isEmpty = items.length === 0;
 
@@ -416,8 +391,11 @@ export default function Index({
                                                 />
                                             </div>
                                             <p className="sm:col-span-2 text-xs text-gray-500">
-                                                Delivery: {shippingZones.map((z) => `${z.label} $${parseFloat(z.price).toFixed(0)}`).join(', ')}. For any other delivery
-                                                quotes, please contact the sales team.
+                                                {deliveryQuoted
+                                                    ? d('checkout.delivery.quote_note', 'Delivery is quoted to this address after you order. Our team will contact you with the price and arrange payment for it separately.')
+                                                    : samplesOnly
+                                                        ? `Samples ship anywhere in Australia for a flat $${shippingCost.toFixed(2)}.`
+                                                        : d('checkout.delivery.free_note', 'Delivery is free with your coupon.')}
                                             </p>
                                         </div>
                                     </div>
@@ -586,30 +564,29 @@ export default function Index({
                                                 </div>
                                             )}
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">{d('checkout.summary.shipping', 'Shipping')}</span>
+                                                <span className="text-gray-600">
+                                                    {samplesOnly ? (
+                                                        <>
+                                                            Sample shipping
+                                                            <span className="ml-1 text-gray-400">({totals.sample_count} sample{totals.sample_count !== 1 ? 's' : ''})</span>
+                                                        </>
+                                                    ) : d('checkout.summary.shipping', 'Shipping')}
+                                                </span>
                                                 <span className="font-medium text-gray-900">
-                                                    {shippingCost > 0
-                                                        ? `$${shippingCost.toFixed(2)}`
-                                                        : parseFloat(totals.subtotal || 0) > 0
-                                                            ? <span className="text-green-600">{d('checkout.free', 'Free')}</span>
-                                                            : '—'}
+                                                    {deliveryQuoted
+                                                        ? <span className="text-amber-700">{d('checkout.delivery.to_be_quoted', 'To be quoted')}</span>
+                                                        : shippingCost > 0
+                                                            ? `$${shippingCost.toFixed(2)}`
+                                                            : <span className="text-green-600">{d('checkout.free', 'Free')}</span>}
                                                 </span>
                                             </div>
-                                            {/* No zone line at all. The delivery rates are already
-                                                spelled out beside the address field, so repeating
-                                                the zone under the figure was noise -- and the
-                                                "select a city to confirm" variant read as a warning
-                                                about a number that was already correct. */}
-                                            {totals.sample_count > 0 && (
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-gray-600">
-                                                        Sample shipping
-                                                        <span className="ml-1 text-gray-400">({totals.sample_count} sample{totals.sample_count !== 1 ? 's' : ''})</span>
-                                                    </span>
-                                                    <span className="font-medium text-gray-900">
-                                                        ${parseFloat(totals.sample_shipping || 0).toFixed(2)}
-                                                    </span>
-                                                </div>
+                                            {/* Samples alongside tiles go out with that delivery
+                                                instead of for their own fee, so say why there is no
+                                                sample shipping line. */}
+                                            {deliveryQuoted && totals.sample_count > 0 && (
+                                                <p className="text-xs text-gray-500">
+                                                    {d('checkout.delivery.samples_with_tiles', 'Your samples travel with the tiles at no extra charge.')}
+                                                </p>
                                             )}
                                             {totals.tax > 0 && (
                                                 <div className="flex justify-between text-sm">
@@ -630,6 +607,11 @@ export default function Index({
                                                     ${grandTotal?.toLocaleString()}
                                                 </span>
                                             </div>
+                                            {deliveryQuoted && (
+                                                <p className="mt-1 text-right text-xs text-gray-500">
+                                                    {d('checkout.delivery.total_excludes', 'Excludes delivery, which is quoted after you order.')}
+                                                </p>
+                                            )}
                                         </div>
 
                                         {/* Place Order Button */}

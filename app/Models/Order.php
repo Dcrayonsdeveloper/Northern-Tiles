@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Cart\Services\PricingService;
 use App\Models\OrderItem;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,6 +30,8 @@ class Order extends Model
         'shipping_address',
         'billing_address',
         'shipping_method',
+        'delivery_quote',
+        'delivery_quote_paid_at',
         'payment_method',
         'payment_status',
         'notes',
@@ -48,7 +51,47 @@ class Order extends Model
         'is_builder_order' => 'boolean',
         'shipped_at'       => 'datetime',
         'delivered_at'     => 'datetime',
+        'delivery_quote'   => 'decimal:2',
+        'delivery_quote_paid_at' => 'datetime',
     ];
+
+    /**
+     * Delivery for this order is quoted by the team rather than charged at
+     * checkout. The quote is collected separately and is never part of
+     * `total`, which is what the card was charged.
+     */
+    public function isDeliveryQuoted(): bool
+    {
+        return $this->shipping_method === PricingService::DELIVERY_QUOTE;
+    }
+
+    /** Where a quoted delivery stands: awaiting a quote, quoted, or paid. Null when nothing is quoted. */
+    public function deliveryQuoteStatus(): ?string
+    {
+        if (! $this->isDeliveryQuoted()) {
+            return null;
+        }
+
+        if ($this->delivery_quote_paid_at) {
+            return 'paid';
+        }
+
+        return $this->delivery_quote === null ? 'awaiting' : 'quoted';
+    }
+
+    /** How delivery was priced, in words, for the order screens and the receipt. */
+    public function deliveryLabel(): ?string
+    {
+        return match ($this->shipping_method) {
+            null, '' => null,
+            PricingService::DELIVERY_QUOTE => 'Quoted separately',
+            PricingService::DELIVERY_SAMPLE_FLAT => 'Samples, flat rate',
+            PricingService::DELIVERY_FREE => 'Free shipping (coupon)',
+            // Orders placed before delivery was quoted recorded the zone they
+            // were charged at, e.g. "sydney-metro".
+            default => ucfirst(str_replace('-', ' ', $this->shipping_method)),
+        };
+    }
 
     /**
      * Hide checkouts that were started by card and never paid for.
