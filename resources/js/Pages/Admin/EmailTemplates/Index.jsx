@@ -41,7 +41,6 @@ function Pagination({ links }) {
                 <Link
                     key={idx}
                     href={l.url ?? '#'}
-                    preserveScroll
                     className={
                         (l.active ? 'bg-brand text-white border-brand' : 'bg-white text-gray-700 border-gray-200 hover:bg-brand/10') +
                         ' rounded-md border px-2.5 py-1.5 text-xs font-medium' +

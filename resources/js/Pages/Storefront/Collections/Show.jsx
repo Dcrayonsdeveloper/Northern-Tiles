@@ -121,7 +121,6 @@ export default function Show({ collection, products }) {
                                             <Link
                                                 key={idx}
                                                 href={link.url}
-                                                preserveScroll
                                                 className={`rounded-md px-3 py-2 text-sm ${
                                                     link.active
                                                         ? 'bg-gray-900 text-white'

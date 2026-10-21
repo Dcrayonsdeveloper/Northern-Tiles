@@ -210,7 +210,6 @@ export default function Index({ items, filters, groups, locales }) {
                                 <Link
                                     key={idx}
                                     href={l.url ?? '#'}
-                                    preserveScroll
                                     className={
                                         (l.active
                                             ? 'bg-brand text-white border-brand'

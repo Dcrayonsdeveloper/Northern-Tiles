@@ -128,7 +128,6 @@ function Pagination({ links }) {
                     <Link
                         key={i}
                         href={link.url}
-                        preserveScroll
                         className={`flex h-8 min-w-[2rem] items-center justify-center rounded-lg px-2 text-xs transition-colors duration-100 ${
                             link.active
                                 ? 'bg-gray-900 font-semibold text-white'
