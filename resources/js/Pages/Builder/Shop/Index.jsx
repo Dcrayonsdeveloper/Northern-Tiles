@@ -279,7 +279,6 @@ export default function BuilderShopIndex({ products, categories, filters, curren
                             <Link
                                 key={i}
                                 href={link.url ?? '#'}
-                                preserveScroll
                                 className={`rounded px-3 py-1.5 text-sm transition ${
                                     link.active
                                         ? 'bg-slate-900 font-semibold text-white'

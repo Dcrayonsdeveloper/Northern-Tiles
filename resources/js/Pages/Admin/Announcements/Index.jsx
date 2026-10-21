@@ -115,7 +115,6 @@ export default function Index({ items, activeAnnouncement }) {
                                         (l.active ? 'bg-brand text-white' : 'bg-white text-gray-700 hover:bg-gray-50') +
                                         ' rounded-md border border-gray-200 px-2 py-1'
                                     }
-                                    preserveScroll
                                     preserveState
                                 >
                                     <span dangerouslySetInnerHTML={{ __html: l.label }} />

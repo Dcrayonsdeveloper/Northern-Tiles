@@ -117,7 +117,6 @@ export default function Blog({ posts, categories = [], filters = {} }) {
                             <Link
                                 key={idx}
                                 href={link.url}
-                                preserveScroll
                                 className={`rounded-md px-4 py-2 text-sm ${
                                     link.active
                                         ? 'bg-brand text-white'
