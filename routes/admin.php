@@ -14,6 +14,7 @@ use App\Domain\Menu\Http\Controllers\Admin\MenuController;
 use App\Domain\SEO\Http\Controllers\Admin\SeoController;
 use App\Domain\Settings\Http\Controllers\Admin\ConfigurationController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ShippingRateController;
 use Illuminate\Support\Facades\Route;
 
 // Dictionary
@@ -32,6 +33,10 @@ Route::resource('announcements', AnnouncementController::class)->except(['show']
 // Configuration
 Route::get('configuration', [ConfigurationController::class, 'edit'])->name('configuration.edit');
 Route::post('configuration', [ConfigurationController::class, 'update'])->name('configuration.update');
+
+// Shipping rates — delivery charge per state, and the samples flat fee
+Route::get('shipping-rates', [ShippingRateController::class, 'edit'])->name('shipping-rates.edit');
+Route::put('shipping-rates', [ShippingRateController::class, 'update'])->name('shipping-rates.update');
 
 // ── Builder Panel ────────────────────────────────────────────────────
 // Runs the contractor portal from this same admin: which products it

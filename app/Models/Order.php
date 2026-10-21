@@ -86,6 +86,7 @@ class Order extends Model
             null, '' => null,
             PricingService::DELIVERY_QUOTE => 'Quoted separately',
             PricingService::DELIVERY_SAMPLE_FLAT => 'Samples, flat rate',
+            PricingService::DELIVERY_STATE_RATE => ($this->shipping_address['state'] ?? 'State') . ' delivery rate',
             PricingService::DELIVERY_FREE => 'Free shipping (coupon)',
             // Orders placed before delivery was quoted recorded the zone they
             // were charged at, e.g. "sydney-metro".

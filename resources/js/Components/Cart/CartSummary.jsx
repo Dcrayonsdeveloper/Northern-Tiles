@@ -9,6 +9,7 @@ export default function CartSummary({ totals, shippingEstimate, appliedCoupon })
         shipping,
         shipping_method,
         shipping_quote_required: deliveryQuoted = false,
+        shipping_awaiting_state: awaitingState = false,
         sample_count = 0,
         tax,
         grand_total,
@@ -56,6 +57,8 @@ export default function CartSummary({ totals, shippingEstimate, appliedCoupon })
                 <span className="font-medium text-gray-900">
                     {deliveryQuoted ? (
                         <span className="text-amber-700">{d('cart.delivery_quoted', 'To be quoted')}</span>
+                    ) : awaitingState ? (
+                        <span className="text-gray-500">{d('cart.delivery_at_checkout', 'Calculated at checkout')}</span>
                     ) : shipping_method === 'free-shipping' ? (
                         <span className="text-green-600">{d('cart.free_with_coupon', 'Free (Coupon)')}</span>
                     ) : parseFloat(shipping || 0) > 0 ? (
@@ -87,9 +90,11 @@ export default function CartSummary({ totals, shippingEstimate, appliedCoupon })
                         {currency}{fmt(grand_total)}
                     </span>
                 </div>
-                {deliveryQuoted && (
+                {(deliveryQuoted || awaitingState) && (
                     <p className="mt-1 text-right text-[11px] text-gray-500">
-                        {d('cart.delivery_excluded', 'Excludes delivery, quoted after you order.')}
+                        {deliveryQuoted
+                            ? d('cart.delivery_excluded', 'Excludes delivery, quoted after you order.')
+                            : d('cart.delivery_plus', 'Plus delivery, calculated at checkout.')}
                     </p>
                 )}
             </div>

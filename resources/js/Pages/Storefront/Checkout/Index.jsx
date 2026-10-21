@@ -29,6 +29,7 @@ export default function Index({
     paymentMethods = [],
     items = [],
     totals = {},
+    deliveryRates = {},
     appliedCoupon = null,
     isGuest = true,
     user = null,
@@ -136,16 +137,21 @@ export default function Index({
 
     const cityOptions = citiesForState(data.shipping_address.state);
 
-    // What is in the cart decides delivery, not the address: samples on their
-    // own ship for a flat fee, and anything else is quoted after the order is
-    // placed. So the server's totals are already final and are shown as sent.
-    // Re-deriving delivery here from the address is what once put the $20 tile
-    // rate on screen for a samples-only order while the card was charged the
-    // sample fee alone.
-    const deliveryQuoted = !!totals.shipping_quote_required;
+    // The server has already priced everything that does not depend on the
+    // address -- samples on their own, a free-shipping coupon -- and says which
+    // applies in shipping_method. Only 'state-rate' is left to the state the
+    // customer picks, looked up in the same rate card the order is charged
+    // from; a state with no rate is quoted after the order. Working the rules
+    // out again here is what once put a tile rate on screen for a samples-only
+    // order while the card was charged the sample fee alone.
+    const state = data.shipping_address.state;
+    const byState = totals.shipping_method === 'state-rate';
+    const stateRate = byState && state ? (deliveryRates[state] ?? null) : null;
+    const awaitingState = byState && !state;
+    const deliveryQuoted = !!totals.shipping_quote_required || (byState && !!state && stateRate === null);
     const samplesOnly = totals.shipping_method === 'sample-flat';
-    const shippingCost = parseFloat(totals.shipping || 0);
-    const grandTotal = parseFloat(totals.grand_total || 0);
+    const shippingCost = byState ? (stateRate ?? 0) : parseFloat(totals.shipping || 0);
+    const grandTotal = parseFloat(totals.grand_total || 0) + (byState ? (stateRate ?? 0) : 0);
 
     const isEmpty = items.length === 0;
 
@@ -393,9 +399,13 @@ export default function Index({
                                             <p className="sm:col-span-2 text-xs text-gray-500">
                                                 {deliveryQuoted
                                                     ? d('checkout.delivery.quote_note', 'Delivery is quoted to this address after you order. Our team will contact you with the price and arrange payment for it separately.')
-                                                    : samplesOnly
-                                                        ? `Samples ship anywhere in Australia for a flat $${shippingCost.toFixed(2)}.`
-                                                        : d('checkout.delivery.free_note', 'Delivery is free with your coupon.')}
+                                                    : awaitingState
+                                                        ? d('checkout.delivery.choose_state', 'Delivery is charged by state. Choose yours to see the price.')
+                                                        : byState
+                                                            ? `Delivery to ${state}: ${shippingCost > 0 ? `$${shippingCost.toFixed(2)}` : 'free'}.`
+                                                            : samplesOnly
+                                                                ? `Samples ship anywhere in Australia for a flat $${shippingCost.toFixed(2)}.`
+                                                                : d('checkout.delivery.free_note', 'Delivery is free with your coupon.')}
                                             </p>
                                         </div>
                                     </div>
@@ -575,15 +585,17 @@ export default function Index({
                                                 <span className="font-medium text-gray-900">
                                                     {deliveryQuoted
                                                         ? <span className="text-amber-700">{d('checkout.delivery.to_be_quoted', 'To be quoted')}</span>
-                                                        : shippingCost > 0
-                                                            ? `$${shippingCost.toFixed(2)}`
-                                                            : <span className="text-green-600">{d('checkout.free', 'Free')}</span>}
+                                                        : awaitingState
+                                                            ? <span className="text-gray-500">{d('checkout.delivery.choose_state_short', 'Choose a state')}</span>
+                                                            : shippingCost > 0
+                                                                ? `$${shippingCost.toFixed(2)}`
+                                                                : <span className="text-green-600">{d('checkout.free', 'Free')}</span>}
                                                 </span>
                                             </div>
                                             {/* Samples alongside tiles go out with that delivery
                                                 instead of for their own fee, so say why there is no
                                                 sample shipping line. */}
-                                            {deliveryQuoted && totals.sample_count > 0 && (
+                                            {!samplesOnly && totals.sample_count > 0 && (
                                                 <p className="text-xs text-gray-500">
                                                     {d('checkout.delivery.samples_with_tiles', 'Your samples travel with the tiles at no extra charge.')}
                                                 </p>
@@ -607,9 +619,11 @@ export default function Index({
                                                     ${grandTotal?.toLocaleString()}
                                                 </span>
                                             </div>
-                                            {deliveryQuoted && (
+                                            {(deliveryQuoted || awaitingState) && (
                                                 <p className="mt-1 text-right text-xs text-gray-500">
-                                                    {d('checkout.delivery.total_excludes', 'Excludes delivery, which is quoted after you order.')}
+                                                    {deliveryQuoted
+                                                        ? d('checkout.delivery.total_excludes', 'Excludes delivery, which is quoted after you order.')
+                                                        : d('checkout.delivery.total_awaits_state', 'Plus delivery, shown once you choose a state.')}
                                                 </p>
                                             )}
                                         </div>

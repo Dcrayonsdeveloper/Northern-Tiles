@@ -11,7 +11,11 @@ class PricingService
     /** Maximum samples allowed per order — hard cap, not a target. */
     public const SAMPLE_MAX_QUANTITY = 5;
 
-    /** Flat shipping charge for a samples-only order, regardless of how many samples (1–5). */
+    /**
+     * Flat shipping charge for a samples-only order, regardless of how many
+     * samples (1–5). The default only: staff can change it under Admin >
+     * Shipping Rates (ShippingRates::sampleRate()).
+     */
     public const SAMPLE_SHIPPING_FLAT = 20.00;
 
     /**
@@ -24,12 +28,14 @@ class PricingService
     /**
      * How an order's delivery was priced. Stored on orders.shipping_method.
      *
-     * Samples on their own go out for a flat fee. Anything else is quoted by
-     * the team once the order is in -- tiles are too heavy and too varied for
-     * a flat rate -- and collected separately, so checkout charges nothing for
-     * it. A free-shipping coupon is the one thing that settles it upfront.
+     * Samples on their own go out for a flat fee. Anything else is charged the
+     * rate staff have set for the state it is going to. Where a state has no
+     * rate, the team quotes delivery once the order is in and collects it
+     * separately, so checkout charges nothing for it. A free-shipping coupon
+     * settles it upfront either way.
      */
     public const DELIVERY_SAMPLE_FLAT = 'sample-flat';
+    public const DELIVERY_STATE_RATE = 'state-rate';
     public const DELIVERY_QUOTE = 'delivery-quote';
     public const DELIVERY_FREE = 'free-shipping';
 
@@ -38,10 +44,11 @@ class PricingService
         $subtotal = $this->calculateSubtotal($cart);
         $discount = $this->calculateDiscount($cart, $subtotal);
 
-        // What is in the cart decides delivery, not where it is going, so
-        // neither the address nor $shippingMethod changes it. Both parameters
-        // stay so existing callers keep working unchanged.
-        $delivery = $this->deliveryFor($cart);
+        // What is in the cart decides delivery, and for tiles the state it is
+        // going to. $shippingMethod is ignored; it stays so existing callers
+        // keep working unchanged.
+        $state = $shippingData['state'] ?? null;
+        $delivery = $this->deliveryFor($cart, $state);
         $shipping = $delivery['amount'];
 
         $taxableAmount = $subtotal - $discount;
@@ -63,6 +70,9 @@ class PricingService
             // Delivery still to be quoted. `shipping` is then 0 because
             // nothing is charged for it at checkout -- not because it is free.
             'shipping_quote_required' => $delivery['method'] === self::DELIVERY_QUOTE,
+            // Priced by state and no address given yet, as in the cart: the
+            // 0 in `shipping` is a placeholder until checkout knows the state.
+            'shipping_awaiting_state' => $delivery['method'] === self::DELIVERY_STATE_RATE && blank($state),
             'sample_shipping' => round($delivery['method'] === self::DELIVERY_SAMPLE_FLAT ? $shipping : 0, 2),
             'tax' => round($tax, 2),
             'grand_total' => round($grandTotal, 2),
@@ -120,14 +130,14 @@ class PricingService
      * going out either way -- so the flat sample fee only applies to an order
      * of nothing but samples.
      */
-    public function deliveryFor(Cart $cart): array
+    public function deliveryFor(Cart $cart, ?string $state = null): array
     {
         if ($cart->isEmpty()) {
             return ['method' => null, 'amount' => 0.0];
         }
 
         if (! $cart->items->contains(fn ($item) => ! $item->is_sample)) {
-            return ['method' => self::DELIVERY_SAMPLE_FLAT, 'amount' => self::SAMPLE_SHIPPING_FLAT];
+            return ['method' => self::DELIVERY_SAMPLE_FLAT, 'amount' => ShippingRates::sampleRate()];
         }
 
         // A free-shipping coupon is an offer the business chose to make, and
@@ -137,7 +147,23 @@ class PricingService
             return ['method' => self::DELIVERY_FREE, 'amount' => 0.0];
         }
 
-        return ['method' => self::DELIVERY_QUOTE, 'amount' => 0.0];
+        $rates = ShippingRates::stateRates();
+        $state = strtoupper(trim((string) $state));
+
+        // Before there is an address the price depends on where it is going --
+        // unless no state has a rate at all, in which case every delivery is
+        // quoted and that can be said now.
+        if ($state === '') {
+            return array_filter($rates, fn ($rate) => $rate !== null) === []
+                ? ['method' => self::DELIVERY_QUOTE, 'amount' => 0.0]
+                : ['method' => self::DELIVERY_STATE_RATE, 'amount' => 0.0];
+        }
+
+        $rate = $rates[$state] ?? null;
+
+        return $rate === null
+            ? ['method' => self::DELIVERY_QUOTE, 'amount' => 0.0]
+            : ['method' => self::DELIVERY_STATE_RATE, 'amount' => $rate];
     }
 
     protected function hasFreeShippingCoupon(Cart $cart): bool
@@ -217,10 +243,10 @@ class PricingService
     }
 
     /**
-     * Shipping summary for the cart drawer.
+     * Shipping summary for the cart drawer, which has no address to price by.
      *
      * There is no spend threshold to count towards any more -- tile delivery
-     * is quoted rather than charged -- so the free-shipping progress bar this
+     * is priced by state or quoted -- so the free-shipping progress bar this
      * used to feed has nothing left to show.
      */
     public function getShippingEstimate(Cart $cart): array
@@ -231,6 +257,7 @@ class PricingService
             'estimated' => round($delivery['amount'], 2),
             'method' => $delivery['method'],
             'quote_required' => $delivery['method'] === self::DELIVERY_QUOTE,
+            'awaiting_state' => $delivery['method'] === self::DELIVERY_STATE_RATE,
             'is_free' => $delivery['method'] === self::DELIVERY_FREE,
             'coupon_free_shipping' => $delivery['method'] === self::DELIVERY_FREE,
         ];
