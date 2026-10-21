@@ -168,7 +168,9 @@ class CheckoutService
         // four spellings of the same place the way a free-text box allowed.
         $rules = [
             'contact.email' => 'required|email|max:255',
-            'contact.phone' => 'nullable|string|max:20',
+            // Required so the delivery driver and the sales team can reach the
+            // customer. The browser's `required` alone is only a suggestion.
+            'contact.phone' => 'required|string|max:20',
             'contact.name' => 'nullable|string|max:255',
             'shipping_address.name' => 'required|string|max:255',
             'shipping_address.address_line_1' => 'required|string|max:255',
