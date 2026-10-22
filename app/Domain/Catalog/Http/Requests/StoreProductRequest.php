@@ -43,8 +43,9 @@ class StoreProductRequest extends FormRequest
             'seller_id' => ['nullable', 'exists:users,id'],
             'attribute_set_id' => ['nullable', 'exists:attribute_sets,id'],
 
-            // Pricing
-            'price' => ['nullable', 'numeric', 'min:0'],
+            // Pricing. products.price is NOT NULL, so a blank price has to be
+            // refused here — it used to reach the insert and come back a 500.
+            'price' => ['required', 'numeric', 'min:0'],
             'compare_at_price' => ['nullable', 'numeric', 'min:0'],
             'cost' => ['nullable', 'numeric', 'min:0'],
             'default_currency' => ['nullable', 'string', 'size:3'],
