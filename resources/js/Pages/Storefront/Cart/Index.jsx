@@ -48,6 +48,8 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal, 
     // samples alone ship for a flat fee, anything else is quoted after the
     // order is placed.
     const deliveryQuoted = !!totals?.shipping_quote_required;
+    // Tile delivery priced by state, which the cart does not know yet.
+    const awaitingState = !!totals?.shipping_awaiting_state;
     const shippingCost = parseFloat(totals?.shipping || 0);
     const [updating, setUpdating] = useState(null);
 
@@ -326,7 +328,9 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal, 
                             <span className="font-semibold text-gray-900">
                                 {deliveryQuoted
                                     ? <span className="text-amber-700">To be quoted</span>
-                                    : shippingCost > 0
+                                    : awaitingState
+                                        ? <span className="text-gray-500">Calculated at checkout</span>
+                                        : shippingCost > 0
                                         ? `$${shippingCost.toFixed(2)}`
                                         : totals?.shipping_method === 'free-shipping'
                                             ? <span className="text-green-600">Free</span>
@@ -345,9 +349,11 @@ export default function Index({ items: initialItems, subtotal: initialSubtotal, 
                                 ${(parseFloat(subtotal || 0) + shippingCost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         </div>
-                        {deliveryQuoted && (
+                        {(deliveryQuoted || awaitingState) && (
                             <p className="mt-1 text-right text-xs text-gray-500">
-                                Excludes delivery, which is quoted after you order.
+                                {deliveryQuoted
+                                    ? 'Excludes delivery, which is quoted after you order.'
+                                    : 'Plus delivery, calculated at checkout.'}
                             </p>
                         )}
                         {isInactive ? (

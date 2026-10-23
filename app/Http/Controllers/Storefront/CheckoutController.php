@@ -61,6 +61,9 @@ class CheckoutController extends Controller
         return Inertia::render($this->checkoutInertiaComponent(), [
             'items' => $summary['items'],
             'totals' => $summary['totals'],
+            // The same rate card the order is charged from, so the page can
+            // price delivery as soon as a state is picked.
+            'deliveryRates' => \App\Domain\Cart\Services\ShippingRates::stateRates(),
             'paymentMethods' => $summary['payment_methods'],
             'isGuest' => !$user,
             'user' => $user ? [

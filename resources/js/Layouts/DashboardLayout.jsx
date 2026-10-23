@@ -181,6 +181,17 @@ function IconReceipt(props) {
     );
 }
 
+function IconTruck(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+            <path
+                d="M2 5h12v10H2V5Zm12 4h4l4 4v2h-8V9ZM6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm11 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"
+                fill="currentColor"
+            />
+        </svg>
+    );
+}
+
 function IconUsers(props) {
     return (
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -608,6 +619,13 @@ export default function DashboardLayout({ title, children }) {
                     href: route('admin.orders.index'),
                     active: route().current('admin.orders.*'),
                     icon: <IconReceipt className="h-5 w-5" />,
+                },
+                {
+                    key: 'shipping-rates',
+                    label: 'Shipping Rates',
+                    href: route('admin.shipping-rates.edit'),
+                    active: route().current('admin.shipping-rates.*'),
+                    icon: <IconTruck className="h-5 w-5" />,
                 },
                 {
                     key: 'categories',

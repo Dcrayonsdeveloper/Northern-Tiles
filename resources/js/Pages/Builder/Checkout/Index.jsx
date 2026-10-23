@@ -33,6 +33,7 @@ export default function Index({
     paymentMethods = [],
     items = [],
     totals = {},
+    deliveryRates = {},
     isGuest = true,
     user = null,
 }) {
@@ -134,11 +135,16 @@ export default function Index({
 
     const cityOptions = citiesForState(data.shipping_address.state);
 
-    // Delivery is quoted after the order, the same as on the retail checkout,
-    // so the server's totals are already final and are shown as sent.
-    const deliveryQuoted = !!totals.shipping_quote_required;
-    const shippingCost = parseFloat(totals.shipping || 0);
-    const grandTotal = parseFloat(totals.grand_total || 0);
+    // Priced the same way as the retail checkout: by the state picked, from
+    // the rate card the order is charged from, or quoted where a state has no
+    // rate. Storefront/Checkout/Index explains why only the lookup is here.
+    const state = data.shipping_address.state;
+    const byState = totals.shipping_method === 'state-rate';
+    const stateRate = byState && state ? (deliveryRates[state] ?? null) : null;
+    const awaitingState = byState && !state;
+    const deliveryQuoted = !!totals.shipping_quote_required || (byState && !!state && stateRate === null);
+    const shippingCost = byState ? (stateRate ?? 0) : parseFloat(totals.shipping || 0);
+    const grandTotal = parseFloat(totals.grand_total || 0) + (byState ? (stateRate ?? 0) : 0);
 
     const isEmpty = items.length === 0;
 
@@ -359,7 +365,11 @@ export default function Index({
                                             <p className="sm:col-span-2 text-xs text-gray-500">
                                                 {deliveryQuoted
                                                     ? 'Delivery is quoted to this address after you order. Our team will contact you with the price and arrange payment for it separately.'
-                                                    : 'Delivery is free with your coupon.'}
+                                                    : awaitingState
+                                                        ? 'Delivery is charged by state. Choose yours to see the price.'
+                                                        : byState
+                                                            ? `Delivery to ${state}: ${shippingCost > 0 ? `$${shippingCost.toFixed(2)}` : 'free'}.`
+                                                            : 'Delivery is free with your coupon.'}
                                             </p>
                                         </div>
                                     </div>
@@ -502,9 +512,11 @@ export default function Index({
                                                 <span className="font-medium text-gray-900">
                                                     {deliveryQuoted
                                                         ? <span className="text-amber-700">To be quoted</span>
-                                                        : shippingCost > 0
-                                                            ? `$${shippingCost.toFixed(2)}`
-                                                            : <span className="text-green-600">Free</span>}
+                                                        : awaitingState
+                                                            ? <span className="text-gray-500">Choose a state</span>
+                                                            : shippingCost > 0
+                                                                ? `$${shippingCost.toFixed(2)}`
+                                                                : <span className="text-green-600">Free</span>}
                                                 </span>
                                             </div>
                                             {totals.tax > 0 && (
@@ -526,9 +538,11 @@ export default function Index({
                                                     ${grandTotal?.toLocaleString()}
                                                 </span>
                                             </div>
-                                            {deliveryQuoted && (
+                                            {(deliveryQuoted || awaitingState) && (
                                                 <p className="mt-1 text-right text-xs text-gray-500">
-                                                    Excludes delivery, which is quoted after you order.
+                                                    {deliveryQuoted
+                                                        ? 'Excludes delivery, which is quoted after you order.'
+                                                        : 'Plus delivery, shown once you choose a state.'}
                                                 </p>
                                             )}
                                         </div>
