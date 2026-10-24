@@ -6,6 +6,7 @@ import { StarRating } from '@/Components/Catalog/StarRating';
 import ProductImage from '@/Components/Catalog/ProductImage';
 import TrustpilotReviewLink from '@/Components/Storefront/TrustpilotReviewLink';
 import OurServices from '@/Components/Storefront/OurServices';
+import { d } from '@/Support/dictionary';
 
 
 /* ── Spec icons (Heroicons outline 24 px) ───────────────────────── */
@@ -348,6 +349,114 @@ function ImageGallery({ product, discountPercent }) {
                 )}
             </div>
         </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SECTION: Delivery & Returns
+   Two tabs under the product, the same on every product page. Each tab's
+   text is one CMS Text entry (product.delivery.body, product.returns.body)
+   with a paragraph per line, so it can be reworded in admin without a
+   deploy; saving an entry blank hides its tab. The defaults summarise the
+   Shipping & Delivery and Return Policy pages, which the tabs link to.
+   ═══════════════════════════════════════════════════════════════════ */
+const DELIVERY_TEXT = [
+    'There is a delivery fee on every delivered order. Within Victoria, allow $100 per pallet; interstate delivery is quoted.',
+    'Our team contacts you with the delivery price after you order, and you pay it separately. Enquire any time to find out pricing to your door.',
+    'Please allow 2–3 business days for regular delivery within Victoria once your order is despatched.',
+    'PICKUP IS FREE FROM OUR THOMASTOWN WAREHOUSE IN MELBOURNE.',
+].join('\n');
+
+const RETURNS_TEXT = [
+    'Unopened, undamaged full boxes of stock lines can be returned within 30 days with proof of purchase. A restocking fee of up to 20% may apply, and freight is not refundable.',
+    'Special-order, clearance and cut-to-size items, and anything laid or installed, cannot be returned for a change of mind.',
+    'Please check your order on arrival. Note any breakage on the delivery paperwork before you sign, and send us photos within 48 hours.',
+    'None of this limits your rights under the Australian Consumer Law.',
+].join('\n');
+
+function DeliveryReturns() {
+    const [active, setActive] = useState(0);
+    const tabRefs = useRef([]);
+
+    const paragraphs = (text) => text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    const tabs = [
+        {
+            key: 'delivery',
+            label: 'Delivery',
+            paragraphs: paragraphs(d('product.delivery.body', DELIVERY_TEXT)),
+            links: [
+                { href: route('shipping'), label: 'Shipping & delivery details' },
+                { href: route('pages.contact'), label: 'Get a delivery quote' },
+            ],
+        },
+        {
+            key: 'returns',
+            label: 'Returns',
+            paragraphs: paragraphs(d('product.returns.body', RETURNS_TEXT)),
+            links: [{ href: route('returns'), label: 'Full return policy' }],
+        },
+    ].filter((tab) => tab.paragraphs.length);
+
+    if (!tabs.length) return null;
+
+    const current = Math.min(active, tabs.length - 1);
+
+    // Arrow keys move between tabs, as they do in any tab list.
+    const onKeyDown = (e) => {
+        const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+        if (!step) return;
+        e.preventDefault();
+        const next = (current + step + tabs.length) % tabs.length;
+        setActive(next);
+        tabRefs.current[next]?.focus();
+    };
+
+    return (
+        <section className="pb-10">
+            <Container>
+                <div className="rounded-xl bg-gray-50 px-5 py-6 sm:px-8 sm:py-8">
+                    <div role="tablist" aria-label="Delivery and returns" className="flex gap-8">
+                        {tabs.map((tab, i) => (
+                            <button
+                                key={tab.key}
+                                ref={(el) => { tabRefs.current[i] = el; }}
+                                type="button"
+                                role="tab"
+                                id={`pdp-${tab.key}-tab`}
+                                aria-selected={i === current}
+                                aria-controls={`pdp-${tab.key}-panel`}
+                                tabIndex={i === current ? 0 : -1}
+                                onClick={() => setActive(i)}
+                                onKeyDown={onKeyDown}
+                                className={`border-b-2 pb-1.5 text-[15px] font-bold uppercase tracking-wide transition-colors sm:text-base ${i === current ? 'border-brand text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                    {tabs.map((tab, i) => (
+                        <div
+                            key={tab.key}
+                            role="tabpanel"
+                            id={`pdp-${tab.key}-panel`}
+                            aria-labelledby={`pdp-${tab.key}-tab`}
+                            hidden={i !== current}
+                            className="mt-5 max-w-3xl space-y-3 text-[14px] leading-relaxed text-gray-700 sm:text-[15px]"
+                        >
+                            {tab.paragraphs.map((text, n) => <p key={n}>{text}</p>)}
+                            <div className="flex flex-wrap gap-x-6 gap-y-2 pt-1">
+                                {tab.links.map((link) => (
+                                    <Link key={link.href} href={link.href} className="inline-flex items-center gap-1 text-[13px] font-semibold text-brand hover:underline">
+                                        {link.label}
+                                        <CR c="h-3.5 w-3.5" />
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </Container>
+        </section>
     );
 }
 
@@ -1176,6 +1285,9 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                     </div>
                 </Container>
             </section>
+
+            {/* Delivery & Returns */}
+            <DeliveryReturns />
 
             {/* Our Services — its own section rather than part of Frequently
                 Bought Together, which renders nothing for a product with no
