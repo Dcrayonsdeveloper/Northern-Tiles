@@ -5,6 +5,7 @@ import { useRef, useState, useCallback } from 'react';
 import { StarRating } from '@/Components/Catalog/StarRating';
 import ProductImage from '@/Components/Catalog/ProductImage';
 import TrustpilotReviewLink from '@/Components/Storefront/TrustpilotReviewLink';
+import OurServices from '@/Components/Storefront/OurServices';
 
 
 /* ── Spec icons (Heroicons outline 24 px) ───────────────────────── */
@@ -724,7 +725,7 @@ function VariantFamilySelector({ familyVariants }) {
 /* ═══════════════════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════════════════ */
-export default function Show({ product, relatedProducts, availableCoupons = [], familyVariants = null, isWishlisted = false, sampleShipping = 20 }) {
+export default function Show({ product, relatedProducts, availableCoupons = [], familyVariants = null, isWishlisted = false, sampleShipping = 20, isHybrid = false }) {
     const { settings, auth } = usePage().props;
     // "$20" rather than "$20.00" in the sample copy; cents only when there are some.
     const sampleShippingLabel = `$${Number(sampleShipping) % 1 === 0 ? Number(sampleShipping) : Number(sampleShipping).toFixed(2)}`;
@@ -1175,6 +1176,14 @@ export default function Show({ product, relatedProducts, availableCoupons = [], 
                     </div>
                 </Container>
             </section>
+
+            {/* Our Services — its own section rather than part of Frequently
+                Bought Together, which renders nothing for a product with no
+                related products. Hybrid flooring is guaranteed for 20 years. */}
+            <OurServices
+                className="py-10 bg-white border-t border-gray-200"
+                qualityTitle={isHybrid ? '20 Year Quality Guarantee' : 'Lifetime Quality Guarantee'}
+            />
 
             {/* Frequently Bought Together */}
             <FrequentlyBoughtTogether products={relatedProducts} currentProduct={product} />
