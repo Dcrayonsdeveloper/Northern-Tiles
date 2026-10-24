@@ -527,6 +527,28 @@ function stripSpecsFromHtml(html) {
     return container.innerHTML;
 }
 
+/* ── Delivery terms, closing every product's Description ──────────── */
+// Rendered rather than written into each product's stored description,
+// so a product added later carries them too and a change of rate is one
+// edit here.
+function DeliveryInfo() {
+    return (
+        <div className="product-description">
+            <h3>Delivery</h3>
+            <ul>
+                <li>Delivery in Victoria: please allow $100 per pallet.</li>
+                <li>
+                    Delivery Australia-wide available. For interstate delivery, please{' '}
+                    <Link href={route('pages.contact')} className="font-semibold text-amber-600 hover:underline">
+                        contact us
+                    </Link>{' '}
+                    for a quote on delivery charges.
+                </li>
+            </ul>
+        </div>
+    );
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════════════════ */
@@ -858,16 +880,19 @@ export default function Show({ product, relatedProducts, familyVariants = null }
                                 </button>
                             </div>
 
-                            {/* Description */}
-                            {product.description && (
-                                <div className="mt-6 border-t border-gray-200 pt-5">
-                                    <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-1">Description</h2>
+                            {/* Description — shown for every product, as each
+                                one closes it with the delivery terms, even a
+                                product with no description of its own. */}
+                            <div className="mt-6 border-t border-gray-200 pt-5">
+                                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-1">Description</h2>
+                                {product.description && (
                                     <div
                                         className="prose prose-sm max-w-none text-gray-600"
                                         dangerouslySetInnerHTML={{ __html: stripSpecsFromHtml(product.description) }}
                                     />
-                                </div>
-                            )}
+                                )}
+                                <DeliveryInfo />
+                            </div>
                         </div>
                     </div>
                 </Container>
