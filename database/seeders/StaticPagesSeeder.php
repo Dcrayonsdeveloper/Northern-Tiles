@@ -31,6 +31,13 @@ use Illuminate\Database\Seeder;
  */
 class StaticPagesSeeder extends Seeder
 {
+    /**
+     * Slugs to seed; empty seeds every page. A subclass narrows it (see
+     * ShippingPageSeeder) so one page can be reseeded on production without
+     * overwriting edits made to the others in the CMS.
+     */
+    protected array $only = [];
+
     public function run(): void
     {
         $pages = [
@@ -59,7 +66,7 @@ class StaticPagesSeeder extends Seeder
                 'title' => 'Shipping & Delivery',
                 'slug' => 'shipping',
                 'meta_title' => 'Shipping & Delivery | Northern TILE Distributors',
-                'meta_description' => 'Delivery across Melbourne and regional Victoria, click & collect from our Thomastown warehouse, lead times and delivery requirements.',
+                'meta_description' => 'Australia-wide delivery from our Thomastown warehouse in Melbourne: allow $100 per pallet in Victoria, interstate delivery by quote, and free pickup.',
                 'body_json' => ['description' => $this->shipping()],
             ],
             [
@@ -70,6 +77,13 @@ class StaticPagesSeeder extends Seeder
                 'body_json' => ['description' => $this->faq()],
             ],
         ];
+
+        if ($this->only) {
+            $pages = array_values(array_filter(
+                $pages,
+                fn (array $page) => in_array($page['slug'], $this->only, true),
+            ));
+        }
 
         $cms = app(CMSService::class);
 
@@ -289,10 +303,29 @@ HTML;
     protected function shipping(): string
     {
         return <<<'HTML'
-<p>We deliver across Melbourne and regional Victoria from our Thomastown warehouse, and you are welcome to collect.</p>
+<p>We deliver anywhere in Australia from our warehouse in Thomastown, Melbourne, and pickup from the warehouse is free. Tiles and stone travel as heavy, palletised freight, so delivery is priced for your address rather than charged at checkout. This page explains what delivery costs, how long it takes and what we need from you. We do not ship outside Australia.</p>
 
-<h2>Click &amp; collect</h2>
-<p>Collection from 19/324 Settlement Road, Thomastown VIC 3074 is free. We will let you know when your order is picked and ready. Please bring your order number and photo ID.</p>
+<h2>Delivery options</h2>
+<table>
+<thead><tr><th>Option</th><th>Typical timeframe</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>Pickup &mdash; Thomastown, Melbourne</td><td>Usually ready same or next business day</td><td>Free</td></tr>
+<tr><td>Delivery within Victoria</td><td>2 &ndash; 3 business days</td><td>Allow $100 per pallet</td></tr>
+<tr><td>Interstate delivery</td><td>Confirmed with your quote</td><td>Contact us for a quote</td></tr>
+</tbody>
+</table>
+
+<h2>How delivery is charged</h2>
+<p>Every delivered order carries a delivery charge, but it is not taken at checkout. You pay for your goods when you order; our team then contacts you with the delivery price for your address and arranges payment for it separately.</p>
+<ul>
+<li><strong>Within Victoria</strong>, allow <strong>$100 per pallet</strong>. How many pallets an order needs depends on its size and weight, and we will confirm it in your quote.</li>
+<li><strong>Interstate</strong>, delivery is quoted individually. Contact us for a price, ideally before you order.</li>
+<li><strong>Want to know the cost first?</strong> Contact us with your address and what you are ordering, and we will price delivery to your door.</li>
+<li><strong>Free-delivery codes.</strong> When a free-delivery promo code is accepted at checkout, there is no delivery charge to pay.</li>
+</ul>
+
+<h2>Free pickup in Melbourne</h2>
+<p>Pickup from 19/324 Settlement Road, Thomastown VIC 3074 is free. To collect rather than have your order delivered, say so in the Order Notes at checkout, or tell us when we contact you about delivery. We will let you know when your order is picked and ready. Please bring your order number and photo ID.</p>
 <ul>
 <li>Monday to Thursday: 9:00am &ndash; 5:00pm</li>
 <li>Friday: 9:00am &ndash; 4:00pm</li>
@@ -300,33 +333,37 @@ HTML;
 <li>Sunday: closed</li>
 </ul>
 
-<h2>Delivery</h2>
-<table>
-<thead><tr><th>Area</th><th>Typical lead time</th><th>Cost</th></tr></thead>
-<tbody>
-<tr><td>Click &amp; collect &mdash; Thomastown</td><td>Usually same or next business day</td><td>Free</td></tr>
-<tr><td>Melbourne metro</td><td>2 &ndash; 5 business days</td><td>Quoted on order</td></tr>
-<tr><td>Regional Victoria</td><td>3 &ndash; 7 business days</td><td>Quoted on order</td></tr>
-<tr><td>Interstate</td><td>By arrangement</td><td>Quoted on order</td></tr>
-</tbody>
-</table>
-<p>Tiles and stone are heavy, palletised freight, so delivery is quoted per order based on weight, volume and address rather than charged at a flat rate. We will confirm the cost with you before despatch.</p>
-
-<h2>Lead times</h2>
-<p>Orders are picked within 1 &ndash; 2 business days where stock is on hand. Lead times above are estimates from despatch, not guarantees, and special-order or indent items take longer &mdash; we will give you an expected date when you order.</p>
-
-<h2>What we need from you</h2>
+<h2>Delivery times</h2>
 <ul>
-<li><strong>Truck access.</strong> Tell us at the time of ordering if the site cannot take a semi or a rigid truck, or if there are height, width or parking restrictions.</li>
-<li><strong>Unloading.</strong> Deliveries are kerbside to the nearest safe point. Our drivers do not carry material into houses, up stairs or onto upper levels. Please have someone on site to receive and check the delivery.</li>
-<li><strong>Someone present.</strong> If nobody is there to accept the delivery, a re-delivery fee may apply.</li>
+<li><strong>Processing.</strong> Orders are picked within 1 &ndash; 2 business days where stock is on hand.</li>
+<li><strong>Within Victoria.</strong> Allow 2 &ndash; 3 business days for standard delivery once your order is despatched.</li>
+<li><strong>Need it sooner?</strong> Faster delivery may be available for an extra charge. Ask us when we quote your delivery.</li>
+<li><strong>Interstate.</strong> We will confirm the timeframe with your quote.</li>
+<li><strong>Special orders.</strong> Special-order and indent items take longer. We will give you an expected date when you order.</li>
+</ul>
+<p>All timeframes are estimates, not guarantees. They can be affected by stock, carrier delays, weather and other events outside our control.</p>
+
+<h2>Samples</h2>
+<p>An order of samples only ships anywhere in Australia for a flat $20, for up to 5 samples. Samples added to an order of tiles travel with that delivery at no extra charge.</p>
+
+<h2>Before your delivery</h2>
+<ul>
+<li><strong>Your address.</strong> Please check your delivery address at checkout. If it needs correcting, contact us as soon as possible.</li>
+<li><strong>Truck access.</strong> Use the Order Notes at checkout to tell us if the site cannot take a semi or a rigid truck, or if there are height, width or parking restrictions.</li>
+<li><strong>Unloading.</strong> Deliveries are kerbside to the nearest safe point. Our drivers do not carry material into houses, up stairs or onto upper levels.</li>
+<li><strong>Someone on site.</strong> Please have someone there to receive and check the delivery. If nobody is there to accept it, a re-delivery fee may apply.</li>
 </ul>
 
-<h2>Checking your delivery</h2>
+<h2>Damaged, missing or late deliveries</h2>
 <p>Please inspect the pallet on arrival. Note any damage, breakage or shortage on the delivery paperwork before you sign, and tell us within <strong>48 hours</strong> with photos so we can lodge a freight claim. Claims made after material has been laid cannot be accepted.</p>
+<p>If a delivery is late, damaged or incomplete, call us on (03) 9464 6623 or email <a href="mailto:info@ntiled.com.au">info@ntiled.com.au</a> with your order number. We will work with the carrier to sort it out.</p>
 
-<h2>Problems with a delivery</h2>
-<p>If a delivery is late, damaged or incomplete, call us on (03) 9464 6623 or email <a href="mailto:info@ntiled.com.au">info@ntiled.com.au</a> with your order number and we will sort it out.</p>
+<h2>Changing or cancelling an order</h2>
+<p>Contact us as soon as possible. We can usually change or cancel an order before it has been picked or despatched. Once freight is booked a cancellation fee may apply, and once your order is on its way we cannot change it. Refunds for cancelled orders are made to your original payment method. For returns after delivery, see our <a href="/returns">Return Policy</a>.</p>
+
+<h2>Order updates and questions</h2>
+<p>Every order is saved to your account. Sign in and open <a href="/orders">My Orders</a> to see where your order is up to and whether its delivery has been quoted and paid.</p>
+<p>For anything else, call (03) 9464 6623, email <a href="mailto:info@ntiled.com.au">info@ntiled.com.au</a> or use our <a href="/contact">contact form</a>.</p>
 HTML;
     }
 
