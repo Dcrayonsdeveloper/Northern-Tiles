@@ -1,6 +1,7 @@
 import BuilderLayout from '@/Layouts/BuilderLayout';
 import Container from '@/Components/Container';
 import ProductImage from '@/Components/Catalog/ProductImage';
+import DeliveryInfo from '@/Components/Catalog/DeliveryInfo';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useRef, useState, useCallback } from 'react';
 
@@ -858,16 +859,19 @@ export default function Show({ product, relatedProducts, familyVariants = null }
                                 </button>
                             </div>
 
-                            {/* Description */}
-                            {product.description && (
-                                <div className="mt-6 border-t border-gray-200 pt-5">
-                                    <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-1">Description</h2>
+                            {/* Description — shown for every product, as each
+                                one closes it with the delivery terms, even a
+                                product with no description of its own. */}
+                            <div className="mt-6 border-t border-gray-200 pt-5">
+                                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-1">Description</h2>
+                                {product.description && (
                                     <div
                                         className="prose prose-sm max-w-none text-gray-600"
                                         dangerouslySetInnerHTML={{ __html: stripSpecsFromHtml(product.description) }}
                                     />
-                                </div>
-                            )}
+                                )}
+                                <DeliveryInfo linkClassName="text-amber-600" />
+                            </div>
                         </div>
                     </div>
                 </Container>
