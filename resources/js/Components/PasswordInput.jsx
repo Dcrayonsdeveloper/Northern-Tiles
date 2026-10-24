@@ -58,12 +58,18 @@ function EyeSlashIcon({ className }) {
  * The toggle is deliberately left in the tab order: someone typing a password
  * they cannot see is exactly who needs to reach it without a mouse. It is a
  * `type="button"` so it never submits the form it sits in.
+ *
+ * Microsoft Edge draws its own reveal button inside every password field, so
+ * Edge users saw two eyes, and the native one showed the password while this
+ * toggle still said it was hidden. `::-ms-reveal` hides Edge's; browsers that
+ * don't know the pseudo-element ignore the rule.
  */
 export default forwardRef(function PasswordInput(
     { className = '', unstyled = false, isFocused = false, ...props },
     ref,
 ) {
     const [visible, setVisible] = useState(false);
+    const fieldClass = 'pe-10 [&::-ms-reveal]:hidden ' + className;
 
     const field = unstyled ? (
         <input
@@ -71,7 +77,7 @@ export default forwardRef(function PasswordInput(
             ref={ref}
             type={visible ? 'text' : 'password'}
             autoFocus={isFocused || undefined}
-            className={'pe-10 ' + className}
+            className={fieldClass}
         />
     ) : (
         <TextInput
@@ -79,7 +85,7 @@ export default forwardRef(function PasswordInput(
             ref={ref}
             isFocused={isFocused}
             type={visible ? 'text' : 'password'}
-            className={'pe-10 ' + className}
+            className={fieldClass}
         />
     );
 
