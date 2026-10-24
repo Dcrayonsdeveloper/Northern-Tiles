@@ -245,6 +245,34 @@ class ShopController extends Controller
             // The sample copy quotes this, so it cannot drift from what the
             // cart charges the way the hardcoded "$9.99" did.
             'sampleShipping' => \App\Domain\Cart\Services\PricingService::SAMPLE_SHIPPING_FLAT,
+            // Hybrid flooring is guaranteed for 20 years, everything else for
+            // life; the Our Services strip titles its quality card from this.
+            'isHybrid' => $this->isHybrid($product),
         ]);
+    }
+
+    /**
+     * Whether a product is hybrid flooring: its product type says so, or its
+     * primary category, one of its extra categories, or the parent of either
+     * has "hybrid" in its slug. That covers hybrid, hybrid-7mm,
+     * hybrid-timber-oak-range, herringbone-hybrid and every subcategory filed
+     * under Hybrid.
+     */
+    private function isHybrid(Product $product): bool
+    {
+        if (str_contains(strtolower((string) $product->product_type), 'hybrid')) {
+            return true;
+        }
+
+        $categoryIds = $product->categories()->pluck('categories.id')
+            ->push($product->category_id)
+            ->filter();
+
+        return Category::query()
+            ->whereIn('id', $categoryIds)
+            ->where(fn ($query) => $query
+                ->where('slug', 'like', '%hybrid%')
+                ->orWhereHas('parent', fn ($parent) => $parent->where('slug', 'like', '%hybrid%')))
+            ->exists();
     }
 }
