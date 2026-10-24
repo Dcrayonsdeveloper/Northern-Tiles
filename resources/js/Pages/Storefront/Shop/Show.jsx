@@ -414,7 +414,9 @@ function DeliveryReturns() {
     return (
         <section className="pb-10">
             <Container>
-                <div className="rounded-xl bg-gray-50 px-5 py-6 sm:px-8 sm:py-8">
+                {/* A white card, like the specifications box: the layout behind
+                    it is already gray-50, so a gray panel had no visible edge. */}
+                <div className="rounded-xl border border-gray-200 bg-white px-5 py-6 shadow-sm sm:px-8 sm:py-8">
                     <div role="tablist" aria-label="Delivery and returns" className="flex gap-8">
                         {tabs.map((tab, i) => (
                             <button
@@ -428,7 +430,7 @@ function DeliveryReturns() {
                                 tabIndex={i === current ? 0 : -1}
                                 onClick={() => setActive(i)}
                                 onKeyDown={onKeyDown}
-                                className={`border-b-2 pb-1.5 text-[15px] font-bold uppercase tracking-wide transition-colors sm:text-base ${i === current ? 'border-brand text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700'}`}
+                                className={`border-b-2 pb-1.5 text-[15px] font-bold uppercase tracking-wide transition-colors sm:text-base ${i === current ? 'border-brand text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
                             >
                                 {tab.label}
                             </button>
